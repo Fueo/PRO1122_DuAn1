@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/blue"
+    tools:context=".RegisterFragment">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+            <ImageView
+                android:id="@+id/imgLogo"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_marginTop="0dp"
+                android:contentDescription="Logo cửa hàng sách"
+                android:src="@drawable/image9"
+                app:layout_constraintBottom_toTopOf="@id/tvSlogan"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.51"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintVertical_chainStyle="packed" />
+
+            <TextView
+                android:id="@+id/tvSlogan"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/greatviberoboto"
+                android:text="Áng mây kiến thức"
+                android:textColor="@android:color/white"
+                android:textAlignment="center"
+                android:textSize="30sp"
+                app:layout_constraintBottom_toTopOf="@id/tvLabelUsername"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/imgLogo" />
+
+            <TextView
+                android:id="@+id/tvLabelUsername"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/robotoserif_medium"
+                android:text="Tên đăng nhập"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@id/tilUsername"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvSlogan" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilUsername"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:boxBackgroundColor="@android:color/white"
+                app:boxCornerRadiusBottomEnd="17dp"
+                app:boxCornerRadiusBottomStart="17dp"
+                app:boxCornerRadiusTopEnd="17dp"
+                app:boxCornerRadiusTopStart="17dp"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvLabelUsername"
+                app:layout_constraintBottom_toTopOf="@id/tvLabelPassword">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:inputType="text"
+                    android:gravity="center_vertical"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:textColor="@color/dark_blue"
+                    android:paddingVertical="15dp"
+                    />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/tvLabelPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/robotoserif_medium"
+                android:text="Mật khẩu"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilUsername"
+                app:layout_constraintBottom_toTopOf="@id/tilPassword" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPassword"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:boxBackgroundColor="@android:color/white"
+                app:boxCornerRadiusBottomEnd="17dp"
+                app:boxCornerRadiusBottomStart="17dp"
+                app:boxCornerRadiusTopEnd="17dp"
+                app:boxCornerRadiusTopStart="17dp"
+                app:endIconMode="password_toggle"
+                app:endIconTint="@color/blue"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvLabelPassword"
+                app:layout_constraintBottom_toTopOf="@id/tvLabelConfirmPassword">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:inputType="textPassword"
+                    android:gravity="center_vertical"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:textColor="@color/dark_blue"
+                    android:paddingVertical="15dp"
+                    />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/tvLabelConfirmPassword"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                android:fontFamily="@font/robotoserif_medium"
+                android:text="Xác nhận mật khẩu"
+                android:textColor="@color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintBottom_toTopOf="@id/tilConfirmPassword"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilPassword" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilConfirmPassword"
+                style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:boxBackgroundColor="@android:color/white"
+                app:boxCornerRadiusBottomEnd="17dp"
+                app:boxCornerRadiusBottomStart="17dp"
+                app:boxCornerRadiusTopEnd="17dp"
+                app:boxCornerRadiusTopStart="17dp"
+                app:endIconMode="password_toggle"
+                app:endIconTint="@color/blue"
+                app:boxStrokeWidth="0dp"
+                app:boxStrokeWidthFocused="0dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvLabelConfirmPassword"
+                app:layout_constraintBottom_toTopOf="@id/btnRegister">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:inputType="textPassword"
+                    android:gravity="center_vertical"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:textColor="@color/dark_blue"
+                    android:paddingVertical="15dp"
+                    />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRegister"
+                android:layout_width="300dp"
+                android:layout_height="80dp"
+                android:layout_marginTop="23dp"
+                android:backgroundTint="@color/white"
+                android:text="Đăng ký"
+                android:textColor="@color/dark_blue"
+                android:fontFamily="@font/robotoserif_bold"
+                android:textSize="16sp"
+                app:cornerRadius="50dp"
+                android:textAllCaps="false"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilConfirmPassword"
+                app:layout_constraintBottom_toBottomOf="parent" />
+            <TextView
+                android:id="@+id/tvHasAccount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="16dp"
+                android:text="Đã có tài khoản ? "
+                android:textColor="@android:color/white"
+                android:fontFamily="@font/robotoserif_medium"
+                app:layout_constraintEnd_toStartOf="@+id/tvLogin"
+                app:layout_constraintHorizontal_chainStyle="packed"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btnRegister" />
+
+            <TextView
+                android:id="@+id/tvLogin"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+
+                android:text="@string/dang_nhap_underlined"
+                android:fontFamily="@font/robotoserif_medium"
+                android:textColor="@android:color/white"
+                app:layout_constraintBaseline_toBaselineOf="@id/tvHasAccount"
+                app:layout_constraintStart_toEndOf="@id/tvHasAccount"
+                app:layout_constraintEnd_toEndOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </ScrollView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">CloudyBooks</string>
+    <string name="continue_as_guest"><u>Tiếp tục với tư cách khách</u></string>
+    <string name="dang_ky_underlined"><u>Đăng ký</u></string>
+    <string name="dang_nhap_underlined"><u>Đăng nhập</u></string>
+
+
+</resources>

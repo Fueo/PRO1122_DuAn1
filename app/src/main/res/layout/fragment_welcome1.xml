@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/blue"
+    android:paddingTop="10dp"
+    android:paddingHorizontal="20dp">
+
+    <!-- Các dấu chấm / trang -->
+    <TextView
+        android:id="@+id/indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:text="— • •"
+        android:textColor="#FFFFFF"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Bỏ qua -->
+    <TextView
+        android:id="@+id/btn_skip"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:text="Bỏ qua >"
+        android:textColor="#FFFFFF"
+        android:textSize="22sp"
+        android:fontFamily="@font/robotoserif_bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Tiêu đề -->
+    <TextView
+        android:id="@+id/title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="35dp"
+        android:paddingHorizontal="40dp"
+        android:fontFamily="@font/robotoserif_bold"
+        android:gravity="center"
+        android:text="Khám phá thế giới tri thức trong tầm tay"
+        android:textAlignment="center"
+        android:textColor="#FFFFFF"
+        android:textSize="25sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/indicator" />
+
+    <!-- Mô tả -->
+    <TextView
+        android:id="@+id/description"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:paddingHorizontal="20dp"
+        android:gravity="center"
+        android:fontFamily="@font/robotoserif_regular"
+        android:text="Chào mừng bạn đến với CloudyBooks cánh cửa mở ra kho tàng tri thức vô tận. Chỉ với một cú chạm, hàng triệu đầu sách từ kinh điển đến hiện đại, từ văn học đến khoa học, đều sẵn sàng để bạn khám phá."
+        android:textAlignment="center"
+        android:textColor="#CFE9FF"
+        android:textSize="13sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/title" />
+
+    <!-- Ảnh chính nằm giữa -->
+    <ImageView
+        android:id="@+id/center_image"
+        android:layout_width="350dp"
+        android:layout_height="350dp"
+        android:contentDescription="@string/app_name"
+        android:src="@drawable/my_image"
+        android:layout_marginTop="50dp"
+        app:layout_constraintEnd_toEndOf="@+id/description"
+        app:layout_constraintStart_toStartOf="@+id/description"
+        app:layout_constraintTop_toTopOf="@+id/description" />
+
+    <!-- Nút tiếp theo -->
+    <Button
+        android:id="@+id/btn_next"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginBottom="28dp"
+        android:background="@drawable/btn_white_rounded"
+        android:elevation="6dp"
+        android:fontFamily="@font/robotoserif_bold"
+        android:paddingLeft="24dp"
+        android:paddingRight="24dp"
+        android:text="Tiếp theo"
+        android:textAllCaps="false"
+        android:textColor="#0F9AF6"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:backgroundTint="@null"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
