@@ -1,5 +1,6 @@
 package com.example.fa25_duan1;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +40,8 @@ public class LoginFragment extends Fragment {
         btnLogin.setOnClickListener(v -> {
             // ... (code xử lý đăng nhập của bạn)
             Toast.makeText(getContext(), "Đăng nhập...", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(getActivity(), HomeActivity.class);
+            getActivity().startActivity(intent);
         });
 
         tvSignUp.setOnClickListener(v -> {

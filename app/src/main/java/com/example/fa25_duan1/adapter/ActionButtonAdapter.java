@@ -21,7 +21,7 @@ public class ActionButtonAdapter extends RecyclerView.Adapter<ActionButtonAdapte
     private final Context context;
 
     public interface OnItemClickListener {
-        void onItemClick(int position);
+        void onItemClick(MenuItem menuItem);
     }
 
     private final OnItemClickListener listener;
@@ -60,7 +60,7 @@ public class ActionButtonAdapter extends RecyclerView.Adapter<ActionButtonAdapte
         holder.itemView.setOnClickListener(v -> {
             int pos = holder.getAdapterPosition();
             if (pos != RecyclerView.NO_POSITION && listener != null) {
-                listener.onItemClick(pos);
+                listener.onItemClick(menuList.get(position));
             }
         });
     }

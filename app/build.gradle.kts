@@ -5,7 +5,6 @@ plugins {
 android {
     namespace = "com.example.fa25_duan1"
     compileSdk = 36
-
     defaultConfig {
         applicationId = "com.example.fa25_duan1"
         minSdk = 24

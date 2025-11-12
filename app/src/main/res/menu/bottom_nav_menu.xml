@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_home"
+        android:icon="@drawable/nav_icon_home"
+        android:title="Home" />
+
+    <item
+        android:id="@+id/nav_favorite"
+        android:icon="@drawable/nav_icon_favorite"
+        android:title="Yêu thích" />
+
+    <item
+        android:id="@+id/nav_profile"
+        android:icon="@drawable/nav_icon_profile"
+        android:title="Tôi" />
+
+    <item
+        android:id="@+id/nav_admin"
+        android:icon="@drawable/nav_icon_admin"
+        android:title="Admin" />
+</menu>

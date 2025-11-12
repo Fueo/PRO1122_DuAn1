@@ -4,15 +4,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="#0486E9"
-    android:padding="8dp" >
+    android:layout_height="120dp"
+    android:background="@color/blue">
 
     <!-- Logo CloudyBooks -->
     <ImageView
         android:id="@+id/iv_logo"
-        android:layout_width="170dp"
-        android:layout_height="70dp"
+        android:layout_width="150dp"
+        android:layout_height="50dp"
         android:layout_marginStart="5dp"
         android:layout_marginTop="8dp"
         android:src="@drawable/ic_logo_placeholder"
@@ -25,7 +24,7 @@
         android:id="@+id/et_search"
         android:layout_width="0dp"
         android:layout_height="50dp"
-        android:layout_marginStart="5dp"
+        android:layout_marginStart="10dp"
         android:layout_marginEnd="10dp"
         android:hint="Sách văn học hiện đại..."
         android:paddingStart="8dp"
@@ -44,8 +43,8 @@
     <!-- Khung giỏ hàng -->
     <FrameLayout
         android:id="@+id/fl_cart_container"
-        android:layout_width="65dp"
-        android:layout_height="65dp"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_marginEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/et_search"
@@ -60,25 +59,25 @@
 
         <!-- Icon giỏ hàng -->
         <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:layout_gravity="center"
             android:contentDescription="Giỏ hàng" />
 
         <!-- Số lượng (huy hiệu đỏ) -->
         <TextView
             android:id="@+id/tv_badge"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_gravity="top|end"
             android:background="@drawable/bg_badge_red"
             android:gravity="center"
             android:text="1"
             android:textColor="@android:color/white"
-            android:textSize="13sp"
+            android:textSize="12sp"
             android:textStyle="bold"
-            android:translationX="4dp"
-            android:translationY="-4dp" />
+
+  />
     </FrameLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

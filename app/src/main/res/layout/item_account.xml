@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="10dp"
+    android:clipChildren="false"
+    android:clipToPadding="false"
+    android:layout_marginBottom="10dp">
+
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+
+            android:background="@drawable/bg_account_card">
+
+            <de.hdodenhof.circleimageview.CircleImageView
+                android:id="@+id/cv_avatar"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:layout_marginStart="5dp"
+                android:src="@drawable/ic_avatar_placeholder"
+                app:civ_border_color="@color/white"
+                app:civ_border_width="2dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+            <TextView
+                android:id="@+id/tv_accountId"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Mã tài khoản:"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                app:layout_constraintStart_toEndOf="@id/cv_avatar"
+                app:layout_constraintBottom_toTopOf="@+id/tv_name"/>
+
+            <TextView
+                android:id="@+id/tv_id"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="1"
+                android:textColor="@color/blue"
+                android:textSize="14sp"
+                app:layout_constraintStart_toEndOf="@id/tv_accountId"
+                app:layout_constraintTop_toTopOf="@+id/tv_accountId" />
+
+            <TextView
+                android:id="@+id/tv_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hùng Xe Độ"
+                android:fontFamily="@font/robotoserif_bold"
+                android:textColor="@color/blue"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:layout_marginStart="10dp"
+                app:layout_constraintStart_toEndOf="@+id/cv_avatar"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent" />
+
+            <TextView
+                android:id="@+id/tv_tag"
+                android:layout_width="130dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_marginBottom="10dp"
+                android:background="@drawable/bg_account_tag"
+                android:fontFamily="@font/robotoserif_regular"
+                android:paddingStart="17dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="17dp"
+                android:paddingBottom="4dp"
+                android:text="Khách hàng"
+                android:textColor="@color/blue"
+                android:textSize="12sp"
+                android:gravity="center_horizontal"
+                app:layout_constraintStart_toEndOf="@id/cv_avatar"
+                app:layout_constraintTop_toBottomOf="@id/tv_name"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+            
+            <ImageView
+                android:id="@+id/iv_delete"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="5dp"
+                android:src="@drawable/ic_managedelete"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                />
+
+            <ImageView
+                android:id="@+id/iv_edit"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="15dp"
+                android:src="@drawable/ic_manageedit"
+                app:layout_constraintTop_toTopOf="@+id/iv_delete"
+                app:layout_constraintBottom_toBottomOf="@+id/iv_delete"
+                app:layout_constraintEnd_toStartOf="@+id/iv_delete"
+                />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

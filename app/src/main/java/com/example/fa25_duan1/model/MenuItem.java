@@ -1,13 +1,18 @@
 package com.example.fa25_duan1.model;
 
 public class MenuItem {
-    private int iconResId;
+    private int iconResId, id;
     private String title;
 
-    public MenuItem(int iconResId, String title) {
+    public MenuItem(int id, int iconResId, String title) {
+        this.id = id;
         this.iconResId = iconResId;
         this.title = title;
     }
+
+    public int getId() {return id;}
+
+    public void setId(int id) {this.id = id;}
 
     public int getIconResId() {
         return iconResId;
