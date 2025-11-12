@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#0486E9"
+    android:padding="8dp" >
+
+    <!-- Logo CloudyBooks -->
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="170dp"
+        android:layout_height="70dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/ic_logo_placeholder"
+        android:contentDescription="Logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- Ô tìm kiếm -->
+    <EditText
+        android:id="@+id/et_search"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_marginStart="5dp"
+        android:layout_marginEnd="10dp"
+        android:hint="Sách văn học hiện đại..."
+        android:paddingStart="8dp"
+        android:paddingEnd="16dp"
+        android:background="@drawable/bg_search_bar"
+        android:drawableStart="@drawable/ic_search"
+        android:drawablePadding="7dp"
+        android:textColorHint="@color/black"
+        android:textColor="@color/black"
+        android:inputType="text"
+        android:fontFamily="@font/robotoserif_regular"
+        app:layout_constraintTop_toBottomOf="@id/iv_logo"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/fl_cart_container" />
+
+    <!-- Khung giỏ hàng -->
+    <FrameLayout
+        android:id="@+id/fl_cart_container"
+        android:layout_width="65dp"
+        android:layout_height="65dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/et_search"
+        app:layout_constraintBottom_toBottomOf="@id/et_search">
+
+        <!-- Vòng tròn nền trắng -->
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+                android:background="@drawable/ic_cart"
+            android:contentDescription="Vòng trắng" />
+
+        <!-- Icon giỏ hàng -->
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center"
+            android:contentDescription="Giỏ hàng" />
+
+        <!-- Số lượng (huy hiệu đỏ) -->
+        <TextView
+            android:id="@+id/tv_badge"
+            android:layout_width="25dp"
+            android:layout_height="25dp"
+            android:layout_gravity="top|end"
+            android:background="@drawable/bg_badge_red"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="@android:color/white"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:translationX="4dp"
+            android:translationY="-4dp" />
+    </FrameLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
