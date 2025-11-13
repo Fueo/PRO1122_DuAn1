@@ -1,139 +1,57 @@
 package com.example.fa25_duan1.model;
 
+import com.google.gson.annotations.SerializedName;
+
 public class User {
-    private int userID, role, avatarId;
-    private String username, password, name, avatar, address, phone, email, createAt;
 
-    public User() {
-    }
+    @SerializedName("_id")
+    private String userID;  // đổi int -> String
 
-    public User(int userID, int role, String username, String password, String name, String avatar, String address, String phone, String email, String createAt) {
-        this.userID = userID;
-        this.role = role;
-        this.username = username;
-        this.password = password;
-        this.name = name;
-        this.avatar = avatar;
-        this.address = address;
-        this.phone = phone;
-        this.email = email;
-        this.createAt = createAt;
-    }
+    private int role;
+    private String username;
+    private String password;
+    private String name;
+    private String avatar;
+    private String address;
+    private String phone;
+    private String email;
 
-    public User(int role, String username, String password, String name, String avatar, String address, String phone, String email, String createAt) {
-        this.role = role;
-        this.username = username;
-        this.password = password;
-        this.name = name;
-        this.avatar = avatar;
-        this.address = address;
-        this.phone = phone;
-        this.email = email;
-        this.createAt = createAt;
-    }
+    @SerializedName("createAt")
+    private String createAt;
 
-    public User(int userID, String password, String username, String name) {
-        this.userID = userID;
-        this.password = password;
-        this.username = username;
-        this.name = name;
-    }
+    // __v bỏ qua, không cần khai báo
 
-    public User(int userID, int role, String username, String password, String name, int avatarId) {
-        this.userID = userID;
-        this.role = role;
-        this.username = username;
-        this.password = password;
-        this.name = name;
-        this.avatarId = avatarId;
-    }
+    // Constructor trống
+    public User() { }
 
-    public int getAvatarId() {
-        return avatarId;
-    }
+    // Getter & Setter
+    public String getUserID() { return userID; }
+    public void setUserID(String userID) { this.userID = userID; }
 
-    public void setAvatarId(int avatarId) {
-        this.avatarId = avatarId;
-    }
+    public int getRole() { return role; }
+    public void setRole(int role) { this.role = role; }
 
-    public int getUserID() {
-        return userID;
-    }
+    public String getUsername() { return username; }
+    public void setUsername(String username) { this.username = username; }
 
-    public void setUserID(int userID) {
-        this.userID = userID;
-    }
+    public String getPassword() { return password; }
+    public void setPassword(String password) { this.password = password; }
 
-    public int getRole() {
-        return role;
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    public void setRole(int role) {
-        this.role = role;
-    }
+    public String getAvatar() { return avatar; }
+    public void setAvatar(String avatar) { this.avatar = avatar; }
 
-    public String getUsername() {
-        return username;
-    }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
 
-    public void setUsername(String username) {
-        this.username = username;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public String getPassword() {
-        return password;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getAvatar() {
-        return avatar;
-    }
-
-    public void setAvatar(String avatar) {
-        this.avatar = avatar;
-    }
-
-    public String getAddress() {
-        return address;
-    }
-
-    public void setAddress(String address) {
-        this.address = address;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getCreateAt() {
-        return createAt;
-    }
-
-    public void setCreateAt(String createAt) {
-        this.createAt = createAt;
-    }
-
+    public String getCreateAt() { return createAt; }
+    public void setCreateAt(String createAt) { this.createAt = createAt; }
 }

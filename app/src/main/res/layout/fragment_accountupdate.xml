@@ -36,7 +36,7 @@
                     android:layout_width="120dp"
                     android:layout_height="120dp"
                     android:src="@drawable/ic_avatar_placeholder"
-                    app:civ_border_color="@color/white"
+                    app:civ_border_color="@color/blue"
                     app:civ_border_width="2dp"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -76,7 +76,6 @@
 
             <EditText
                 android:id="@+id/edtUsername"
-                android:enabled="false"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
@@ -84,7 +83,6 @@
                 android:paddingHorizontal="12dp"
                 android:textSize="14sp"
                 android:textColor="@color/black"
-                android:backgroundTint="#D6D6D6"
                 android:text="admin123"
                 android:singleLine="true"
                 android:fontFamily="@font/robotoserif_regular"/>
@@ -158,13 +156,14 @@
                     app:boxStrokeWidth="0dp"
                     app:boxStrokeWidthFocused="0dp">
                     <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edtPassword"
                         android:layout_width="match_parent"
-                        android:layout_height="match_parent"
+                        android:layout_height="20dp"
                         android:inputType="textPassword"
                         android:gravity="center_vertical"
                         android:fontFamily="@font/robotoserif_regular"
                         android:textColor="@color/black"
-                        android:paddingVertical="0dp"
+                        android:padding="0dp"
                         />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -201,13 +200,14 @@
                     app:boxStrokeWidth="0dp"
                     app:boxStrokeWidthFocused="0dp">
                     <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edtNewPassword"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="20dp"
                         android:inputType="textPassword"
                         android:fontFamily="@font/robotoserif_regular"
                         android:textColor="@color/black"
+                        android:gravity="center_vertical"
                         android:padding="0dp"
-                        android:paddingTop="5dp"
                         />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -242,13 +242,14 @@
                     app:boxStrokeWidth="0dp"
                     app:boxStrokeWidthFocused="0dp">
                     <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/edtConfirmPassword"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="20dp"
                         android:inputType="textPassword"
                         android:fontFamily="@font/robotoserif_regular"
                         android:textColor="@color/black"
                         android:padding="0dp"
-                        android:paddingTop="5dp"
+                        android:gravity="center_vertical"
                         />
                 </com.google.android.material.textfield.TextInputLayout>
 
