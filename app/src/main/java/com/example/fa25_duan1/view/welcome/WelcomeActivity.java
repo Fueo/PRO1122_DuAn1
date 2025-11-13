@@ -1,5 +1,5 @@
 // MainActivity.java
-package com.example.fa25_duan1;
+package com.example.fa25_duan1.view.welcome;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
@@ -8,9 +8,11 @@ import androidx.viewpager2.widget.ViewPager2;
 import android.content.Intent;
 import android.os.Bundle;
 
+import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.WelcomePagerAdapter;
+import com.example.fa25_duan1.view.auth.AuthActivity;
 
-public class MainActivity extends AppCompatActivity implements WelcomeFragment.OnWelcomeActionListener {
+public class WelcomeActivity extends AppCompatActivity implements WelcomeFragment.OnWelcomeActionListener {
 
     private ViewPager2 viewPager;
     private FragmentStateAdapter pagerAdapter;
@@ -64,7 +66,7 @@ public class MainActivity extends AppCompatActivity implements WelcomeFragment.O
     }
 
     private void startAuthActivity(int tab) {
-        Intent intent = new Intent(MainActivity.this, AuthActivity.class);
+        Intent intent = new Intent(WelcomeActivity.this, AuthActivity.class);
         // Gửi cờ "DEFAULT_TAB" sang cho AuthActivity
         intent.putExtra("DEFAULT_TAB", tab);
         startActivity(intent);

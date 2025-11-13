@@ -1,13 +1,13 @@
-package com.example.fa25_duan1;
+package com.example.fa25_duan1.view.detail;
 
 import android.os.Bundle;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
+
+import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.view.home.AdminFragment;
 
 public class DetailActivity extends AppCompatActivity {
 

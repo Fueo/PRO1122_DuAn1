@@ -7,7 +7,7 @@ import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.WelcomeFragment;
+import com.example.fa25_duan1.view.welcome.WelcomeFragment;
 
 public class WelcomePagerAdapter extends FragmentStateAdapter {
 

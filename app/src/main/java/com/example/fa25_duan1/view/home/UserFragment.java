@@ -1,4 +1,4 @@
-package com.example.fa25_duan1;
+package com.example.fa25_duan1.view.home;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +10,9 @@ import android.widget.RelativeLayout;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import com.example.fa25_duan1.view.detail.DetailActivity;
+import com.example.fa25_duan1.R;
 
 public class UserFragment extends Fragment {
     RelativeLayout rlProfile;

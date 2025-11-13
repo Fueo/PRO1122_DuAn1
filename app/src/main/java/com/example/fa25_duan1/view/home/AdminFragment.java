@@ -1,7 +1,8 @@
-package com.example.fa25_duan1;
+package com.example.fa25_duan1.view.home;
 
 import static com.example.fa25_duan1.data.MenuAdminData.getListMenuAdminData;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,8 +15,10 @@ import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.ActionButtonAdapter;
 import com.example.fa25_duan1.model.MenuItem;
+import com.example.fa25_duan1.view.management.AccountActivity;
 
 import java.util.ArrayList;
 
@@ -61,6 +64,7 @@ public class AdminFragment extends Fragment {
                     break;
                 case 5:
                     Toast.makeText(getActivity(), "Vào trang Account", Toast.LENGTH_SHORT).show();
+                    startActivity(new Intent(getActivity(), AccountActivity.class));
                     break;
                 case 6:
                     Toast.makeText(getActivity(), "Vào trang Statistic", Toast.LENGTH_SHORT).show();

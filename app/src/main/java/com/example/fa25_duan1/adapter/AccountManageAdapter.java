@@ -26,6 +26,7 @@ public class AccountManageAdapter extends RecyclerView.Adapter<AccountManageAdap
     public interface OnItemClickListener {
         void onEditClick(User user);
         void onDeleteClick(User user);
+        void onItemClick(User user);
     }
 
     private final OnItemClickListener listener;
@@ -46,7 +47,6 @@ public class AccountManageAdapter extends RecyclerView.Adapter<AccountManageAdap
             ivDelete = itemView.findViewById(R.id.iv_delete);
             tvName = itemView.findViewById(R.id.tv_name);
             tvTag = itemView.findViewById(R.id.tv_tag);
-            tvId = itemView.findViewById(R.id.tv_id);
             cvAvatar = itemView.findViewById(R.id.cv_avatar);
         }
     }
@@ -73,10 +73,15 @@ public class AccountManageAdapter extends RecyclerView.Adapter<AccountManageAdap
             role = "Admin";
         }
 
-        holder.cvAvatar.setImageResource(user.getAvatarId());
+        holder.cvAvatar.setImageResource(user.getAvatarId() != -1 ? user.getAvatarId() : R.drawable.ic_avatar_placeholder);
         holder.tvName.setText(user.getName());
         holder.tvTag.setText(role);
-        holder.tvId.setText(user.getUserID());
+        holder.itemView.setOnClickListener(v -> {
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onItemClick(userList.get(position));
+            }
+        });
 
         holder.ivEdit.setOnClickListener(v -> {
             int pos = holder.getAdapterPosition();

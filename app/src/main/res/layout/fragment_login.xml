@@ -8,7 +8,7 @@
     android:layout_height="match_parent"
     android:background="@color/blue"
     android:paddingTop="10dp"
-    tools:context=".LoginFragment">
+    tools:context=".view.auth.LoginFragment">
 
     <ScrollView
         android:layout_width="match_parent"

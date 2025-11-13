@@ -5,8 +5,8 @@ import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentActivity;
 import androidx.viewpager2.adapter.FragmentStateAdapter;
 
-import com.example.fa25_duan1.LoginFragment;
-import com.example.fa25_duan1.RegisterFragment;
+import com.example.fa25_duan1.view.auth.LoginFragment;
+import com.example.fa25_duan1.view.auth.RegisterFragment;
 
 public class AuthPagerAdapter extends FragmentStateAdapter {
 

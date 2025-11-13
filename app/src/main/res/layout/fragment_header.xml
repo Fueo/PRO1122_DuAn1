@@ -42,6 +42,39 @@
 
     <!-- Khung giỏ hàng -->
     <FrameLayout
+        android:id="@+id/fl_favorite_container"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/et_search"
+        app:layout_constraintBottom_toBottomOf="@id/et_search">
+
+        <!-- Vòng tròn nền trắng -->
+        <ImageView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/ic_cart"
+            android:contentDescription="Vòng trắng" />
+
+
+        <!-- Số lượng (huy hiệu đỏ) -->
+        <TextView
+            android:id="@+id/tv_badge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="top|end"
+            android:background="@drawable/bg_badge_red"
+            android:gravity="center"
+            android:text="1"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            />
+    </FrameLayout>
+
+    <!-- Khung giỏ hàng -->
+    <FrameLayout
         android:id="@+id/fl_cart_container"
         android:layout_width="50dp"
         android:layout_height="50dp"
@@ -57,12 +90,6 @@
                 android:background="@drawable/ic_cart"
             android:contentDescription="Vòng trắng" />
 
-        <!-- Icon giỏ hàng -->
-        <ImageView
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_gravity="center"
-            android:contentDescription="Giỏ hàng" />
 
         <!-- Số lượng (huy hiệu đỏ) -->
         <TextView
@@ -76,7 +103,6 @@
             android:textColor="@android:color/white"
             android:textSize="12sp"
             android:textStyle="bold"
-
   />
     </FrameLayout>
 

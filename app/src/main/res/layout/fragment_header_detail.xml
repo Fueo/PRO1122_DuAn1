@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="120dp"
+    android:background="@color/blue"
+    android:padding="8dp">
+
+    <!-- Logo ở trên cùng -->
+    <ImageView
+        android:id="@+id/iv_logo"
+        android:layout_width="160dp"
+        android:layout_height="60dp"
+        android:contentDescription="TODO"
+        android:src="@drawable/ic_logo_placeholder"
+        tools:ignore="MissingConstraints" />
+
+    <!-- Thanh tìm kiếm + nút back + receipt + cart ở dưới logo -->
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

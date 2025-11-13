@@ -32,10 +32,20 @@ public class User {
         this.createAt = createAt;
     }
 
-    public User(int userID, String password, String username) {
+    public User(int userID, String password, String username, String name) {
         this.userID = userID;
         this.password = password;
         this.username = username;
+        this.name = name;
+    }
+
+    public User(int userID, int role, String username, String password, String name, int avatarId) {
+        this.userID = userID;
+        this.role = role;
+        this.username = username;
+        this.password = password;
+        this.name = name;
+        this.avatarId = avatarId;
     }
 
     public int getAvatarId() {
@@ -125,4 +135,5 @@ public class User {
     public void setCreateAt(String createAt) {
         this.createAt = createAt;
     }
+
 }

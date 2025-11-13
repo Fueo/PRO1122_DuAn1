@@ -1,4 +1,4 @@
-package com.example.fa25_duan1;
+package com.example.fa25_duan1.view.detail;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,6 +10,8 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+
+import com.example.fa25_duan1.R;
 
 public class HeaderDetailFragment extends Fragment {
     TextView tv_title;

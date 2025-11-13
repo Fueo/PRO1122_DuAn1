@@ -9,7 +9,7 @@
     android:background="@color/blue"
     android:paddingTop="10dp"
     android:paddingHorizontal="20dp"
-    tools:context=".AuthActivity">
+    tools:context=".view.auth.AuthActivity">
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout_auth"
