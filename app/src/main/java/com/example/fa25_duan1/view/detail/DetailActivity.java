@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.view.cart.CartFragment;
+import com.example.fa25_duan1.view.cart.CheckoutFragment;
 import com.example.fa25_duan1.view.home.AdminFragment;
 
 public class DetailActivity extends AppCompatActivity {
@@ -47,9 +49,9 @@ public class DetailActivity extends AppCompatActivity {
         if ("profile".equals(fragmentName)) {
             return new ProfileFragment();
         } else if ("cart".equals(fragmentName)) {
-            return new AdminFragment();
-        } else if ("admin".equals(fragmentName)) {
-            return new AdminFragment();
+            return new CartFragment();
+        } else if ("checkout".equals(fragmentName)) {
+            return new CheckoutFragment();
         }
         return null;
     }

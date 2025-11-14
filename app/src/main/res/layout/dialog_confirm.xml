@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    tools:context=".MainActivity">
+    android:background="@drawable/bg_dialog">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -18,6 +18,7 @@
         android:background="@color/white">
 
         <TextView
+            android:id="@+id/tvTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Đăng xuất"
@@ -35,11 +36,13 @@
             android:layout_marginBottom="16dp" />
 
         <TextView
+            android:id="@+id/tvContent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Bạn có chắc chắn muốn đăng xuất khỏi trái đất ?"
             android:textColor="@color/gray_text"
             android:textSize="16sp"
+            android:textAlignment="center"
             android:fontFamily="@font/robotoserif_regular"
             android:gravity="center"
             android:layout_marginBottom="24dp" />

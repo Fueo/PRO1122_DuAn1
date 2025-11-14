@@ -7,38 +7,40 @@
     android:orientation="vertical"
     android:gravity="center"
     android:padding="16dp"
-    android:background="@color/white">
+    android:background="@drawable/bg_dialog">
 
     <ImageView
-        android:id="@+id/iv_success_icon"
+        android:id="@+id/ivDialogIcon"
         android:layout_width="64dp"
         android:layout_height="64dp"
         android:src="@drawable/ic_success"
-        android:layout_marginBottom="16dp"/>
+        android:layout_marginBottom="16dp" />
 
     <TextView
-        android:id="@+id/tv_title"
+        android:id="@+id/tvDialogTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Chúc mừng!!!!"
         android:textColor="@color/black"
         android:fontFamily="@font/robotoserif_bold"
+        android:textAlignment="center"
         android:textSize="24sp"
         android:textStyle="bold"
         android:layout_marginBottom="8dp" />
 
     <TextView
-        android:id="@+id/tv_sucess_message"
+        android:id="@+id/tvDialogMessage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Đơn hàng của bạn đã được đặt"
         android:fontFamily="@font/robotoserif_regular"
+        android:textAlignment="center"
         android:textColor="@color/gray_text"
         android:textSize="16sp"
         android:layout_marginBottom="24dp" />
 
     <com.google.android.material.button.MaterialButton
-        android:id="@+id/btn_track_order"
+        android:id="@+id/btnDialogConfirm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="THEO DÕI ĐƠN HÀNG"

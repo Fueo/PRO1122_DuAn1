@@ -100,26 +100,36 @@
                     android:layout_marginEnd="2dp"
                     android:background="#444444" />
 
-                <Spinner
-                    android:id="@+id/spSearch"
+<!--                <Spinner-->
+<!--                    android:id="@+id/spSearch"-->
+<!--                    android:layout_width="120dp"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:background="@color/white"-->
+<!--                    android:fontFamily="@font/robotoserif_regular"-->
+<!--                    android:layout_gravity="center_vertical"-->
+<!--                    android:entries="@array/filter_options"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintTop_toTopOf="parent"-->
+<!--                    app:layout_constraintBottom_toBottomOf="parent"-->
+<!--                    />-->
+
+                <org.angmarch.views.NiceSpinner
+                    android:id="@+id/nice_spinner"
                     android:layout_width="120dp"
-                    android:layout_height="match_parent"
-                    android:background="@color/white"
-                    android:fontFamily="@font/robotoserif_regular"
-                    android:layout_gravity="center_vertical"
-                    android:entries="@array/filter_options"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    />
-                <ImageView
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:src="@drawable/ic_arrow_drop_down_black"
-                    app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent"
                     />
+<!--                <ImageView-->
+<!--                    android:layout_width="32dp"-->
+<!--                    android:layout_height="32dp"-->
+<!--                    android:src="@drawable/ic_arrow_drop_down_black"-->
+<!--                    app:layout_constraintEnd_toEndOf="parent"-->
+<!--                    app:layout_constraintTop_toTopOf="parent"-->
+<!--                    app:layout_constraintBottom_toBottomOf="parent"-->
+<!--                    />-->
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 

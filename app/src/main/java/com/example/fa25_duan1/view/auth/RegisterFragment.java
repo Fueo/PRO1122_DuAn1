@@ -13,6 +13,8 @@ import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2; // <-- THÊM IMPORT
 
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
+import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputLayout;
 
@@ -41,8 +43,32 @@ public class RegisterFragment extends Fragment {
 
         // Xử lý sự kiện nút Đăng ký
         btnRegister.setOnClickListener(v -> {
-            // ... (code xử lý đăng ký của bạn)
-            Toast.makeText(getContext(), "Đăng ký...", Toast.LENGTH_SHORT).show();
+
+            // Tạo instance của ConfirmDialogFragment
+            ConfirmDialogFragment dialog = new ConfirmDialogFragment(
+                    "Xác nhận đăng ký",
+                    "",
+                    new ConfirmDialogFragment.OnConfirmListener() {
+                        @Override
+                        public void onConfirmed() {
+                            // Xử lý khi người dùng nhấn "CÓ"
+                            NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
+                                    "Thành công",
+                                    "Bạn đã đăng ký thành công!",
+                                    "Đóng",
+                                    NotificationDialogFragment.TYPE_SUCCESS,
+                                    () -> {
+
+                                    }
+                            );
+                            dialogFragment.show(getParentFragmentManager(), "SuccessDialog");
+
+                        }
+                    }
+            );
+
+            // Hiển thị dialog
+            dialog.show(getParentFragmentManager(), "ConfirmDialog");
         });
 
         // --- THÊM SỰ KIỆN CLICK CHO tvLogin ---

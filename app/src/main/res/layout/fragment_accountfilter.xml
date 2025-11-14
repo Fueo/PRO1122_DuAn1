@@ -53,136 +53,148 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-
-    <androidx.cardview.widget.CardView
-        android:id="@+id/cvFilter"
+    <net.cachapa.expandablelayout.ExpandableLayout
+        android:id="@+id/expandable_layout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:cardCornerRadius="8dp"
-        app:cardElevation="6dp"
-        app:cardUseCompatPadding="true"
-        android:background="@color/white"
-        app:layout_constraintTop_toBottomOf="@+id/spinner_sort"
+        app:el_duration="300"
+        app:el_expanded="false"
+        app:el_parallax="1"
+        app:layout_constraintTop_toBottomOf="@+id/clFilter"
         app:layout_constraintStart_toStartOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cvFilter"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="10dp">
+            app:cardCornerRadius="8dp"
+            app:cardElevation="6dp"
+            app:cardUseCompatPadding="true"
+            android:background="@color/white"
+            app:layout_constraintTop_toBottomOf="@+id/spinner_sort"
+            app:layout_constraintStart_toStartOf="parent">
 
-            <TextView
-                android:id="@+id/tv_filter2"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_bold"
-                android:textSize="14sp"
-                android:text="Bộ lọc"
-                android:padding="0dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                />
-
-            <ImageView
-                android:id="@+id/ivClose"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@drawable/ic_close"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                />
-
-            <TextView
-                android:id="@+id/tvCondition"
-                android:layout_width="wrap_content"
-                android:layout_height="32dp"
-                android:layout_marginStart="5dp"
-                android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"
-                android:textSize="14sp"
-                android:text="Vai trò"
-                android:padding="0dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tv_filter2"
-                />
-
-            <LinearLayout
-                android:id="@+id/condition1"
+            <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="5dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                app:layout_constraintTop_toBottomOf="@+id/tvCondition"
-                app:layout_constraintStart_toStartOf="parent">
-                <CheckBox
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:buttonTint="@color/blue"/>
+                android:padding="10dp">
+
                 <TextView
+                    android:id="@+id/tv_filter2"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="Khách hàng"
+                    android:layout_height="32dp"
+                    android:textColor="@color/black"
+                    android:fontFamily="@font/robotoserif_bold"
+                    android:textSize="14sp"
+                    android:text="Bộ lọc"
+                    android:padding="0dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    />
+
+                <ImageView
+                    android:id="@+id/ivClose"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:src="@drawable/ic_close"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    />
+
+                <TextView
+                    android:id="@+id/tvCondition"
+                    android:layout_width="wrap_content"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="5dp"
+                    android:textColor="@color/black"
                     android:fontFamily="@font/robotoserif_regular"
-                    android:textColor="#333333"
-                    android:textSize="16sp"/>
-            </LinearLayout>
+                    android:textSize="14sp"
+                    android:text="Vai trò"
+                    android:padding="0dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@+id/tv_filter2"
+                    />
 
-            <LinearLayout
-                android:id="@+id/condition2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginStart="5dp"
-                app:layout_constraintTop_toBottomOf="@+id/condition1"
-                app:layout_constraintStart_toStartOf="parent">
-                <CheckBox
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:buttonTint="@color/blue"/>
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/condition1"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="Nhân viên"
-                    android:textColor="#333333"
-                    android:textSize="16sp"
-                    android:fontFamily="@font/robotoserif_regular"/>
-            </LinearLayout>
+                    android:layout_marginStart="5dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    app:layout_constraintTop_toBottomOf="@+id/tvCondition"
+                    app:layout_constraintStart_toStartOf="parent">
+                    <CheckBox
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:buttonTint="@color/blue"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="Khách hàng"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:textColor="#333333"
+                        android:textSize="16sp"/>
+                </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/condition3"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginTop="6dp"
-                android:layout_marginStart="5dp"
-                app:layout_constraintTop_toBottomOf="@+id/condition2"
-                app:layout_constraintStart_toStartOf="parent">
-                <CheckBox
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:buttonTint="@color/blue"/>
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:id="@+id/condition2"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="16dp"
-                    android:text="Admin"
-                    android:textColor="#333333"
-                    android:textSize="16sp"
-                    android:fontFamily="@font/robotoserif_regular"/>
-            </LinearLayout>
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginStart="5dp"
+                    app:layout_constraintTop_toBottomOf="@+id/condition1"
+                    app:layout_constraintStart_toStartOf="parent">
+                    <CheckBox
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:buttonTint="@color/blue"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="Nhân viên"
+                        android:textColor="#333333"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/robotoserif_regular"/>
+                </LinearLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+                <LinearLayout
+                    android:id="@+id/condition3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="6dp"
+                    android:layout_marginStart="5dp"
+                    app:layout_constraintTop_toBottomOf="@+id/condition2"
+                    app:layout_constraintStart_toStartOf="parent">
+                    <CheckBox
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:buttonTint="@color/blue"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:text="Admin"
+                        android:textColor="#333333"
+                        android:textSize="16sp"
+                        android:fontFamily="@font/robotoserif_regular"/>
+                </LinearLayout>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
 
 
 
 
-    </androidx.cardview.widget.CardView>
+        </androidx.cardview.widget.CardView>
+
+    </net.cachapa.expandablelayout.ExpandableLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

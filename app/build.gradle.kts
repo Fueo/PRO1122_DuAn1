@@ -41,10 +41,17 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
+
+    // Thư viện fetchAPI
     implementation ("com.squareup.retrofit2:retrofit:2.11.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
+    // Thư viện quản lý dữ liệu
     implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")
+    // Thư vin xử lý ảnh
     implementation ("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor ("com.github.bumptech.glide:compiler:4.16.0")
+    // Thư viện UI
+    implementation ("com.github.cachapa:ExpandableLayout:2.9.2")
+    implementation ("com.github.arcadefire:nice-spinner:1.4.4")
 }

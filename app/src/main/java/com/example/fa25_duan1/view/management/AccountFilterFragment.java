@@ -17,11 +17,15 @@ import androidx.fragment.app.Fragment;
 
 import com.example.fa25_duan1.R;
 
+import net.cachapa.expandablelayout.ExpandableLayout;
+
 public class AccountFilterFragment extends Fragment {
     private ImageView ivClose;
     private ConstraintLayout clFilter;
     private CardView cvFilter;
+    private ExpandableLayout expandableLayout;
     private boolean isFilterVisible = false; // trạng thái hiện/tắt của card filter
+    private Spinner spinner;
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_accountfilter, container, false);
 
@@ -30,10 +34,11 @@ public class AccountFilterFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        Spinner spinner = view.findViewById(R.id.spinner_sort);
+        spinner = view.findViewById(R.id.spinner_sort);
         clFilter = view.findViewById(R.id.clFilter);
         ivClose = view.findViewById(R.id.ivClose);
         cvFilter = view.findViewById(R.id.cvFilter);
+        expandableLayout = view.findViewById(R.id.expandable_layout);
         String[] items = {"Mới nhất", "Cũ nhất", "Theo tên"};
 
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(
@@ -48,19 +53,12 @@ public class AccountFilterFragment extends Fragment {
         };
         spinner.setAdapter(adapter);
 
-        // Ban đầu ẩn card filter
-        cvFilter.setVisibility(View.GONE);
-
         // Khi ấn vào icon bộ lọc → bật/tắt card
         clFilter.setOnClickListener(v -> {
-            if (cvFilter.getVisibility() == View.VISIBLE) {
-                cvFilter.setVisibility(View.GONE);
-            } else {
-                cvFilter.setVisibility(View.VISIBLE);
-            }
+            expandableLayout.toggle();
         });
 
         // Khi ấn vào icon close → tắt card
-        ivClose.setOnClickListener(v -> cvFilter.setVisibility(View.GONE));
+        ivClose.setOnClickListener(v -> expandableLayout.collapse());
     }
 }
