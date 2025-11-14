@@ -8,7 +8,8 @@ import com.example.fa25_duan1.repository.UserRepository;
 
 import java.util.List;
 
-import retrofit2.Callback;
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 
 public class UserViewModel extends ViewModel {
     private final UserRepository repository;
@@ -25,16 +26,35 @@ public class UserViewModel extends ViewModel {
         return repository.getUserByID(id);
     }
 
-    public void addUser(User user, Callback<Void> callback) {
-        repository.addUser(user, callback);
+//    public void addUser(User user, retrofit2.Callback<Void> callback) {
+//        repository.addUser(user, callback);
+//    }
+
+    public LiveData<User> addUserWithAvatar(RequestBody username,
+                                                   RequestBody password,
+                                                   RequestBody name,
+                                                   RequestBody email,
+                                                   RequestBody phone,
+                                                   RequestBody address,
+                                                   RequestBody role,
+                                                   MultipartBody.Part avatar) {
+        return repository.addUserWithAvatar(username, password, name, email, phone, address, role, avatar);
     }
 
-    public void updateUser(String id, User user, Callback<User> callback) {
-        repository.updateUser(id, user, callback);
+
+    public LiveData<User> updateUserWithAvatar(String id,
+                                               RequestBody username,
+                                               RequestBody password,
+                                               RequestBody name,
+                                               RequestBody email,
+                                               RequestBody phone,
+                                               RequestBody address,
+                                               RequestBody role,
+                                               MultipartBody.Part avatar) {
+        return repository.updateUserWithAvatar(id, username, password, name, email, phone, address, role, avatar);
     }
 
     public LiveData<Boolean> deleteUser(String id) {
         return repository.deleteUser(id);
     }
 }
-

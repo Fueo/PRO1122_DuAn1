@@ -1,5 +1,6 @@
 package com.example.fa25_duan1.view.management;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -19,8 +20,8 @@ import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.AccountManageAdapter;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.detail.DetailActivity;
-import com.example.fa25_duan1.view.home.HeaderHomeFragment;
 import com.example.fa25_duan1.viewmodel.UserViewModel;
+import com.example.fa25_duan1.view.management.UpdateActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,21 +42,18 @@ public class AccountManageFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        getActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_filter, new AccountFilterFragment())
-                .commit();
         rvData = view.findViewById(R.id.rvData);
         btnAdd = view.findViewById(R.id.btnAdd);
 
         accountManageAdapter = new AccountManageAdapter(getContext(), new ArrayList<>(), new AccountManageAdapter.OnItemClickListener() {
             @Override
             public void onEditClick(User user) {
-                handleAddEditUser(user);
+                openUpdateActivity(user);
             }
 
             @Override
             public void onDeleteClick(User user) {
-                handleDeleteUser(user);
+                deleteUser(user);
             }
 
             @Override
@@ -69,7 +67,13 @@ public class AccountManageFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
-        // GET all users
+        // Lấy danh sách user từ server
+        loadUsers();
+
+        btnAdd.setOnClickListener(v -> openUpdateActivity(null));
+    }
+
+    private void loadUsers() {
         viewModel.getAllUsers().observe(getViewLifecycleOwner(), users -> {
             if (users != null) {
                 accountManageAdapter.setData(users);
@@ -77,23 +81,22 @@ public class AccountManageFragment extends Fragment {
                 Toast.makeText(getContext(), "Lấy danh sách user thất bại", Toast.LENGTH_SHORT).show();
             }
         });
-
-        btnAdd.setOnClickListener(v -> handleAddEditUser(null));
     }
 
-    private void handleAddEditUser(User user) {
+    private void openUpdateActivity(User user) {
         Intent intent = new Intent(getContext(), UpdateActivity.class);
+        intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Thêm mới user");
+
         if (user != null) {
-            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Chỉnh sửa user");
+            intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Chỉnh sửa user");
             intent.putExtra("Id", user.getUserID());
-        } else {
-            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thêm mới user");
         }
-        intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "account");
-        startActivity(intent);
+        intent.putExtra(UpdateActivity.EXTRA_CONTENT_FRAGMENT, "account");
+
+        startActivityForResult(intent, 1001);
     }
 
-    private void handleDeleteUser(User user) {
+    private void deleteUser(User user) {
         if (user == null) return;
 
         viewModel.deleteUser(user.getUserID()).observe(getViewLifecycleOwner(), success -> {
@@ -108,4 +111,15 @@ public class AccountManageFragment extends Fragment {
             }
         });
     }
+
+    // Nhận kết quả từ Activity update
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == 1001 && resultCode == Activity.RESULT_OK) {
+            loadUsers(); // refresh danh sách khi thêm/sửa user
+        }
+    }
+
 }

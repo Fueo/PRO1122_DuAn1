@@ -16,14 +16,26 @@ android {
     }
 
     buildTypes {
-        release {
+        getByName("debug") {
             isMinifyEnabled = false
+            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.7:3002/\"")
+            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.100.116:3002/\"")
+        }
+
+        getByName("release") {
+            isMinifyEnabled = true
+            buildConfigField("String", "BASE_URL_ATHOME", "\"https://api.production.com/\"")
+            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"https://api.production.com/\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
     }
+    buildFeatures {
+        buildConfig = true  // BẬT tính năng BuildConfig
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

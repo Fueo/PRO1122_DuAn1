@@ -8,6 +8,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,9 +16,14 @@ import androidx.fragment.app.Fragment;
 
 import com.example.fa25_duan1.R;
 
+import org.angmarch.views.NiceSpinner;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+
 public class HeaderManagementFragment extends Fragment {
     ImageView iv_back;
-    Spinner spSearch;
+    NiceSpinner spSearch;
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_headermanagement, container, false);
 
@@ -33,18 +39,19 @@ public class HeaderManagementFragment extends Fragment {
             getActivity().finish();
         });
 
-        String[] items = {"Theo tên"};
+        // Dữ liệu cho spinner
+        LinkedList<String> data = new LinkedList<>(Arrays.asList(
+                "Theo tên", "Option 2", "Option 3", "Option 4"));
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                getContext(), R.layout.item_spinner, items) {
-            @Override
-            public View getDropDownView(int position, View convertView, ViewGroup parent) {
-                View view = super.getDropDownView(position, convertView, parent);
-                TextView tv = (TextView) view.findViewById(R.id.tvSpinnerItem);
+        // Gắn dữ liệu vào spinner
+        spSearch.attachDataSource(data);
 
-                return view;
-            }
-        };
-        spSearch.setAdapter(adapter);
+        // Bắt sự kiện chọn item
+        spSearch.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
+            String selectedItem = data.get(position);
+            Toast.makeText(getActivity(),
+                    "Bạn chọn: " + selectedItem,
+                    Toast.LENGTH_SHORT).show();
+        });
     }
 }
