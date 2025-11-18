@@ -9,11 +9,11 @@ import android.provider.MediaStore;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Spinner;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -28,7 +28,11 @@ import com.example.fa25_duan1.utils.FileUtils;
 import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
 import com.example.fa25_duan1.viewmodel.UserViewModel;
 
+import org.angmarch.views.NiceSpinner;
+
 import java.io.File;
+import java.util.Arrays;
+import java.util.LinkedList;
 
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -36,15 +40,18 @@ import okhttp3.RequestBody;
 
 public class AccountUpdateFragment extends Fragment {
 
-    private Spinner spRole;
+    private NiceSpinner spRole;
     private EditText edtUsername, edtPassword, edtNewPassword, edtConfirmPassword,
             edtFullName, edtPhone, edtEmail, edtAddress;
+    private TextView tvTitlePassword, tvTitleOldPassword, tvTitleNewPassword;
+    private LinearLayout llNewPassword;
     private ImageView ivProfile, btnChangeAvatar;
     private Button btnUpdate;
 
     private UserViewModel viewModel;
     private Uri selectedAvatarUri = null;
     private String userId;
+    private User currentUser; // SỬA: Thêm biến để lưu user hiện tại (khi edit)
 
     private static final int PICK_IMAGE_REQUEST = 1002;
 
@@ -62,6 +69,7 @@ public class AccountUpdateFragment extends Fragment {
 
         viewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
+        // ... (binding các view) ...
         spRole = view.findViewById(R.id.spRole);
         edtUsername = view.findViewById(R.id.edtUsername);
         edtPassword = view.findViewById(R.id.edtPassword);
@@ -74,19 +82,30 @@ public class AccountUpdateFragment extends Fragment {
         ivProfile = view.findViewById(R.id.ivProfile);
         btnUpdate = view.findViewById(R.id.btnSave);
         btnChangeAvatar = view.findViewById(R.id.btnChangeAvatar);
+        tvTitlePassword = view.findViewById(R.id.tvTitlePassword);
+        tvTitleOldPassword = view.findViewById(R.id.tvTitleOldPassword);
+        tvTitleNewPassword = view.findViewById(R.id.tvTitleNewPassword);
+        llNewPassword = view.findViewById(R.id.llNewPassword);
 
-        // Spinner role
-        String[] items = {"Khách hàng", "Nhân viên", "Admin"};
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
-                R.layout.item_spinner, items);
-        spRole.setAdapter(adapter);
+
+        // Dữ liệu cho spinner
+        LinkedList<String> data = new LinkedList<>(Arrays.asList(
+                "Khách hàng", "Nhân viên", "Admin"));
+        spRole.attachDataSource(data);
 
         // Lấy userId từ Intent
         userId = getActivity().getIntent().getStringExtra("Id");
         if (userId != null) {
+            // Chế độ "Edit"
             edtUsername.setEnabled(false);
             edtUsername.setBackgroundTintList(ColorStateList.valueOf(0xFFCCCCCC));
             loadUserDetail(userId);
+        } else {
+            // Chế độ "Add"
+            tvTitlePassword.setText("Mật khẩu");
+            tvTitleOldPassword.setText("Mật khẩu");
+            tvTitleNewPassword.setVisibility(View.GONE);
+            llNewPassword.setVisibility(View.GONE);
         }
 
         btnChangeAvatar.setOnClickListener(v -> pickImageFromGallery());
@@ -102,7 +121,9 @@ public class AccountUpdateFragment extends Fragment {
     private void loadUserDetail(String id) {
         viewModel.getUserByID(id).observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
-                spRole.setSelection(user.getRole());
+                this.currentUser = user; // SỬA: Lưu user lại để dùng khi update
+
+                spRole.setSelectedIndex(user.getRole());
                 edtUsername.setText(user.getUsername());
                 edtFullName.setText(user.getName());
                 edtEmail.setText(user.getEmail());
@@ -137,6 +158,7 @@ public class AccountUpdateFragment extends Fragment {
     }
 
     private MultipartBody.Part prepareFilePart(String partName, Uri fileUri) {
+        // ... (code không đổi) ...
         if (fileUri == null) return null;
         String filePath = FileUtils.getPath(getContext(), fileUri);
         if (filePath == null) return null;
@@ -145,103 +167,190 @@ public class AccountUpdateFragment extends Fragment {
         return MultipartBody.Part.createFormData(partName, file.getName(), requestFile);
     }
 
+    private RequestBody toRequestBody(String value) {
+        // ... (code không đổi) ...
+        if (value == null) value = "";
+        return RequestBody.create(MediaType.parse("text/plain"), value);
+    }
+
+    private void showErrorDialog(String content) {
+        // ... (code không đổi) ...
+        NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
+                "Lỗi",
+                content,
+                "Đóng",
+                NotificationDialogFragment.TYPE_ERROR,
+                () -> {}
+        );
+        dialogFragment.show(getParentFragmentManager(), "error_dialog");
+    }
+
+    private boolean validateInput() {
+        // ... (code validate của bạn, giữ nguyên) ...
+        String username = edtUsername.getText().toString().trim();
+        String password = edtPassword.getText().toString().trim();
+        String confirmPass = edtConfirmPassword.getText().toString().trim();
+        String fullName = edtFullName.getText().toString().trim();
+        String email = edtEmail.getText().toString().trim();
+        String phone = edtPhone.getText().toString().trim(); // nếu có
+
+        // Regex email
+        String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
+
+        // Regex phone VN (nếu phone không rỗng)
+        String phoneRegex = "^(0?)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-5]|9[0-9])[0-9]{7}$";
+
+        // Kiểm tra username & password
+        if (username.isEmpty() || password.isEmpty()) {
+            edtUsername.setError("Username và mật khẩu không được để trống");
+            edtUsername.requestFocus();
+            return false;
+        }
+
+        // Kiểm tra confirm password
+        if (!password.equals(confirmPass)) {
+            showErrorDialog("Mật khẩu không trùng nhau");
+            return false;
+        }
+
+        // Kiểm tra full name
+        if (fullName.isEmpty()) {
+            edtFullName.setError("Tên không được để trống");
+            edtFullName.requestFocus();
+            return false;
+        }
+
+        // Kiểm tra email
+        if (email.isEmpty()) {
+            edtEmail.setError("Email không được để trống");
+            edtEmail.requestFocus();
+            return false;
+        } else if (!email.matches(emailRegex)) {
+            edtEmail.setError("Email không hợp lệ");
+            edtEmail.requestFocus();
+            return false;
+        }
+
+        // Kiểm tra phone (nếu không rỗng)
+        if (!phone.isEmpty() && !phone.matches(phoneRegex)) {
+            edtPhone.setError("Số điện thoại không hợp lệ");
+            edtPhone.requestFocus();
+            return false;
+        }
+        return true;
+    }
+
     private void addUser() {
+        // 1. Validate trước
+        if (!validateInput()) {
+            return; // Dừng lại nếu validate thất bại
+        }
+
+        // 2. Lấy dữ liệu (sau khi đã validate)
         String username = edtUsername.getText().toString().trim();
         String password = edtPassword.getText().toString().trim();
         String fullName = edtFullName.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
         String phone = edtPhone.getText().toString().trim();
         String address = edtAddress.getText().toString().trim();
-        int role = spRole.getSelectedItemPosition();
+        int role = spRole.getSelectedIndex();
 
-        if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(getContext(), "Username và mật khẩu không được để trống", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        RequestBody usernameBody = RequestBody.create(MediaType.parse("text/plain"), username);
-        RequestBody passwordBody = RequestBody.create(MediaType.parse("text/plain"), password);
-        RequestBody nameBody = RequestBody.create(MediaType.parse("text/plain"), fullName);
-        RequestBody emailBody = RequestBody.create(MediaType.parse("text/plain"), email);
-        RequestBody phoneBody = RequestBody.create(MediaType.parse("text/plain"), phone);
-        RequestBody addressBody = RequestBody.create(MediaType.parse("text/plain"), address);
-        RequestBody roleBody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(role));
+        // 3. Chuẩn bị RequestBody
+        RequestBody usernameBody = toRequestBody(username);
+        RequestBody passwordBody = toRequestBody(password);
+        RequestBody nameBody = toRequestBody(fullName);
+        RequestBody emailBody = toRequestBody(email);
+        RequestBody phoneBody = toRequestBody(phone);
+        RequestBody addressBody = toRequestBody(address);
+        RequestBody roleBody = toRequestBody(String.valueOf(role));
         MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
 
+        // 4. Gọi ViewModel và OBSERVE
         viewModel.addUserWithAvatar(usernameBody, passwordBody, nameBody, emailBody, phoneBody,
-                addressBody, roleBody, avatarPart).observe(getViewLifecycleOwner(), addedUser -> {
-            if (addedUser != null) {
+                addressBody, roleBody, avatarPart).observe(getViewLifecycleOwner(), user -> {
+
+            // 5. Chỉ xử lý khi API đã trả về (user != null là thành công)
+            if (user != null) {
                 Toast.makeText(getContext(), "Thêm user thành công", Toast.LENGTH_SHORT).show();
                 getActivity().setResult(Activity.RESULT_OK);
                 getActivity().finish();
             } else {
-                Toast.makeText(getContext(), "Thêm user thất bại", Toast.LENGTH_SHORT).show();
+                // Xử lý lỗi (optional)
+                showErrorDialog("Thêm user thất bại. Vui lòng thử lại.");
             }
         });
     }
 
     private void updateUser() {
+        // 1. Kiểm tra xem đã load được user chưa
+        if (currentUser == null) {
+            Toast.makeText(getContext(), "Đang tải dữ liệu user, vui lòng đợi...", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // 2. Lấy dữ liệu
         String fullName = edtFullName.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
         String phone = edtPhone.getText().toString().trim();
         String address = edtAddress.getText().toString().trim();
-        int role = spRole.getSelectedItemPosition();
+        int role = spRole.getSelectedIndex();
 
         String oldPass = edtPassword.getText().toString().trim();
         String newPass = edtNewPassword.getText().toString().trim();
         String confirmPass = edtConfirmPassword.getText().toString().trim();
 
-        viewModel.getUserByID(userId).observe(getViewLifecycleOwner(), user -> {
-            if (user == null) {
-                Toast.makeText(getContext(), "Không lấy được thông tin user", Toast.LENGTH_SHORT).show();
+        // 3. Validate dữ liệu
+        if (fullName.isEmpty()) {
+            edtFullName.setError("Tên không được để trống");
+            edtFullName.requestFocus();
+            return;
+        }
+        if (email.isEmpty()) {
+            edtEmail.setError("Email không được để trống");
+            edtEmail.requestFocus();
+            return;
+        }
+
+        // 4. Xử lý logic mật khẩu
+        String finalPassword = currentUser.getPassword(); // Mặc định là mật khẩu cũ (đã hash)
+
+        if (!oldPass.isEmpty() || !newPass.isEmpty() || !confirmPass.isEmpty()) {
+            // Nếu người dùng có ý định đổi pass
+            if (!newPass.equals(confirmPass)) {
+                showErrorDialog("Mật khẩu mới không trùng khớp");
                 return;
             }
+            // (Bạn có thể thêm logic check mật khẩu cũ (oldPass) ở đây nếu API yêu cầu)
 
-            if (!oldPass.isEmpty() || !newPass.isEmpty()) {
-                if (!oldPass.equals(user.getPassword())) {
-                    NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
-                            "Lỗi",
-                            "Mật khẩu cũ không đúng",
-                            "Đóng",
-                            NotificationDialogFragment.TYPE_ERROR,
-                            () -> {}
-                    );
-                    dialogFragment.show(getParentFragmentManager(), "error_dialog");
-                    return;
-                }
-                if (!newPass.equals(confirmPass)) {
-                    NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
-                            "Lỗi",
-                            "Mật khẩu mới không trùng khớp",
-                            "Đóng",
-                            NotificationDialogFragment.TYPE_ERROR,
-                            () -> {}
-                    );
-                    dialogFragment.show(getParentFragmentManager(), "error_dialog");
-                    return;
-                }
+            // Nếu newPass không rỗng, ta sẽ dùng newPass
+            if (!newPass.isEmpty()) {
+                finalPassword = newPass;
             }
+            // Nếu newPass rỗng (và oldPass/confirmPass cũng rỗng), finalPassword vẫn là pass cũ
+        }
 
-            RequestBody usernameBody = RequestBody.create(MediaType.parse("text/plain"), edtUsername.getText().toString().trim());
-            RequestBody passwordBody = RequestBody.create(MediaType.parse("text/plain"), newPass.isEmpty() ? user.getPassword() : newPass);
-            RequestBody nameBody = RequestBody.create(MediaType.parse("text/plain"), fullName);
-            RequestBody emailBody = RequestBody.create(MediaType.parse("text/plain"), email);
-            RequestBody phoneBody = RequestBody.create(MediaType.parse("text/plain"), phone);
-            RequestBody addressBody = RequestBody.create(MediaType.parse("text/plain"), address);
-            RequestBody roleBody = RequestBody.create(MediaType.parse("text/plain"), String.valueOf(role));
-            MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
+        // 5. Chuẩn bị RequestBody
+        RequestBody usernameBody = toRequestBody(currentUser.getUsername()); // Username không đổi
+        RequestBody passwordBody = toRequestBody(finalPassword); // Mật khẩu cuối cùng
+        RequestBody nameBody = toRequestBody(fullName);
+        RequestBody emailBody = toRequestBody(email);
+        RequestBody phoneBody = toRequestBody(phone);
+        RequestBody addressBody = toRequestBody(address);
+        RequestBody roleBody = toRequestBody(String.valueOf(role));
+        MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
 
-            viewModel.updateUserWithAvatar(userId, usernameBody, passwordBody, nameBody, emailBody,
-                            phoneBody, addressBody, roleBody, avatarPart)
-                    .observe(getViewLifecycleOwner(), updatedUser -> {
-                        if (updatedUser != null) {
-                            Toast.makeText(getContext(), "Cập nhật thành công", Toast.LENGTH_SHORT).show();
-                            getActivity().setResult(Activity.RESULT_OK);
-                            getActivity().finish();
-                        } else {
-                            Toast.makeText(getContext(), "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
-                        }
-                    });
+        // 6. Gọi ViewModel và OBSERVE
+        viewModel.updateUserWithAvatar(userId, usernameBody, passwordBody, nameBody, emailBody,
+                phoneBody, addressBody, roleBody, avatarPart).observe(getViewLifecycleOwner(), updatedUser -> {
+
+            // 7. Chỉ xử lý khi API đã trả về
+            if (updatedUser != null) {
+                Toast.makeText(getContext(), "Cập nhật thành công", Toast.LENGTH_SHORT).show();
+                getActivity().setResult(Activity.RESULT_OK);
+                getActivity().finish();
+            } else {
+                showErrorDialog("Cập nhật thất bại. Vui lòng thử lại.");
+            }
         });
     }
 }

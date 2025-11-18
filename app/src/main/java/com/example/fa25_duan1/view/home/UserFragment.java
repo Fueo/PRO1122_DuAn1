@@ -1,28 +1,82 @@
 package com.example.fa25_duan1.view.home;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
+import com.bumptech.glide.Glide;
+import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.viewmodel.AuthViewModel;
+import com.example.fa25_duan1.viewmodel.UserViewModel;
 
 public class UserFragment extends Fragment {
-    RelativeLayout rlProfile;
+    RelativeLayout rlProfile, rlHistory;
+    LinearLayout rlLogout;
+    TextView tvName, tvRole, tvPhone, tvEmail;
+    ImageView ivProfile;
+    AuthViewModel authViewModel;
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_user, container, false);
     }
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
         rlProfile = view.findViewById(R.id.rlProfile);
+        rlHistory = view.findViewById(R.id.rlHistory);
+        rlLogout = view.findViewById(R.id.rlLogout);
+        tvName = view.findViewById(R.id.tvName);
+        tvRole = view.findViewById(R.id.tvRole);
+        tvPhone = view.findViewById(R.id.tvPhone);
+        tvEmail = view.findViewById(R.id.tvEmail);
+        ivProfile = view.findViewById(R.id.ivProfile);
+
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+
+        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.getData() != null) {
+                User user = response.getData();
+                String role = user.getRole() == 0 ? "Khách hàng" : user.getRole() == 1 ? "Nhân viên" : "Admin";
+
+                tvName.setText(user.getName());
+                tvRole.setText(role);
+                tvEmail.setText(user.getEmail());
+                tvPhone.setText(
+                        (user.getPhone() == null || user.getPhone().isEmpty())
+                                ? "Chưa cập nhật"
+                                : user.getPhone()
+                );
+
+                if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+                    Glide.with(requireActivity())
+                            .load(user.getAvatar())
+                            .placeholder(R.drawable.ic_avatar_placeholder)
+                            .error(R.drawable.ic_avatar_placeholder)
+                            .into(ivProfile);
+                } else {
+                    ivProfile.setImageResource(R.drawable.ic_avatar_placeholder);
+                }
+
+            } else {
+                Toast.makeText(requireContext(), "Không lấy được thông tin", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+
         rlProfile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -30,6 +84,18 @@ public class UserFragment extends Fragment {
                 intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang cá nhân");
                 intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "profile");
                 startActivity(intent);
+            }
+        });
+
+        rlHistory.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(view.getContext(), DetailActivity.class);
+                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Lịch sử mua hàng");
+                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "orderhistory");
+                startActivity(intent);
+
+
             }
         });
     }

@@ -1,27 +1,34 @@
 package com.example.fa25_duan1.view.auth;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView; // <-- THÊM IMPORT
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.Observer;
 import androidx.viewpager2.widget.ViewPager2; // <-- THÊM IMPORT
-
+import androidx.lifecycle.ViewModelProvider;
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.model.Auth.AuthResponse;
 import com.example.fa25_duan1.view.home.HomeActivity;
-import com.google.android.material.button.MaterialButton;
+import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.google.android.material.textfield.TextInputLayout;
 
 public class LoginFragment extends Fragment {
-
+    private AuthViewModel viewModel;
     TextInputLayout tilUsername, tilPassword;
-    MaterialButton btnLogin;
+    EditText etUsername, etPassword;
+    Button btnLogin;
     TextView tvSignUp; // <-- THÊM BIẾN NÀY
 
     @Nullable
@@ -36,15 +43,43 @@ public class LoginFragment extends Fragment {
 
         tilUsername = view.findViewById(R.id.tilUsername);
         tilPassword = view.findViewById(R.id.tilPassword);
+        etUsername = view.findViewById(R.id.etUsername);
+        etPassword = view.findViewById(R.id.etPassword);
         btnLogin = view.findViewById(R.id.btnLogin);
-        tvSignUp = view.findViewById(R.id.tvSignUp); // <-- THÊM DÒNG NÀY
+        tvSignUp = view.findViewById(R.id.tvSignUp);
+
+        viewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+
 
         btnLogin.setOnClickListener(v -> {
-            // ... (code xử lý đăng nhập của bạn)
-            Toast.makeText(getContext(), "Đăng nhập...", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(getActivity(), HomeActivity.class);
-            getActivity().startActivity(intent);
+            String username = etUsername.getText().toString().trim();
+            String password = etPassword.getText().toString().trim();
+
+            viewModel.login(username, password).observe(requireActivity(), new Observer<AuthResponse>() {
+                @Override
+                public void onChanged(AuthResponse authResponse) {
+                    if (authResponse != null && authResponse.getAccessToken() != null && authResponse.getRefreshToken() != null) {
+                        // 1. Lưu accessToken và refreshToken vào SharedPreferences
+                        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+                        SharedPreferences.Editor editor = sharedPreferences.edit();
+                        editor.putString("accessToken", authResponse.getAccessToken());
+                        editor.putString("refreshToken", authResponse.getRefreshToken());
+                        editor.apply(); // commit async
+
+                        // 2. Thông báo đăng nhập thành công
+                        Toast.makeText(requireActivity(), "Đăng nhập thành công", Toast.LENGTH_SHORT).show();
+
+                        // 3. Chuyển sang HomeActivity
+                        Intent intent = new Intent(getActivity(), HomeActivity.class);
+                        requireActivity().startActivity(intent);
+                        requireActivity().finish(); // đóng LoginActivity nếu muốn
+                    } else {
+                        Toast.makeText(getActivity(), "Login failed", Toast.LENGTH_SHORT).show();
+                    }
+                }
+            });
         });
+
 
         tvSignUp.setOnClickListener(v -> {
             // Tìm ViewPager2 trong AuthActivity và lướt nó sang trang 1 (Register)

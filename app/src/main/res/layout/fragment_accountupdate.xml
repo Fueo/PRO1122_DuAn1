@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
@@ -11,10 +10,10 @@
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:fillViewport="true"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomBar"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toTopOf="@id/bottomBar">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -48,10 +47,10 @@
                     android:layout_gravity="bottom|end"
                     android:layout_marginEnd="6dp"
                     android:layout_marginBottom="6dp"
-                    android:src="@drawable/ic_add"
                     android:background="@drawable/bg_plus_circle"
-                    android:padding="6dp"
                     android:contentDescription="Đổi avatar"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_add"
                     app:tint="@android:color/white" />
             </FrameLayout>
 
@@ -59,20 +58,20 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Tài khoản"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:textColor="@color/black"
+                android:layout_marginBottom="4dp"
                 android:fontFamily="@font/robotoserif_bold"
-                android:layout_marginBottom="4dp"/>
+                android:text="Tài khoản"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/robotoserif_regular"
                 android:text="Tên đăng nhập"
-                android:textSize="13sp"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textSize="13sp" />
 
             <EditText
                 android:id="@+id/edtUsername"
@@ -80,135 +79,148 @@
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
                 android:background="@drawable/bg_edit_input"
+                android:fontFamily="@font/robotoserif_regular"
                 android:paddingHorizontal="12dp"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:text=""
                 android:singleLine="true"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:text=""
+                android:textColor="@color/black"
+                android:textSize="14sp" />
 
             <!-- Chức vụ -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
                 android:gravity="center_vertical"
-                android:layout_marginTop="10dp">
+                android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
                     android:text="Chức vụ:"
-                    android:textSize="13sp"
                     android:textColor="@color/black"
-                    android:fontFamily="@font/robotoserif_regular"/>
+                    android:textSize="13sp" />
 
-                <Spinner
-                    android:id="@+id/spRole"
-                    android:layout_width="wrap_content"
-                    android:layout_height="40dp"
-                    android:layout_marginLeft="13dp"
-                    android:gravity="center_vertical"
-                    android:paddingTop="5dp"
-                    android:background="@drawable/bg_spinner_drop"
-                    android:spinnerMode="dropdown"/>
+<!--                <Spinner-->
+<!--                    android:id="@+id/spRole"-->
+<!--                    android:layout_width="wrap_content"-->
+<!--                    android:layout_height="40dp"-->
+<!--                    android:layout_marginLeft="13dp"-->
+<!--                    android:background="@drawable/bg_spinner_drop"-->
+<!--                    android:gravity="center_vertical"-->
+<!--                    android:paddingTop="5dp"-->
+<!--                    android:spinnerMode="dropdown" />-->
+
+                    <org.angmarch.views.NiceSpinner
+                        android:id="@+id/spRole"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:textSize="13sp"
+                        android:fontFamily="@font/robotoserif_regular"
+                        />
+
 
             </LinearLayout>
 
             <!-- ========= ĐỔI MẬT KHẨU ========= -->
             <TextView
+                android:id="@+id/tvTitlePassword"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:fontFamily="@font/robotoserif_bold"
                 android:text="Đổi mật khẩu"
-                android:textStyle="bold"
-                android:textSize="16sp"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_bold"/>
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
             <!-- Mật khẩu cũ -->
             <TextView
+                android:id="@+id/tvTitleOldPassword"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:fontFamily="@font/robotoserif_regular"
                 android:text="Mật khẩu cũ"
-                android:textSize="13sp"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textSize="13sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:background="@drawable/bg_edit_input"
                 android:layout_marginTop="4dp"
+                android:background="@drawable/bg_edit_input"
                 android:gravity="center_vertical">
 
                 <com.google.android.material.textfield.TextInputLayout
-                    app:boxBackgroundMode="none"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    app:boxBackgroundMode="none"
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxCornerRadiusBottomStart="10dp"
                     app:boxCornerRadiusTopEnd="10dp"
                     app:boxCornerRadiusTopStart="10dp"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/blue"
                     app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    app:boxStrokeWidthFocused="0dp"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/blue">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edtPassword"
                         android:layout_width="match_parent"
                         android:layout_height="20dp"
-                        android:inputType="textPassword"
-                        android:gravity="center_vertical"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:textColor="@color/black"
+                        android:gravity="center_vertical"
+                        android:inputType="textPassword"
                         android:paddingVertical="0dp"
-                        />
+                        android:textColor="@color/black" />
                 </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
 
-            <!-- Mật khẩu cũ -->
             <TextView
+                android:id="@+id/tvTitleNewPassword"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:fontFamily="@font/robotoserif_regular"
                 android:text="Mật khẩu mới"
-                android:textSize="13sp"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textSize="13sp" />
 
             <LinearLayout
+                android:id="@+id/llNewPassword"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:background="@drawable/bg_edit_input"
                 android:layout_marginTop="4dp"
+                android:background="@drawable/bg_edit_input"
                 android:gravity="center_vertical">
 
                 <com.google.android.material.textfield.TextInputLayout
 
-                    app:boxBackgroundMode="none"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    app:boxBackgroundMode="none"
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxCornerRadiusBottomStart="10dp"
                     app:boxCornerRadiusTopEnd="10dp"
                     app:boxCornerRadiusTopStart="10dp"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/blue"
                     app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    app:boxStrokeWidthFocused="0dp"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/blue">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edtNewPassword"
                         android:layout_width="match_parent"
                         android:layout_height="20dp"
-                        android:inputType="textPassword"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:textColor="@color/black"
                         android:gravity="center_vertical"
+                        android:inputType="textPassword"
                         android:padding="0dp"
-                        />
+                        android:textColor="@color/black" />
                 </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
@@ -217,40 +229,40 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
+                android:fontFamily="@font/robotoserif_regular"
                 android:text="Xác thực mật khẩu"
-                android:textSize="13sp"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textSize="13sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:background="@drawable/bg_edit_input"
                 android:layout_marginTop="4dp"
+                android:background="@drawable/bg_edit_input"
                 android:gravity="center_vertical">
 
                 <com.google.android.material.textfield.TextInputLayout
-                    app:boxBackgroundMode="none"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    app:boxBackgroundMode="none"
                     app:boxCornerRadiusBottomEnd="10dp"
                     app:boxCornerRadiusBottomStart="10dp"
                     app:boxCornerRadiusTopEnd="10dp"
                     app:boxCornerRadiusTopStart="10dp"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/blue"
                     app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp">
+                    app:boxStrokeWidthFocused="0dp"
+                    app:endIconMode="password_toggle"
+                    app:endIconTint="@color/blue">
+
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edtConfirmPassword"
                         android:layout_width="match_parent"
                         android:layout_height="20dp"
-                        android:inputType="textPassword"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:textColor="@color/black"
-                        android:padding="0dp"
                         android:gravity="center_vertical"
-                        />
+                        android:inputType="textPassword"
+                        android:padding="0dp"
+                        android:textColor="@color/black" />
                 </com.google.android.material.textfield.TextInputLayout>
 
             </LinearLayout>
@@ -259,21 +271,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:fontFamily="@font/robotoserif_bold"
                 android:text="Thông tin liên hệ"
-                android:textStyle="bold"
-                android:textSize="16sp"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_bold"/>
+                android:textSize="16sp"
+                android:textStyle="bold" />
 
-            <!-- Tên -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Tên"
-                android:textSize="13sp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Tên (bắt buộc)"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textSize="13sp" />
 
             <EditText
                 android:id="@+id/edtFullName"
@@ -281,46 +292,22 @@
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
                 android:background="@drawable/bg_edit_input"
-                android:paddingHorizontal="12dp"
+                android:fontFamily="@font/robotoserif_regular"
                 android:hint="Yolanie"
-                android:textSize="14sp"
-                android:textColor="@color/black"
-                android:singleLine="true"
-                android:fontFamily="@font/robotoserif_regular"/>
-
-            <!-- Số điện thoại -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="Số điện thoại"
-                android:textSize="13sp"
-                android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
-
-            <EditText
-                android:id="@+id/edtPhone"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_edit_input"
                 android:paddingHorizontal="12dp"
-                android:hint="0911 363 363"
-                android:inputType="phone"
-                android:textSize="14sp"
-                android:textColor="@color/black"
                 android:singleLine="true"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textColor="@color/black"
+                android:textSize="14sp" />
 
             <!-- Email -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Email"
-                android:textSize="13sp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Email (bắt buộc)"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textSize="13sp" />
 
             <EditText
                 android:id="@+id/edtEmail"
@@ -328,23 +315,44 @@
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
                 android:background="@drawable/bg_edit_input"
-                android:paddingHorizontal="12dp"
+                android:fontFamily="@font/robotoserif_regular"
                 android:hint="anhphungcanhmo123@gmail.com"
                 android:inputType="textEmailAddress"
-                android:textSize="14sp"
-                android:textColor="@color/black"
+                android:paddingHorizontal="12dp"
                 android:singleLine="true"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textColor="@color/black"
+                android:textSize="14sp" />
 
-            <!-- Địa chỉ -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Địa chỉ"
-                android:textSize="13sp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Số điện thoại"
                 android:textColor="@color/black"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/edtPhone"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_edit_input"
+                android:fontFamily="@font/robotoserif_regular"
+                android:hint="0944 555 777"
+                android:paddingHorizontal="12dp"
+                android:singleLine="true"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Địa chỉ"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
 
             <EditText
                 android:id="@+id/edtAddress"
@@ -352,12 +360,13 @@
                 android:layout_height="40dp"
                 android:layout_marginTop="4dp"
                 android:background="@drawable/bg_edit_input"
+                android:fontFamily="@font/robotoserif_regular"
+                android:hint="120 Yên Lãng, Đống Đa, Hà Nội"
+                android:inputType="textEmailAddress"
                 android:paddingHorizontal="12dp"
-                android:hint="Số 10 Đan Phượng, Phường Đống Đa, Hà Nội"
-                android:textSize="14sp"
-                android:textColor="@color/black"
                 android:singleLine="true"
-                android:fontFamily="@font/robotoserif_regular"/>
+                android:textColor="@color/black"
+                android:textSize="14sp" />
 
         </LinearLayout>
     </ScrollView>
@@ -367,22 +376,22 @@
         android:id="@+id/bottomBar"
         android:layout_width="0dp"
         android:layout_height="56dp"
-        android:orientation="vertical"
-        android:gravity="center"
         android:background="#C7C7C7"
+        android:gravity="center"
+        android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
         <Button
             android:id="@+id/btnSave"
             android:layout_width="160dp"
             android:layout_height="40dp"
+            android:background="@drawable/btn_blue_rounded"
+            android:fontFamily="@font/robotoserif_bold"
             android:text="Lưu"
             android:textAllCaps="false"
-            android:fontFamily="@font/robotoserif_bold"
-            android:background="@drawable/btn_blue_rounded"
-            app:backgroundTint="@null"/>
+            app:backgroundTint="@null" />
 
     </LinearLayout>
 

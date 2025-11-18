@@ -39,7 +39,7 @@
 
                 <TextView
                     android:fontFamily="@font/robotoserif_bold"
-                    android:id="@+id/tvUserName"
+                    android:id="@+id/tvName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
@@ -47,13 +47,13 @@
                     android:textColor="@color/white"
                     android:textSize="22sp"
                     android:textStyle="bold"
-                    app:layout_constraintBottom_toTopOf="@id/tvUserType"
+                    app:layout_constraintBottom_toTopOf="@id/tvRole"
                     app:layout_constraintStart_toEndOf="@id/ivProfile"
                     app:layout_constraintTop_toTopOf="@id/ivProfile"
                     app:layout_constraintVertical_chainStyle="packed"/>
 
                 <TextView
-                    android:id="@+id/tvUserType"
+                    android:id="@+id/tvRole"
                     android:fontFamily="@font/robotoserif_regular"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -68,7 +68,7 @@
                     android:textSize="12sp"
                     app:layout_constraintBottom_toBottomOf="@id/ivProfile"
                     app:layout_constraintStart_toEndOf="@id/ivProfile"
-                    app:layout_constraintTop_toBottomOf="@id/tvUserName" />
+                    app:layout_constraintTop_toBottomOf="@id/tvName" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -98,6 +98,7 @@
                             android:src="@drawable/ic_phone_gray"
                             app:tint="#555555" />
                         <TextView
+                            android:id="@+id/tvPhone"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="16dp"
@@ -119,6 +120,7 @@
                             android:src="@drawable/ic_email_gray"
                             app:tint="#555555" />
                         <TextView
+                            android:id="@+id/tvEmail"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="16dp"
@@ -435,7 +437,7 @@
 
             <!-- Nút Đăng xuất -->
             <LinearLayout
-                android:id="@+id/btnLogout"
+                android:id="@+id/rlLogout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"

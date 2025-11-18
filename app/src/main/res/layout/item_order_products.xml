@@ -1,0 +1,50 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="6dp">
+
+    <ImageView
+        android:id="@+id/imgProduct"
+        android:layout_width="0dp"
+        android:layout_height="50dp"
+        android:layout_weight="1"
+        android:scaleType="centerCrop"/>
+
+    <TextView
+        android:id="@+id/tvProductName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:text="Tên sản phẩm"
+        android:textColor="@color/black"
+        android:textSize="12sp"
+        android:layout_gravity="center"
+        android:fontFamily="@font/robotoserif_regular"/>
+
+    <TextView
+        android:id="@+id/tvProductQuantity"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="1"
+        android:textColor="@color/black"
+        android:layout_gravity="center"
+        android:textSize="16sp"
+        android:fontFamily="@font/robotoserif_regular"/>
+
+    <TextView
+        android:id="@+id/tvProductAmount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:gravity="center"
+        android:text="75.000 VND"
+        android:textSize="13sp"
+        android:layout_gravity="center"
+        android:textColor="#1A5BD4"
+        android:fontFamily="@font/robotoserif_regular"/>
+</LinearLayout>

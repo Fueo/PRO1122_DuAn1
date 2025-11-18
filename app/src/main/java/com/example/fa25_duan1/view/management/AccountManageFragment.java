@@ -3,6 +3,7 @@ package com.example.fa25_duan1.view.management;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,16 +16,20 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
+
 
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.AccountManageAdapter;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.detail.DetailActivity;
+import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
+import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
 import com.example.fa25_duan1.viewmodel.UserViewModel;
 import com.example.fa25_duan1.view.management.UpdateActivity;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AccountManageFragment extends Fragment {
 
@@ -41,6 +46,10 @@ public class AccountManageFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        getActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_filter, new AccountFilterFragment())
+                .commit();
 
         rvData = view.findViewById(R.id.rvData);
         btnAdd = view.findViewById(R.id.btnAdd);
@@ -65,22 +74,18 @@ public class AccountManageFragment extends Fragment {
         rvData.setLayoutManager(new LinearLayoutManager(getContext()));
         rvData.setAdapter(accountManageAdapter);
 
-        viewModel = new ViewModelProvider(this).get(UserViewModel.class);
+        // Sử dụng ViewModel scoped to Activity nếu muốn chia sẻ dữ liệu giữa Fragment
+// Trong Fragment
+        viewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
 
-        // Lấy danh sách user từ server
-        loadUsers();
-
-        btnAdd.setOnClickListener(v -> openUpdateActivity(null));
-    }
-
-    private void loadUsers() {
-        viewModel.getAllUsers().observe(getViewLifecycleOwner(), users -> {
+        viewModel.getDisplayedUsers().observe(getViewLifecycleOwner(), users -> {
             if (users != null) {
-                accountManageAdapter.setData(users);
-            } else {
-                Toast.makeText(getContext(), "Lấy danh sách user thất bại", Toast.LENGTH_SHORT).show();
+                accountManageAdapter.setData(users); // adapter sẽ notifyDataSetChanged()
             }
         });
+
+
+        btnAdd.setOnClickListener(v -> openUpdateActivity(null));
     }
 
     private void openUpdateActivity(User user) {
@@ -99,27 +104,44 @@ public class AccountManageFragment extends Fragment {
     private void deleteUser(User user) {
         if (user == null) return;
 
-        viewModel.deleteUser(user.getUserID()).observe(getViewLifecycleOwner(), success -> {
-            if (Boolean.TRUE.equals(success)) {
-                Toast.makeText(getContext(), "Xóa thành công", Toast.LENGTH_SHORT).show();
+        ConfirmDialogFragment dialog = new ConfirmDialogFragment(
+                "Xóa user",
+                "Xác nhận xoá user có tên " + user.getName(),
+                new ConfirmDialogFragment.OnConfirmListener() {
+                    @Override
+                    public void onConfirmed() {
+                        // Gọi API và observe kết quả
+                        viewModel.deleteUser(user.getUserID()).observe(getViewLifecycleOwner(), success -> {
+                            if (success != null && success) {
+                                // Nếu API báo thành công, tải lại toàn bộ danh sách
+                                viewModel.refreshData();
 
-                List<User> updatedList = new ArrayList<>(accountManageAdapter.getUserList());
-                updatedList.remove(user);
-                accountManageAdapter.setData(updatedList);
-            } else {
-                Toast.makeText(getContext(), "Xóa thất bại", Toast.LENGTH_SHORT).show();
-            }
-        });
+                                // Hiển thị thông báo thành công
+                                NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
+                                        "Thành công",
+                                        "Bạn đã xóa user thành công",
+                                        "Đóng",
+                                        NotificationDialogFragment.TYPE_SUCCESS,
+                                        () -> {}
+                                );
+                                dialogFragment.show(getParentFragmentManager(), "SuccessDialog");
+                            } else {
+                                // Xử lý khi xóa thất bại (optional)
+                                Toast.makeText(getContext(), "Xóa thất bại", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    }
+                }
+        );
+        dialog.show(getParentFragmentManager(), "ConfirmDialog");
     }
 
-    // Nhận kết quả từ Activity update
+    // Không cần gọi loadUsers() ở onActivityResult vì LiveData tự cập nhật
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-
         if (requestCode == 1001 && resultCode == Activity.RESULT_OK) {
-            loadUsers(); // refresh danh sách khi thêm/sửa user
+            viewModel.refreshData();
         }
     }
-
 }

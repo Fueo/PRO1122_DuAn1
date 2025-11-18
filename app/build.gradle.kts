@@ -18,8 +18,8 @@ android {
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
-            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.7:3002/\"")
-            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.100.116:3002/\"")
+            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.9:3002/\"")
+            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.120.66:3002/\"")
         }
 
         getByName("release") {
@@ -57,6 +57,8 @@ dependencies {
     // Thư viện fetchAPI
     implementation ("com.squareup.retrofit2:retrofit:2.11.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.11.0")
+    // OkHttp logging
+    implementation ("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.11")
     // Thư viện quản lý dữ liệu
     implementation ("androidx.lifecycle:lifecycle-livedata-ktx:2.8.6")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.6")

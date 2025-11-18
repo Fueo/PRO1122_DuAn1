@@ -1,6 +1,7 @@
 package com.example.fa25_duan1.adapter;
 
 import android.content.Context;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -71,7 +72,6 @@ public class AccountManageAdapter extends RecyclerView.Adapter<AccountManageAdap
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         User user = userList.get(position);
-
         // Load avatar
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             Glide.with(context)

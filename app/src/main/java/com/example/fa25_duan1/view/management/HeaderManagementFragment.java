@@ -5,16 +5,18 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.viewmodel.UserViewModel;
 
 import org.angmarch.views.NiceSpinner;
 
@@ -22,36 +24,61 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 public class HeaderManagementFragment extends Fragment {
-    ImageView iv_back;
+    ImageView ivBack;
+    EditText etSearch;
     NiceSpinner spSearch;
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_headermanagement, container, false);
+    UserViewModel viewModel;
 
-        return view;
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+        return inflater.inflate(R.layout.fragment_headermanagement, container, false);
     }
+
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // Kiểm tra để tránh chèn nhiều lần khi rotate
-        iv_back = view.findViewById(R.id.iv_back);
+
+        ivBack = view.findViewById(R.id.ivBack);
+        etSearch = view.findViewById(R.id.etSearch);
         spSearch = view.findViewById(R.id.spSearch);
 
-        iv_back.setOnClickListener(v -> {
-            getActivity().finish();
-        });
+        viewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
 
-        // Dữ liệu cho spinner
+        ivBack.setOnClickListener(v -> getActivity().finish());
+
+        // Spinner data
         LinkedList<String> data = new LinkedList<>(Arrays.asList(
-                "Theo tên", "Option 2", "Option 3", "Option 4"));
-
-        // Gắn dữ liệu vào spinner
+                "Theo tên", "Theo SĐT"));
         spSearch.attachDataSource(data);
 
-        // Bắt sự kiện chọn item
+        // Khi text thay đổi trong EditText
+        etSearch.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                searchUsersFromHeader(s.toString());
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {}
+        });
+
+        // Khi spinner thay đổi
         spSearch.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
-            String selectedItem = data.get(position);
-            Toast.makeText(getActivity(),
-                    "Bạn chọn: " + selectedItem,
-                    Toast.LENGTH_SHORT).show();
+            // Cập nhật lại search khi đổi type
+            searchUsersFromHeader(etSearch.getText().toString());
         });
     }
+
+    private void searchUsersFromHeader(String query) {
+        if (viewModel == null) return;
+
+        String type = spSearch.getSelectedItem() != null && spSearch.getSelectedItem().toString().equals("Theo SĐT")
+                ? "phone" : "name";
+
+        viewModel.searchUsers(query, type);
+    }
 }
+

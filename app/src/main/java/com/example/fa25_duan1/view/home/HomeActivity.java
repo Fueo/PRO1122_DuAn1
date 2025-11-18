@@ -27,14 +27,14 @@ public class HomeActivity extends AppCompatActivity {
                 .replace(R.id.fragment_header, new HeaderHomeFragment())
                 .commit();
 
-        loadFragment(new AdminFragment(), true); // Hiện BottomNavigationView cho fragment chính
+        loadFragment(new HomeFragment(), true); // Hiện BottomNavigationView cho fragment chính
 
         // Listener cho BottomNavigationView
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
 
             if (id == R.id.nav_home) {
-                loadFragment(new DetailFragment(), true);
+                loadFragment(new HomeFragment(), true);
             } else if (id == R.id.nav_favorite) {
                 loadFragment(new FavoriteFragment(), true);
             } else if (id == R.id.nav_profile) {

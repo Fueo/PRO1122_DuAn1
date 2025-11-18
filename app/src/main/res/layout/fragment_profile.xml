@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -17,35 +16,29 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/blue"
             app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:cardBackgroundColor="@color/blue">
+            app:cardElevation="0dp">
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
                 android:paddingHorizontal="10dp">
 
-                <androidx.cardview.widget.CardView
-                    android:id="@+id/cv_avatar"
-                    android:layout_width="70dp"
-                    android:layout_height="70dp"
-                    app:cardCornerRadius="35dp"
-                    app:cardElevation="0dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent">
 
-                    <ImageView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:src="@drawable/ic_avatar_placeholder"
-                        android:scaleType="centerCrop"
-                        android:contentDescription="Avatar" />
-                </androidx.cardview.widget.CardView>
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/ivProfile"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@drawable/ic_avatar_placeholder"
+                    app:civ_border_color="@color/white"
+                    app:civ_border_width="2dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"/>
 
                 <TextView
-                    android:id="@+id/tv_title"
+                    android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
@@ -54,25 +47,25 @@
                     android:text="Thông tin cá nhân"
                     android:textColor="@color/white"
                     android:textSize="14sp"
-                    app:layout_constraintStart_toEndOf="@id/cv_avatar"
-                    app:layout_constraintBottom_toTopOf="@+id/tv_user_name"/>
+                    app:layout_constraintBottom_toTopOf="@+id/tvName"
+                    app:layout_constraintStart_toEndOf="@id/ivProfile" />
 
                 <TextView
-                    android:id="@+id/tv_user_name"
+                    android:id="@+id/tvName"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Hùng Xe Độ"
+                    android:layout_marginStart="16dp"
                     android:fontFamily="@font/robotoserif_bold"
+                    android:text="Hùng Xe Độ"
                     android:textColor="@color/white"
                     android:textSize="20sp"
                     android:textStyle="bold"
-                    android:layout_marginStart="16dp"
-                    app:layout_constraintStart_toEndOf="@+id/cv_avatar"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintBottom_toBottomOf="parent" />
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toEndOf="@+id/ivProfile"
+                    app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
-                    android:id="@+id/tv_customer_tag"
+                    android:id="@+id/tvRole"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
@@ -85,8 +78,8 @@
                     android:text="Khách hàng"
                     android:textColor="#0085FF"
                     android:textSize="12sp"
-                    app:layout_constraintStart_toEndOf="@id/cv_avatar"
-                    app:layout_constraintTop_toBottomOf="@id/tv_user_name" />
+                    app:layout_constraintStart_toEndOf="@id/ivProfile"
+                    app:layout_constraintTop_toBottomOf="@id/tvName" />
 
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.cardview.widget.CardView>
@@ -102,50 +95,50 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:fontFamily="@font/robotoserif_bold"
                 android:text="Thông tin liên hệ"
                 android:textColor="#000000"
                 android:textSize="18sp"
-                android:fontFamily="@font/robotoserif_bold"
-                android:textStyle="bold"
-                android:layout_centerVertical="true"
-                android:layout_alignParentStart="true" />
+                android:textStyle="bold" />
 
             <ImageView
                 android:layout_width="35dp"
                 android:layout_height="35dp"
-                android:src="@drawable/ic_edit_gray"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:contentDescription="Chỉnh sửa" />
+                android:contentDescription="Chỉnh sửa"
+                android:src="@drawable/ic_edit_gray" />
         </RelativeLayout>
 
         <!-- ==== CARDVIEW THÔNG TIN LIÊN HỆ ==== -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:cardBackgroundColor="@android:color/white"
             app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardElevation="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp"
                 android:clipChildren="false"
                 android:clipToPadding="false"
-                >
+                android:orientation="vertical"
+                android:padding="16dp">
 
                 <TextView
+                    android:id="@+id/tvPhone"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="0911 363 363"
-                    android:fontFamily="@font/robotoserif_regular"
                     android:drawableStart="@drawable/ic_phone_gray"
                     android:drawablePadding="12dp"
+                    android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
+                    android:text="0911 363 363"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
@@ -154,15 +147,16 @@
                     android:background="#F0F0F0" />
 
                 <TextView
+                    android:id="@+id/tvEmail"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="anhphungcanhmo123@gmail.com"
                     android:drawableStart="@drawable/ic_email_gray"
                     android:drawablePadding="12dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
+                    android:text="anhphungcanhmo123@gmail.com"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
@@ -171,15 +165,16 @@
                     android:background="#F0F0F0" />
 
                 <TextView
+                    android:id="@+id/tvAddress"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Số 10 Đan Phượng"
                     android:drawableStart="@drawable/ic_location_gray"
                     android:drawablePadding="12dp"
+                    android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
                     android:paddingTop="12dp"
-                    android:fontFamily="@font/robotoserif_regular"
                     android:paddingBottom="12dp"
+                    android:text="Số 10 Đan Phượng"
                     android:textColor="@color/cardview_dark_background" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
@@ -195,30 +190,30 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:fontFamily="@font/robotoserif_bold"
                 android:text="Tài khoản"
                 android:textColor="#000000"
                 android:textSize="18sp"
-                android:fontFamily="@font/robotoserif_bold"
-                android:textStyle="bold"
-                android:layout_centerVertical="true"
-                android:layout_alignParentStart="true" />
+                android:textStyle="bold" />
 
             <ImageView
                 android:layout_width="35dp"
                 android:layout_height="35dp"
-                android:src="@drawable/ic_edit_gray"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:contentDescription="Chỉnh sửa" />
+                android:contentDescription="Chỉnh sửa"
+                android:src="@drawable/ic_edit_gray" />
         </RelativeLayout>
 
         <!-- ==== CARDVIEW TÀI KHOẢN ==== -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:cardBackgroundColor="@android:color/white"
             app:cardCornerRadius="16dp"
-            app:cardElevation="6dp"
-            app:cardBackgroundColor="@android:color/white">
+            app:cardElevation="6dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -229,7 +224,6 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Mật khẩu"
                     android:drawableStart="@drawable/ic_lock_gray"
                     android:drawableEnd="@drawable/ic_arrow_right_gray"
                     android:drawablePadding="12dp"
@@ -237,6 +231,7 @@
                     android:gravity="center_vertical"
                     android:paddingTop="12dp"
                     android:paddingBottom="12dp"
+                    android:text="Mật khẩu"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
@@ -245,15 +240,16 @@
                     android:background="#F0F0F0" />
 
                 <TextView
+                    android:id="@+id/tvCreateAt"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Ngày tạo tài khoản: 11/9/2025"
                     android:drawableStart="@drawable/ic_calendar_gray"
                     android:drawablePadding="12dp"
+                    android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
                     android:paddingTop="12dp"
-                    android:fontFamily="@font/robotoserif_regular"
                     android:paddingBottom="12dp"
+                    android:text="Ngày tạo tài khoản: 11/9/2025"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
@@ -262,15 +258,16 @@
                     android:background="#F0F0F0" />
 
                 <TextView
+                    android:id="@+id/tvOrder"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Tổng đơn đã đặt: 36"
                     android:drawableStart="@drawable/ic_document_gray"
                     android:drawablePadding="12dp"
+                    android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
                     android:paddingTop="12dp"
-                    android:fontFamily="@font/robotoserif_regular"
                     android:paddingBottom="12dp"
+                    android:text="Tổng đơn đã đặt: 36"
                     android:textColor="@color/cardview_dark_background" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>

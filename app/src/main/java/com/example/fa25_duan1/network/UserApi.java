@@ -1,5 +1,6 @@
 package com.example.fa25_duan1.network;
 
+import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.User;
 
 import java.util.List;
@@ -20,11 +21,11 @@ public interface UserApi {
 
     // GET: Lấy tất cả users
     @GET("users/")
-    Call<List<User>> getAllUsers();
+    Call<ApiResponse<List<User>>> getAllUsers();
 
     // GET: Lấy user theo ID
     @GET("users/{id}")
-    Call<User> getUserByID(@Path("id") String id);
+    Call<ApiResponse<User>> getUserByID(@Path("id") String id);
 
 //    // POST: Thêm user
 //    @POST("users/add")
@@ -46,12 +47,12 @@ public interface UserApi {
 
     // PUT: Cập nhật user theo ID
     @PUT("users/update/{id}")
-    Call<User> updateUser(@Path("id") String id, @Body User user);
+    Call<ApiResponse<User>> updateUser(@Path("id") String id, @Body User user);
 
     //PUT: Cập nhật user có kèm avatar
     @Multipart
     @PUT("users/update/{id}")
-    Call<User> updateUserWithAvatar(
+    Call<ApiResponse<User>> updateUserWithAvatar(
             @Path("id") String id,
             @Part("username") RequestBody username,
             @Part("password") RequestBody password,

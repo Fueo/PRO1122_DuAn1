@@ -1,21 +1,53 @@
 package com.example.fa25_duan1.network;
 
-import com.example.fa25_duan1.R;
+import android.content.Context;
+
+import com.example.fa25_duan1.BuildConfig;
+
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class RetrofitClient {
-    private static final String BASE_URL = com.example.fa25_duan1.BuildConfig.BASE_URL_ATHOME;
-    private static Retrofit retrofit;
 
-    public static Retrofit getInstance() {
-        if (retrofit == null) {
-            retrofit = new Retrofit.Builder()
-                    .baseUrl(BASE_URL)
-                    .addConverterFactory(GsonConverterFactory.create())
-                    .build();
-        }
-        return retrofit;
+    private static RetrofitClient instance = null;
+    private final AuthApi authApi;
+    private final UserApi userApi;
+    private static final String BASE_URL = BuildConfig.BASE_URL_ATSCHOOL;
+
+    private RetrofitClient(Context context) {
+        HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+        logging.setLevel(HttpLoggingInterceptor.Level.BODY);
+
+        OkHttpClient client = new OkHttpClient.Builder()
+                .addInterceptor(new AuthInterceptor(context)) // thêm token interceptor
+                .authenticator(new TokenAuthenticator(context))
+                .addInterceptor(logging)
+                .build();
+
+        Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(client)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build();
+
+        authApi = retrofit.create(AuthApi.class);
+        userApi = retrofit.create(UserApi.class);
     }
 
+    public static synchronized RetrofitClient getInstance(Context context) {
+        if (instance == null) {
+            instance = new RetrofitClient(context);
+        }
+        return instance;
+    }
+
+    public AuthApi getAuthApi() {
+        return authApi;
+    }
+
+    public UserApi getUserApi() {
+        return userApi;
+    }
 }

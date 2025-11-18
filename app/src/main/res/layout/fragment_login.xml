@@ -78,6 +78,7 @@
                 app:layout_constraintTop_toBottomOf="@id/tvLabelUsername"
                 app:layout_constraintBottom_toTopOf="@id/tvLabelPassword">
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etUsername"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:inputType="text"
@@ -122,6 +123,7 @@
                 app:layout_constraintTop_toBottomOf="@id/tvLabelPassword"
                 app:layout_constraintBottom_toTopOf="@id/btnLogin">
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPassword"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:inputType="textPassword"
