@@ -34,7 +34,7 @@
             android:layout_width="16dp"
             android:layout_height="16dp"
             android:layout_marginTop="4dp"
-            android:src="@drawable/ic_arrow_up"
+            android:src="@drawable/ic_arrow_up_2"
             app:tint="@color/blue" />
     </LinearLayout>
 

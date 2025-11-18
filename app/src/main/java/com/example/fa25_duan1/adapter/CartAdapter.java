@@ -49,17 +49,31 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
                 .placeholder(R.drawable.book_cover_placeholder)
                 .into(holder.ivBookCover);
 
-        // Xử lý các nút
+        // --- SỬA LỖI TẠI ĐÂY ---
+
+        // Xử lý nút Xóa
         holder.btnDelete.setOnClickListener(v -> {
-            if (listener != null) listener.onDeleteClick(item, position);
+            int currentPos = holder.getBindingAdapterPosition();
+            if (currentPos != RecyclerView.NO_POSITION && listener != null) {
+                // Lấy lại item từ danh sách theo vị trí mới nhất để đảm bảo chính xác
+                listener.onDeleteClick(cartItems.get(currentPos), currentPos);
+            }
         });
 
+        // Xử lý nút Tăng
         holder.btnIncrease.setOnClickListener(v -> {
-            if (listener != null) listener.onIncreaseClick(item, position);
+            int currentPos = holder.getBindingAdapterPosition();
+            if (currentPos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onIncreaseClick(cartItems.get(currentPos), currentPos);
+            }
         });
 
+        // Xử lý nút Giảm
         holder.btnDecrease.setOnClickListener(v -> {
-            if (listener != null) listener.onDecreaseClick(item, position);
+            int currentPos = holder.getBindingAdapterPosition();
+            if (currentPos != RecyclerView.NO_POSITION && listener != null) {
+                listener.onDecreaseClick(cartItems.get(currentPos), currentPos);
+            }
         });
     }
 

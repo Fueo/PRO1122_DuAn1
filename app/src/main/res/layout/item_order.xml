@@ -173,7 +173,7 @@
                     android:layout_height="24dp"
                     android:layout_gravity="bottom"
                     android:layout_marginStart="4dp"
-                    android:src="@drawable/ic_arrow_up_1"
+                    android:src="@drawable/ic_arrow_down"
                     app:tint="#0486E9" />
             </LinearLayout>
         </LinearLayout>

@@ -172,4 +172,12 @@
             app:iconGravity="textEnd" />
     </LinearLayout>
 
+    <include
+        android:id="@+id/layout_empty_cart"
+        layout="@layout/fragment_none"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        tools:visibility="gone" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
