@@ -18,7 +18,8 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.ActionButtonAdapter;
 import com.example.fa25_duan1.model.MenuItem;
-import com.example.fa25_duan1.view.management.AccountActivity;
+import com.example.fa25_duan1.view.detail.DetailActivity;
+import com.example.fa25_duan1.view.management.ManageActivity;
 
 import java.util.ArrayList;
 
@@ -46,9 +47,10 @@ public class AdminFragment extends Fragment {
 
         rvButton.setLayoutManager(gridLayoutManager1); // 4 cột
         ActionButtonAdapter adapter = new ActionButtonAdapter(getActivity(), listButtonData, item -> {
+            Intent intent = new Intent(getActivity(), ManageActivity.class);
             switch (item.getId()) {
                 case 0:
-                    Toast.makeText(getActivity(), "Vào trang Category", Toast.LENGTH_SHORT).show();
+                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "category");
                     break;
                 case 1:
                     Toast.makeText(getActivity(), "Vào trang Product", Toast.LENGTH_SHORT).show();
@@ -60,16 +62,16 @@ public class AdminFragment extends Fragment {
                     Toast.makeText(getActivity(), "Vào trang Sales", Toast.LENGTH_SHORT).show();
                     break;
                 case 4:
-                    Toast.makeText(getActivity(), "Vào trang Author", Toast.LENGTH_SHORT).show();
+                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "author");
                     break;
                 case 5:
-                    Toast.makeText(getActivity(), "Vào trang Account", Toast.LENGTH_SHORT).show();
-                    startActivity(new Intent(getActivity(), AccountActivity.class));
+                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "account");
                     break;
                 case 6:
                     Toast.makeText(getActivity(), "Vào trang Statistic", Toast.LENGTH_SHORT).show();
                     break;
             }
+            startActivity(intent);
         });
 
         rvButton.setAdapter(adapter);

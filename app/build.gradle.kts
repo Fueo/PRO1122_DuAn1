@@ -18,14 +18,13 @@ android {
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
-            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.9:3002/\"")
-            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.120.66:3002/\"")
+            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.7:3002/\"")
+            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.68.157:3002/\"")
         }
 
         getByName("release") {
             isMinifyEnabled = true
             buildConfigField("String", "BASE_URL_ATHOME", "\"https://api.production.com/\"")
-            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"https://api.production.com/\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

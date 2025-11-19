@@ -20,8 +20,12 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.example.fa25_duan1.model.User;
+import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
+import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
+import com.example.fa25_duan1.view.welcome.WelcomeActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.example.fa25_duan1.viewmodel.UserViewModel;
 
@@ -98,5 +102,62 @@ public class UserFragment extends Fragment {
 
             }
         });
+
+        rlLogout.setOnClickListener(v -> {
+            showLogoutDialogConfirm();
+        });
+    }
+
+    private void handleLogoutSuccess(SharedPreferences sharedPref) {
+        // 3. Xóa các token
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.remove("accessToken");
+        editor.remove("refreshToken");
+        editor.apply();
+
+        Toast.makeText(requireContext(), "Đăng xuất thành công!", Toast.LENGTH_SHORT).show();
+        startAuthActivity(0);
+        requireActivity().finish();
+    }
+
+    private void startAuthActivity(int tab) {
+        Intent intent = new Intent(requireActivity(), AuthActivity.class);
+        intent.putExtra("DEFAULT_TAB", tab);
+        startActivity(intent);
+    }
+
+    private void showLogoutDialogConfirm() {
+        ConfirmDialogFragment dialog = new ConfirmDialogFragment(
+                "Xác nhận đăng xuất?",
+                "",
+                new ConfirmDialogFragment.OnConfirmListener() {
+                    @Override
+                    public void onConfirmed() {
+                        // 1. Lấy Refresh Token từ SharedPreferences
+                        SharedPreferences sharedPref = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+                        String refreshToken = sharedPref.getString("refreshToken", null);
+
+                        if (refreshToken != null) {
+                            // 2. Gọi hàm logout qua ViewModel
+                            authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), response -> {
+                                if (response != null) {
+                                    // Đăng xuất thành công hoặc API trả về 200/204
+                                    handleLogoutSuccess(sharedPref);
+                                } else {
+                                    // Xử lý lỗi (ví dụ: lỗi mạng, token hết hạn/không hợp lệ)
+                                    // Trong trường hợp lỗi, ta vẫn nên xóa token trên client để buộc người dùng đăng nhập lại
+                                    Toast.makeText(requireContext(), "Đã xảy ra lỗi khi đăng xuất. Đang thực hiện đăng xuất cục bộ.", Toast.LENGTH_LONG).show();
+                                    handleLogoutSuccess(sharedPref);
+                                }
+                            });
+                        } else {
+                            // Không có Refresh Token, thực hiện đăng xuất cục bộ ngay lập tức
+                            handleLogoutSuccess(sharedPref);
+                        }
+                    }
+                }
+        );
+
+        dialog.show(getParentFragmentManager(), "ConfirmDialog");
     }
 }

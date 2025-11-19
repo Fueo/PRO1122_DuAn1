@@ -1,4 +1,4 @@
-package com.example.fa25_duan1.view.management;
+package com.example.fa25_duan1.view.management.account;
 
 import android.app.Activity;
 import android.content.Intent;

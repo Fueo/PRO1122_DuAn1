@@ -74,7 +74,6 @@ public class UserViewModel extends AndroidViewModel {
 
             // 3.3 Cập nhật danh sách sẽ được hiển thị
             displayedUsersLiveData.setValue(sorted);
-            Log.d("UserViewModel", "Data refreshed. Loaded " + users.size() + " users.");
         });
     }
 
@@ -117,10 +116,6 @@ public class UserViewModel extends AndroidViewModel {
         // Đây là hàm pass-through, giữ nguyên
         return repository.getUserByID(id);
     }
-
-
-    // --- CÁC HÀM LỌC, TÌM KIẾM, SẮP XẾP (LOCAL) ---
-    // Các hàm này đọc từ "allUsersLiveData" và ghi vào "displayedUsersLiveData"
 
     /**
      * Tìm kiếm user. Sẽ đọc từ danh sách gốc (allUsersLiveData).

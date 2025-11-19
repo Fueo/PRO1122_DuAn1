@@ -6,14 +6,17 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
-import com.example.fa25_duan1.view.detail.HeaderDetailFragment;
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.view.detail.HeaderDetailFragment;
 import com.example.fa25_duan1.view.home.AdminFragment;
-import com.example.fa25_duan1.view.management.account.AccountUpdateFragment;
-import com.example.fa25_duan1.view.management.author.AuthorUpdateFragment;
-import com.example.fa25_duan1.view.management.category.CategoryUpdateFragment;
+import com.example.fa25_duan1.view.management.account.AccountHeaderFragment;
+import com.example.fa25_duan1.view.management.account.AccountManageFragment;
+import com.example.fa25_duan1.view.management.author.AuthorHeaderFragment;
+import com.example.fa25_duan1.view.management.author.AuthorManageFragment;
+import com.example.fa25_duan1.view.management.category.CategoryHeaderFragment;
+import com.example.fa25_duan1.view.management.category.CategoryManageFragment;
 
-public class UpdateActivity extends AppCompatActivity {
+public class ManageActivity extends AppCompatActivity {
 
 
     public static final String EXTRA_HEADER_TITLE = "extra_header_title";
@@ -23,15 +26,12 @@ public class UpdateActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_account_update);
+        setContentView(R.layout.activity_management);
 
         if (savedInstanceState == null) {
-            // 1. Lấy title từ intent
-            String headerTitle = getIntent().getStringExtra(EXTRA_HEADER_TITLE);
-            if (headerTitle == null) headerTitle = "Default Title";
 
             // 2. Load HeaderFragment với title
-            HeaderDetailFragment headerFragment = HeaderDetailFragment.newInstance(headerTitle);
+            Fragment headerFragment = getHeaderFragmentFromIntent();
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_header, headerFragment)
                     .commit();
@@ -50,11 +50,23 @@ public class UpdateActivity extends AppCompatActivity {
     private Fragment getFragmentFromIntent() {
         String fragmentName = getIntent().getStringExtra(EXTRA_CONTENT_FRAGMENT);
         if ("account".equals(fragmentName)) {
-            return new AccountUpdateFragment();
+            return new AccountManageFragment();
         } else if ("author".equals(fragmentName)) {
-            return new AuthorUpdateFragment();
+            return new AuthorManageFragment();
         } else if ("category".equals(fragmentName)) {
-            return new CategoryUpdateFragment();
+            return new CategoryManageFragment();
+        }
+        return null;
+    }
+
+    private Fragment getHeaderFragmentFromIntent() {
+        String fragmentName = getIntent().getStringExtra(EXTRA_CONTENT_FRAGMENT);
+        if ("account".equals(fragmentName)) {
+            return new AccountHeaderFragment();
+        } else if ("author".equals(fragmentName)) {
+            return new AuthorHeaderFragment();
+        } else if ("category".equals(fragmentName)) {
+            return new CategoryHeaderFragment();
         }
         return null;
     }

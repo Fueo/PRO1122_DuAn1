@@ -14,7 +14,9 @@ public class RetrofitClient {
     private static RetrofitClient instance = null;
     private final AuthApi authApi;
     private final UserApi userApi;
-    private static final String BASE_URL = BuildConfig.BASE_URL_ATSCHOOL;
+    private final AuthorApi authorApi;
+    private final CategoryApi categoryApi;
+    private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
 
     private RetrofitClient(Context context) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
@@ -34,6 +36,8 @@ public class RetrofitClient {
 
         authApi = retrofit.create(AuthApi.class);
         userApi = retrofit.create(UserApi.class);
+        authorApi = retrofit.create(AuthorApi.class);
+        categoryApi = retrofit.create(CategoryApi.class);
     }
 
     public static synchronized RetrofitClient getInstance(Context context) {
@@ -49,5 +53,13 @@ public class RetrofitClient {
 
     public UserApi getUserApi() {
         return userApi;
+    }
+
+    public AuthorApi getAuthorApi() {
+        return authorApi;
+    }
+
+    public CategoryApi getCategoryApi() {
+        return categoryApi;
     }
 }

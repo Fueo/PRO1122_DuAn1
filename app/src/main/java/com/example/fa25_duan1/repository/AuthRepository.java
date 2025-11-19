@@ -110,4 +110,26 @@ public class AuthRepository {
 
         return liveData;
     }
+
+    public LiveData<RefreshTokenResponse> logout(String refreshToken) {
+        MutableLiveData<RefreshTokenResponse> liveData = new MutableLiveData<>();
+        authApi.logout(new RefreshTokenRequest(refreshToken)).enqueue(new Callback<RefreshTokenResponse>() {
+            @Override
+            public void onResponse(Call<RefreshTokenResponse> call, Response<RefreshTokenResponse> response) {
+                if (response.isSuccessful()) {
+                    liveData.setValue(response.body());
+                } else {
+                    // Xử lý khi đăng xuất không thành công (ví dụ: token không hợp lệ)
+                    liveData.setValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(Call<RefreshTokenResponse> call, Throwable t) {
+                // Xử lý lỗi mạng, kết nối...
+                liveData.setValue(null);
+            }
+        });
+        return liveData;
+    }
 }

@@ -1,7 +1,6 @@
 package com.example.fa25_duan1.adapter;
 
 import android.content.Context;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -55,10 +54,10 @@ public class AccountManageAdapter extends RecyclerView.Adapter<AccountManageAdap
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivEdit = itemView.findViewById(R.id.iv_edit);
-            ivDelete = itemView.findViewById(R.id.iv_delete);
+            ivDelete = itemView.findViewById(R.id.ivDelete);
             tvName = itemView.findViewById(R.id.tv_name);
             tvTag = itemView.findViewById(R.id.tv_tag);
-            cvAvatar = itemView.findViewById(R.id.cv_avatar);
+            cvAvatar = itemView.findViewById(R.id.cvAvatar);
         }
     }
 

@@ -1,13 +1,11 @@
-package com.example.fa25_duan1.view.management;
+package com.example.fa25_duan1.view.management.category;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -16,18 +14,20 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.viewmodel.UserViewModel;
+import com.example.fa25_duan1.viewmodel.AuthorViewModel;
+import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 
 import org.angmarch.views.NiceSpinner;
 
 import java.util.Arrays;
 import java.util.LinkedList;
 
-public class HeaderManagementFragment extends Fragment {
+public class CategoryHeaderFragment extends Fragment {
+    TextView tv_title;
     ImageView ivBack;
     EditText etSearch;
     NiceSpinner spSearch;
-    UserViewModel viewModel;
+    CategoryViewModel viewModel;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -41,15 +41,21 @@ public class HeaderManagementFragment extends Fragment {
         ivBack = view.findViewById(R.id.ivBack);
         etSearch = view.findViewById(R.id.etSearch);
         spSearch = view.findViewById(R.id.spSearch);
+        tv_title = view.findViewById(R.id.tv_title);
 
-        viewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+        tv_title.setText("Quản lí danh mục");
+        etSearch.setHint("Tìm kiếm danh mục");
+
+        viewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
 
         ivBack.setOnClickListener(v -> getActivity().finish());
 
         // Spinner data
         LinkedList<String> data = new LinkedList<>(Arrays.asList(
-                "Theo tên", "Theo SĐT"));
+                "Theo tên", ""));
         spSearch.attachDataSource(data);
+        spSearch.setEnabled(false);
+        spSearch.setClickable(false);
 
         // Khi text thay đổi trong EditText
         etSearch.addTextChangedListener(new android.text.TextWatcher() {
@@ -58,27 +64,17 @@ public class HeaderManagementFragment extends Fragment {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                searchUsersFromHeader(s.toString());
+                searchCategoriesFromHeader(s.toString());
             }
 
             @Override
             public void afterTextChanged(android.text.Editable s) {}
         });
-
-        // Khi spinner thay đổi
-        spSearch.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
-            // Cập nhật lại search khi đổi type
-            searchUsersFromHeader(etSearch.getText().toString());
-        });
     }
 
-    private void searchUsersFromHeader(String query) {
+    private void searchCategoriesFromHeader(String query) {
         if (viewModel == null) return;
-
-        String type = spSearch.getSelectedItem() != null && spSearch.getSelectedItem().toString().equals("Theo SĐT")
-                ? "phone" : "name";
-
-        viewModel.searchUsers(query, type);
+        viewModel.searchCategories(query);
     }
 }
 

@@ -40,4 +40,7 @@ public class AuthViewModel extends AndroidViewModel {
         return repository.getMyInfo();
     }
 
+    public LiveData<RefreshTokenResponse> logout(String refreshToken) {
+        return repository.logout(refreshToken);
+    }
 }

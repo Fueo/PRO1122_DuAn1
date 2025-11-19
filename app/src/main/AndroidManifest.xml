@@ -43,7 +43,7 @@
             android:name=".view.auth.AuthActivity"
             android:exported="false" />
         <activity
-            android:name=".view.management.AccountActivity"
+            android:name=".view.management.ManageActivity"
             android:exported="false" />
     </application>
 </manifest>

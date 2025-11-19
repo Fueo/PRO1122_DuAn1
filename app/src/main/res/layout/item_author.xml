@@ -27,10 +27,10 @@
                 app:layout_constraintBottom_toBottomOf="parent"/>
 
             <TextView
-                android:id="@+id/tv_name"
+                android:id="@+id/tvName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Hùng Xe Độ"
+                android:text="J.K. Rowling"
                 android:fontFamily="@font/robotoserif_bold"
                 android:textColor="@color/blue"
                 android:textSize="20sp"
@@ -42,24 +42,20 @@
                 app:layout_constraintBottom_toBottomOf="parent" />
 
             <TextView
-                android:id="@+id/tv_tag"
-                android:layout_width="130dp"
+                android:id="@+id/tvInfo"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="10dp"
                 android:layout_marginBottom="10dp"
-                android:background="@drawable/bg_account_tag"
                 android:fontFamily="@font/robotoserif_regular"
-                android:paddingStart="17dp"
                 android:paddingTop="4dp"
-                android:paddingEnd="17dp"
                 android:paddingBottom="4dp"
                 android:layout_marginTop="5dp"
-                android:text="Khách hàng"
+                android:text="Tác giả của 5 đầu sách"
                 android:textColor="@color/blue"
                 android:textSize="12sp"
-                android:gravity="center_horizontal"
                 app:layout_constraintStart_toEndOf="@id/cvAvatar"
-                app:layout_constraintTop_toBottomOf="@id/tv_name"
+                app:layout_constraintTop_toBottomOf="@id/tvName"
                 app:layout_constraintBottom_toBottomOf="parent"/>
             
             <ImageView
@@ -74,7 +70,7 @@
                 />
 
             <ImageView
-                android:id="@+id/iv_edit"
+                android:id="@+id/ivEdit"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:layout_marginEnd="20dp"
