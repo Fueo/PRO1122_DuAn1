@@ -63,7 +63,6 @@ public class AuthorViewModel extends AndroidViewModel {
             });
 
             displayedAuthorsLiveData.setValue(sorted);
-            Log.d("AuthorViewModel", "Data refreshed. Loaded " + authors.size() + " authors.");
         });
     }
 

@@ -15,7 +15,7 @@
             android:layout_height="wrap_content"
             android:paddingBottom="16dp">
             <ImageView
-                android:id="@+id/iv_book_cover"
+                android:id="@+id/ivImage"
                 android:layout_width="250dp"
                 android:layout_height="280dp"
                 android:layout_marginTop="24dp"
@@ -53,7 +53,7 @@
                 app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
-                android:id="@+id/tv_book_title"
+                android:id="@+id/tvName"
                 android:fontFamily="@font/robotoserif_bold"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -66,7 +66,7 @@
                 android:textStyle="bold"
                 app:layout_constraintEnd_toStartOf="@+id/tv_book_price"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/iv_book_cover" />
+                app:layout_constraintTop_toBottomOf="@+id/ivImage" />
 
             <TextView
                 android:id="@+id/tv_book_author"
@@ -81,7 +81,7 @@
                 android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tv_book_title" />
+                app:layout_constraintTop_toBottomOf="@+id/tvName" />
 
             <TextView
                 android:id="@+id/tv_book_price"
@@ -93,9 +93,9 @@
                 android:textColor="@color/black"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="@+id/tv_book_title"
+                app:layout_constraintBottom_toBottomOf="@+id/tvName"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/tv_book_title" />
+                app:layout_constraintTop_toTopOf="@+id/tvName" />
 
             <LinearLayout
                 android:id="@+id/ll_book_stats_container"
@@ -298,7 +298,7 @@
             app:iconGravity="textStart" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btn_buy_now"
+            android:id="@+id/btnEdit"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"

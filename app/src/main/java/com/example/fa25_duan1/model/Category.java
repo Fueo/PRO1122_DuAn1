@@ -5,14 +5,26 @@ import com.google.gson.annotations.SerializedName;
 public class Category {
     @SerializedName("cateName")
     private String name;
+    @SerializedName("createAt")
+    private String createAt;
 
     @SerializedName("_id")
     private String cateID;
 
     private boolean isSelected;
 
+    public Category() {
+    }
+
     public Category(String name, boolean isSelected) {
         this.name = name;
+        this.isSelected = isSelected;
+    }
+
+    public Category(String name, String createAt, String cateID, boolean isSelected) {
+        this.name = name;
+        this.createAt = createAt;
+        this.cateID = cateID;
         this.isSelected = isSelected;
     }
 
@@ -23,4 +35,12 @@ public class Category {
 
     public boolean isSelected() { return isSelected; }
     public void setSelected(boolean selected) { isSelected = selected; }
+
+    public String getCreateAt() {
+        return createAt;
+    }
+
+    public void setCreateAt(String createAt) {
+        this.createAt = createAt;
+    }
 }

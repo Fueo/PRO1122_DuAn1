@@ -24,10 +24,8 @@ import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
-import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
 import com.example.fa25_duan1.view.welcome.WelcomeActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
-import com.example.fa25_duan1.viewmodel.UserViewModel;
 
 public class UserFragment extends Fragment {
     RelativeLayout rlProfile, rlHistory;
@@ -35,9 +33,11 @@ public class UserFragment extends Fragment {
     TextView tvName, tvRole, tvPhone, tvEmail;
     ImageView ivProfile;
     AuthViewModel authViewModel;
+
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_user, container, false);
     }
+
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         rlProfile = view.findViewById(R.id.rlProfile);
@@ -98,8 +98,6 @@ public class UserFragment extends Fragment {
                 intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Lịch sử mua hàng");
                 intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "orderhistory");
                 startActivity(intent);
-
-
             }
         });
 
@@ -108,17 +106,25 @@ public class UserFragment extends Fragment {
         });
     }
 
+    // --- PHẦN QUAN TRỌNG ĐÃ SỬA ---
     private void handleLogoutSuccess(SharedPreferences sharedPref) {
-        // 3. Xóa các token
         SharedPreferences.Editor editor = sharedPref.edit();
+
+        // 1. Xóa Token
         editor.remove("accessToken");
         editor.remove("refreshToken");
+
+        // 2. QUAN TRỌNG: Xóa trạng thái "Ghi nhớ mật khẩu"
+        // Để lần sau mở app, nó sẽ không tự động đăng nhập nữa
+        editor.remove("rememberMe");
+
         editor.apply();
 
         Toast.makeText(requireContext(), "Đăng xuất thành công!", Toast.LENGTH_SHORT).show();
         startAuthActivity(0);
         requireActivity().finish();
     }
+    // ------------------------------
 
     private void startAuthActivity(int tab) {
         Intent intent = new Intent(requireActivity(), AuthActivity.class);
@@ -144,8 +150,7 @@ public class UserFragment extends Fragment {
                                     // Đăng xuất thành công hoặc API trả về 200/204
                                     handleLogoutSuccess(sharedPref);
                                 } else {
-                                    // Xử lý lỗi (ví dụ: lỗi mạng, token hết hạn/không hợp lệ)
-                                    // Trong trường hợp lỗi, ta vẫn nên xóa token trên client để buộc người dùng đăng nhập lại
+                                    // Xử lý lỗi nhưng vẫn logout cục bộ để tránh kẹt
                                     Toast.makeText(requireContext(), "Đã xảy ra lỗi khi đăng xuất. Đang thực hiện đăng xuất cục bộ.", Toast.LENGTH_LONG).show();
                                     handleLogoutSuccess(sharedPref);
                                 }

@@ -52,10 +52,10 @@ public class RankingBookAdapter extends RecyclerView.Adapter<RankingBookAdapter.
         public RankingViewHolder(@NonNull View itemView) {
             super(itemView);
             tvRankNumber = itemView.findViewById(R.id.tv_rank_number);
-            tvTitle = itemView.findViewById(R.id.tv_book_title);
+            tvTitle = itemView.findViewById(R.id.tvName);
             tvAuthor = itemView.findViewById(R.id.tv_author);
             tvLikeCount = itemView.findViewById(R.id.tv_like_count);
-            ivCover = itemView.findViewById(R.id.iv_book_cover);
+            ivCover = itemView.findViewById(R.id.ivImage);
         }
     }
 }

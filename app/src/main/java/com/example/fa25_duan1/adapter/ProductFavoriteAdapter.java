@@ -63,10 +63,10 @@ public class ProductFavoriteAdapter extends RecyclerView.Adapter<ProductFavorite
 
         public ProductFavoriteViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivBookCover = itemView.findViewById(R.id.iv_book_cover);
-            ivFavorite = itemView.findViewById(R.id.iv_favorite);
+            ivBookCover = itemView.findViewById(R.id.ivImage);
+            ivFavorite = itemView.findViewById(R.id.ivDelete);
             tvDiscountBadge = itemView.findViewById(R.id.tv_discount_badge);
-            tvBookTitle = itemView.findViewById(R.id.tv_book_title);
+            tvBookTitle = itemView.findViewById(R.id.tvName);
             tvBookAuthor = itemView.findViewById(R.id.tv_book_author);
             tvCurrentPrice = itemView.findViewById(R.id.tv_current_price);
             tvOriginalPrice = itemView.findViewById(R.id.tv_original_price);

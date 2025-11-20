@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="175dp"
+    android:layout_width="200dp"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
@@ -27,31 +27,32 @@
 
         <ImageView
             android:id="@+id/ivDelete"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:src="@drawable/tim"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:src="@drawable/ic_managedelete"
+            android:background="#CCFFFFFF"
+            android:layout_marginTop="5dp"
+            android:layout_marginStart="5dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/tv_discount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:text="-20%"
-            android:background="@drawable/badge_discount"
-            android:textColor="@color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+<!--        <TextView-->
+<!--            android:id="@+id/tv_discount"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginTop="8dp"-->
+<!--            android:layout_marginEnd="8dp"-->
+<!--            android:paddingStart="8dp"-->
+<!--            android:paddingEnd="8dp"-->
+<!--            android:paddingTop="4dp"-->
+<!--            android:paddingBottom="4dp"-->
+<!--            android:text="-20%"-->
+<!--            android:background="@drawable/badge_discount"-->
+<!--            android:textColor="@color/white"-->
+<!--            android:textSize="12sp"-->
+<!--            android:textStyle="bold"-->
+<!--            app:layout_constraintEnd_toEndOf="parent"-->
+<!--            app:layout_constraintTop_toTopOf="parent" />-->
 
         <TextView
             android:id="@+id/tvName"
@@ -86,17 +87,17 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvName" />
 
-        <TextView
-            android:id="@+id/tv_original_price"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:fontFamily="@font/robotoserif_regular"
-            android:text="50.000 đ"
-            android:textColor="@color/gray_text"
-            android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@id/tvPrice"
-            app:layout_constraintStart_toEndOf="@id/tvPrice" />
+<!--        <TextView-->
+<!--            android:id="@+id/tv_original_price"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:layout_height="wrap_content"-->
+<!--            android:layout_marginStart="8dp"-->
+<!--            android:fontFamily="@font/robotoserif_regular"-->
+<!--            android:text="50.000 đ"-->
+<!--            android:textColor="@color/gray_text"-->
+<!--            android:textSize="12sp"-->
+<!--            app:layout_constraintBottom_toBottomOf="@id/tvPrice"-->
+<!--            app:layout_constraintStart_toEndOf="@id/tvPrice" />-->
 
         <Button
             android:id="@+id/btnEdit"
@@ -105,7 +106,7 @@
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
-            android:text="Mua Ngay"
+            android:text="Chỉnh sửa"
             android:fontFamily="@font/robotoserif_bold"
             android:textAllCaps="false"
             android:textColor="@color/white"
@@ -116,29 +117,30 @@
             app:layout_constraintTop_toBottomOf="@id/tvPrice" />
 
         <TextView
-            android:id="@+id/tv_view_count"
+            android:id="@+id/tvTitleQuantity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:text="Lượt xem: 3636"
+            android:text="Tồn kho:"
             android:fontFamily="@font/robotoserif_regular"
             android:textColor="@color/gray_text"
-            android:textSize="8sp"
+            android:textSize="12sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/btnEdit" />
 
         <TextView
-            android:id="@+id/tv_like_count"
+            android:id="@+id/tvQuantity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:text="Lượt thích: 3636"
+            android:layout_marginStart="8dp"
+            android:text="2"
             android:fontFamily="@font/robotoserif_regular"
             android:textColor="@color/gray_text"
-            android:textSize="8sp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tv_view_count" />
+            android:textSize="12sp"
+            app:layout_constraintStart_toEndOf="@+id/tvTitleQuantity"
+            app:layout_constraintTop_toTopOf="@+id/tvTitleQuantity"
+            app:layout_constraintBottom_toBottomOf="@+id/tvTitleQuantity"/>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

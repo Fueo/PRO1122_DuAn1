@@ -53,7 +53,7 @@ public class AdminFragment extends Fragment {
                     intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "category");
                     break;
                 case 1:
-                    Toast.makeText(getActivity(), "Vào trang Product", Toast.LENGTH_SHORT).show();
+                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "product");
                     break;
                 case 2:
                     Toast.makeText(getActivity(), "Vào trang Invoice", Toast.LENGTH_SHORT).show();

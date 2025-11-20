@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- PHẦN CUỘN -->
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        app:layout_constraintBottom_toTopOf="@id/bottomBar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="80dp">
+
+            <!-- Avatar + nút đổi -->
+            <FrameLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="16dp">
+
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/ivImage"
+                    android:layout_width="120dp"
+                    android:layout_height="120dp"
+                    android:src="@drawable/book_cover_placeholder"
+                    app:civ_border_color="@color/blue"
+                    app:civ_border_width="2dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageView
+                    android:id="@+id/btnChangeAvatar"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:layout_gravity="bottom|end"
+                    android:layout_marginEnd="6dp"
+                    android:layout_marginBottom="6dp"
+                    android:background="@drawable/bg_plus_circle"
+                    android:contentDescription="Đổi avatar"
+                    android:padding="6dp"
+                    android:src="@drawable/ic_add"
+                    app:tint="@android:color/white" />
+            </FrameLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="4dp"
+                android:fontFamily="@font/robotoserif_bold"
+                android:text="Thông tin sách"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Tên sách"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/etName"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_edit_input"
+                android:fontFamily="@font/robotoserif_regular"
+                android:paddingHorizontal="12dp"
+                android:singleLine="true"
+                android:text=""
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:text="Tác giả:"
+                    android:textColor="@color/black"
+                    android:textSize="13sp" />
+
+                <org.angmarch.views.NiceSpinner
+                    android:id="@+id/spAuthor"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:gravity="center_vertical"
+                    android:textSize="13sp" />
+
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:text="Danh mục:"
+                    android:textColor="@color/black"
+                    android:textSize="13sp" />
+
+                <org.angmarch.views.NiceSpinner
+                    android:id="@+id/spCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:gravity="center_vertical"
+                    android:textSize="13sp" />
+
+
+            </LinearLayout>
+
+
+            <TextView
+                android:id="@+id/tvTitleDescription"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Mô tả"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+
+            <EditText
+                android:id="@+id/etDescription"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/rounded_border_background"
+                android:gravity="top"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text=""
+                android:padding="8dp"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:text="Số trang"
+                    android:textColor="@color/black"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/etPages"
+                    android:layout_width="50dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_edit_input"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginStart="5dp"
+                    android:singleLine="true"
+                    android:inputType="number"
+                    android:textAlignment="center"
+                    android:hint="15"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:text="Ngày xuất bản: "
+                    android:layout_marginStart="10dp"
+                    android:textColor="@color/black"
+                    android:textSize="13sp" />
+
+                <EditText
+                    android:id="@+id/etDate"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_edit_input"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:paddingHorizontal="12dp"
+                    android:layout_marginStart="5dp"
+                    android:singleLine="true"
+                    android:textAlignment="center"
+                    android:inputType="date"
+                    android:layout_weight="1"
+                    android:hint="02/05/1999"
+                    android:textColor="@color/black"
+                    android:textSize="14sp" />
+            </LinearLayout>
+            <!-- ========= THÔNG TIN HÀNG HÓA ========= -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:fontFamily="@font/robotoserif_bold"
+                android:text="Thông tin hàng hóa"
+                android:textColor="@color/black"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Giá bán"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/etPrice"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_edit_input"
+                android:fontFamily="@font/robotoserif_regular"
+                android:hint="150.000đ"
+                android:paddingHorizontal="12dp"
+                android:singleLine="true"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <!-- Email -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Số lượng tồn kho"
+                android:textColor="@color/black"
+                android:textSize="13sp" />
+
+            <EditText
+                android:id="@+id/etQuantity"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginTop="4dp"
+                android:background="@drawable/bg_edit_input"
+                android:fontFamily="@font/robotoserif_regular"
+                android:hint="120"
+                android:inputType="textEmailAddress"
+                android:paddingHorizontal="12dp"
+                android:singleLine="true"
+                android:textColor="@color/black"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:gravity="center_vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:text="Trạng thái sản phẩm"
+                    android:textColor="@color/black"
+                    android:textSize="13sp" />
+
+                <org.angmarch.views.NiceSpinner
+                    android:id="@+id/spStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:gravity="center_vertical"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- THANH DƯỚI + NÚT LƯU -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:background="#C7C7C7"
+        android:gravity="center"
+        android:orientation="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <Button
+            android:id="@+id/btnSave"
+            android:layout_width="160dp"
+            android:layout_height="40dp"
+            android:background="@drawable/btn_blue_rounded"
+            android:fontFamily="@font/robotoserif_bold"
+            android:text="Lưu"
+            android:textAllCaps="false"
+            app:backgroundTint="@null" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

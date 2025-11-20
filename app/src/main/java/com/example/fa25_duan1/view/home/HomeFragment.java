@@ -1,10 +1,12 @@
 package com.example.fa25_duan1.view.home;
+
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,7 +42,6 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-
         viewPagerBanner = view.findViewById(R.id.viewPagerBanner);
         layoutIndicators = view.findViewById(R.id.layoutIndicators);
         rvBooksGrid = view.findViewById(R.id.rv_books_grid);
@@ -49,9 +50,7 @@ public class HomeFragment extends Fragment {
         rvRankingCategories = view.findViewById(R.id.rv_ranking_categories);
         rvRankingBooks = view.findViewById(R.id.rv_ranking_books);
 
-
         setupBanner();
-
         setupBookGrid();
         setupCategories();
         setupHorizontalBooks();
@@ -111,11 +110,8 @@ public class HomeFragment extends Fragment {
         }
     }
 
-
     private void setupBookGrid() {
-
         List<Book> books = getGridBooks();
-
         BookGridAdapter adapter = new BookGridAdapter(books);
         rvBooksGrid.setLayoutManager(new GridLayoutManager(getContext(), 2));
         rvBooksGrid.setAdapter(adapter);
@@ -123,41 +119,49 @@ public class HomeFragment extends Fragment {
 
     private void setupCategories() {
         List<Category> categories = new ArrayList<>();
+        // Mặc định chọn tab đầu tiên (true)
         categories.add(new Category("Sách tham khảo", true));
         categories.add(new Category("Văn học", false));
         categories.add(new Category("Kinh tế", false));
         categories.add(new Category("Kỹ năng sống", false));
 
-        CategoryAdapter adapter = new CategoryAdapter(categories);
+        // --- ĐÃ CẬP NHẬT: Truyền Listener vào Adapter ---
+        CategoryAdapter adapter = new CategoryAdapter(getContext(), categories, new CategoryAdapter.ICategoryClickListener() {
+            @Override
+            public void onCategoryClick(Category category) {
+                // Xử lý khi click vào 1 tab
+                // Ví dụ: Toast tên category được chọn
+                Toast.makeText(getContext(), "Bạn chọn: " + category.getName(), Toast.LENGTH_SHORT).show();
+
+                // TODO: Gọi hàm load lại sách theo category ở đây nếu muốn
+                // loadBooksByCategory(category.getName());
+            }
+        });
+
         rvCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvCategories.setAdapter(adapter);
 
+        // Lưu ý: Nếu dùng chung adapter thì ấn ở trên, ở dưới cũng sẽ nhảy theo
         rvRankingCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvRankingCategories.setAdapter(adapter);
     }
 
     private void setupHorizontalBooks() {
-
         List<Book> books = getDummyBooks();
-
         BookHorizontalAdapter adapter = new BookHorizontalAdapter(books);
         rvBooksHorizontal.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
         rvBooksHorizontal.setAdapter(adapter);
     }
 
     private void setupRankingBooks() {
-
         List<Book> books = getDummyBooks();
-
         RankingBookAdapter adapter = new RankingBookAdapter(books);
         rvRankingBooks.setLayoutManager(new LinearLayoutManager(getContext()));
         rvRankingBooks.setAdapter(adapter);
     }
 
-
     private List<Book> getDummyBooks() {
         List<Book> list = new ArrayList<>();
-
         list.add(new Book("Thằng Huyện - Con Hầu", "Nguyễn Thế Hà", R.drawable.book_cover_placeholder, 32000, 50000, "-20%", 3636, 1200));
         list.add(new Book("Mắt Biếc", "Nguyễn Nhật Ánh", R.drawable.book_cover_placeholder, 80000, 100000, "-20%", 5000, 2300));
         list.add(new Book("Nhà Giả Kim", "Paulo Coelho", R.drawable.book_cover_placeholder, 65000, 75000, "-15%", 9000, 4500));
@@ -165,14 +169,12 @@ public class HomeFragment extends Fragment {
         return list;
     }
 
-
     private List<Book> getGridBooks() {
         List<Book> list = new ArrayList<>();
         list.add(new Book("Thằng Huyện - Con Hầu", "Nguyễn Thế Hà", R.drawable.book_cover_placeholder, 32000, 50000, "-20%", 3636, 1200));
         list.add(new Book("Mắt Biếc", "Nguyễn Nhật Ánh", R.drawable.book_cover_placeholder, 80000, 100000, "-20%", 5000, 2300));
         list.add(new Book("Nhà Giả Kim", "Paulo Coelho", R.drawable.book_cover_placeholder, 65000, 75000, "-15%", 9000, 4500));
         list.add(new Book("Tắt Đèn", "Ngô Tất Tố", R.drawable.book_cover_placeholder, 40000, 45000, "-10%", 2000, 800));
-
         return list;
     }
 }

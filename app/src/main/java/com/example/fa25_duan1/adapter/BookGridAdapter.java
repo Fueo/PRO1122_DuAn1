@@ -63,15 +63,15 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivCover = itemView.findViewById(R.id.iv_book_cover);
-            ivFavorite = itemView.findViewById(R.id.iv_favorite);
-            tvTitle = itemView.findViewById(R.id.tv_book_title);
-            tvSalePrice = itemView.findViewById(R.id.tv_sale_price);
+            ivCover = itemView.findViewById(R.id.ivImage);
+            ivFavorite = itemView.findViewById(R.id.ivDelete);
+            tvTitle = itemView.findViewById(R.id.tvName);
+            tvSalePrice = itemView.findViewById(R.id.tvPrice);
             tvOriginalPrice = itemView.findViewById(R.id.tv_original_price);
             tvDiscount = itemView.findViewById(R.id.tv_discount);
             tvViewCount = itemView.findViewById(R.id.tv_view_count);
             tvLikeCount = itemView.findViewById(R.id.tv_like_count);
-            btnBuyNow = itemView.findViewById(R.id.btn_buy_now);
+            btnBuyNow = itemView.findViewById(R.id.btnEdit);
         }
     }
 }

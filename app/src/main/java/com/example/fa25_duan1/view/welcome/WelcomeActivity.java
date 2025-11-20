@@ -11,19 +11,34 @@ import android.os.Bundle;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.WelcomePagerAdapter;
 import com.example.fa25_duan1.view.auth.AuthActivity;
+import com.example.fa25_duan1.view.home.HomeActivity; // <--- MỚI: Import HomeActivity
 
 public class WelcomeActivity extends AppCompatActivity implements WelcomeFragment.OnWelcomeActionListener {
     private ViewPager2 viewPager;
     private FragmentStateAdapter pagerAdapter;
 
-    // --- Thêm hằng số cho SharedPreferences ---
     public static final String APP_PREFS = "AppPrefs";
     public static final String KEY_IS_FIRST_RUN = "isFirstRun";
-    // ------------------------------------------
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // --- 1. KIỂM TRA AUTO LOGIN (CODE MỚI THÊM) ---
+        // Phải kiểm tra trước khi setContentView để trải nghiệm mượt nhất
+        SharedPreferences loginPrefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        boolean rememberMe = loginPrefs.getBoolean("rememberMe", false);
+        String accessToken = loginPrefs.getString("accessToken", null);
+
+        // Nếu người dùng đã chọn ghi nhớ và có token -> Vào thẳng app
+        if (rememberMe && accessToken != null) {
+            Intent intent = new Intent(WelcomeActivity.this, HomeActivity.class);
+            startActivity(intent);
+            finish(); // Đóng WelcomeActivity lại
+            return;   // Dừng code tại đây, không chạy các đoạn dưới nữa
+        }
+        // ------------------------------------------------
+
         setContentView(R.layout.activity_main);
 
         viewPager = findViewById(R.id.view_pager);
@@ -41,7 +56,6 @@ public class WelcomeActivity extends AppCompatActivity implements WelcomeFragmen
                 int lastItemIndex = pagerAdapter.getItemCount() - 1;
 
                 if (lastItemIndex >= 0) {
-                    // Chuyển item và 'false' để không có animation
                     viewPager.setCurrentItem(lastItemIndex, false);
                 }
             });
@@ -83,4 +97,3 @@ public class WelcomeActivity extends AppCompatActivity implements WelcomeFragmen
         startActivity(intent);
     }
 }
-

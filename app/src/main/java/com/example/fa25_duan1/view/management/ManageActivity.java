@@ -15,6 +15,8 @@ import com.example.fa25_duan1.view.management.author.AuthorHeaderFragment;
 import com.example.fa25_duan1.view.management.author.AuthorManageFragment;
 import com.example.fa25_duan1.view.management.category.CategoryHeaderFragment;
 import com.example.fa25_duan1.view.management.category.CategoryManageFragment;
+import com.example.fa25_duan1.view.management.product.ProductHeaderFragment;
+import com.example.fa25_duan1.view.management.product.ProductManageFragment;
 
 public class ManageActivity extends AppCompatActivity {
 
@@ -55,6 +57,8 @@ public class ManageActivity extends AppCompatActivity {
             return new AuthorManageFragment();
         } else if ("category".equals(fragmentName)) {
             return new CategoryManageFragment();
+        }else if ("product".equals(fragmentName)) {
+            return new ProductManageFragment();
         }
         return null;
     }
@@ -67,6 +71,8 @@ public class ManageActivity extends AppCompatActivity {
             return new AuthorHeaderFragment();
         } else if ("category".equals(fragmentName)) {
             return new CategoryHeaderFragment();
+        } else if ("product".equals(fragmentName)) {
+            return new ProductHeaderFragment();
         }
         return null;
     }

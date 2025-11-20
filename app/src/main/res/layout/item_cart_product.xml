@@ -8,7 +8,7 @@
     android:padding="16dp">
 
     <com.google.android.material.imageview.ShapeableImageView
-        android:id="@+id/iv_book_cover"
+        android:id="@+id/ivImage"
         android:layout_width="95dp"
         android:layout_height="95dp"
         android:scaleType="centerCrop"
@@ -20,7 +20,7 @@
         tools:srcCompat="@tools:sample/backgrounds/scenic" />
 
     <TextView
-        android:id="@+id/tv_book_title"
+        android:id="@+id/tvName"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
@@ -31,7 +31,7 @@
         android:textSize="16sp"
         android:maxLines="2"
         android:ellipsize="end"
-        app:layout_constraintStart_toEndOf="@id/iv_book_cover"
+        app:layout_constraintStart_toEndOf="@id/ivImage"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toStartOf="@id/btn_delete_item" />
 
@@ -55,7 +55,7 @@
         android:fontFamily="@font/robotoserif_bold"
         android:textSize="16sp"
         android:textStyle="bold"
-        app:layout_constraintStart_toEndOf="@id/iv_book_cover"
+        app:layout_constraintStart_toEndOf="@id/ivImage"
         app:layout_constraintBottom_toBottomOf="parent" />
 
     <LinearLayout

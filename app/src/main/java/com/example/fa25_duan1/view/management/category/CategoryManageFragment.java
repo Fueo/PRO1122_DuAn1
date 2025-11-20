@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.CategoryAdapter; // Dùng Adapter mới
 import com.example.fa25_duan1.adapter.CategoryManageAdapter;
+import com.example.fa25_duan1.model.Author;
 import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
 import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
@@ -26,9 +27,10 @@ import com.example.fa25_duan1.view.management.UpdateActivity;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel; // Dùng ViewModel Category
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class CategoryManageFragment extends Fragment {
-
+    private View layout_empty;
     private RecyclerView rvData;
     private Button btnAdd;
     private CategoryManageAdapter categoryAdapter; // Sửa tên biến
@@ -44,14 +46,13 @@ public class CategoryManageFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Phần Filter tạm thời comment lại vì CategoryFilterFragment của bạn đang dùng UserViewModel
-        // getActivity().getSupportFragmentManager().beginTransaction()
-        //        .replace(R.id.fragment_filter, new CategoryFilterFragment())
-        //        .commit();
+         getActivity().getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_filter, new CategoryFilterFragment())
+                .commit();
 
         rvData = view.findViewById(R.id.rvData);
         btnAdd = view.findViewById(R.id.btnAdd);
-
+        layout_empty = view.findViewById(R.id.layout_empty);
         // Khởi tạo Adapter
         categoryAdapter = new CategoryManageAdapter(getContext(), new ArrayList<>(), new CategoryManageAdapter.OnCategoryActionListener() {
             @Override
@@ -75,6 +76,7 @@ public class CategoryManageFragment extends Fragment {
         viewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 categoryAdapter.setData(categories);
+                checkEmptyState(categories); // Gọi hàm kiểm tra
             }
         });
 
@@ -123,6 +125,16 @@ public class CategoryManageFragment extends Fragment {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1001 && resultCode == Activity.RESULT_OK) {
             viewModel.refreshData();
+        }
+    }
+
+    private void checkEmptyState(List<Category> list) {
+        if (list == null || list.isEmpty()) {
+            layout_empty.setVisibility(View.VISIBLE); // Hiện ảnh rỗng
+            rvData.setVisibility(View.GONE);         // Ẩn danh sách
+        } else {
+            layout_empty.setVisibility(View.GONE);    // Ẩn ảnh rỗng
+            rvData.setVisibility(View.VISIBLE);      // Hiện danh sách
         }
     }
 }

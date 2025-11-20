@@ -8,6 +8,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 
+import com.example.fa25_duan1.model.Author;
 import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.repository.CategoryRepository;
 
@@ -58,13 +59,14 @@ public class CategoryViewModel extends AndroidViewModel {
             // Cập nhật danh sách gốc
             allCategoriesLiveData.setValue(categories);
 
-            // Mặc định hiển thị toàn bộ danh sách (có thể sort A-Z nếu muốn)
+            // Sắp xếp mới nhất
             List<Category> sorted = new ArrayList<>(categories);
-            // Ví dụ sort theo tên A-Z
-            sorted.sort((c1, c2) -> c1.getName().compareToIgnoreCase(c2.getName()));
+            sorted.sort((a1, a2) -> {
+                if (a1.getCreateAt() == null || a2.getCreateAt() == null) return 0;
+                return a2.getCreateAt().compareTo(a1.getCreateAt());
+            });
 
             displayedCategoriesLiveData.setValue(sorted);
-            Log.d("CategoryViewModel", "Data refreshed. Loaded " + categories.size() + " categories.");
         });
     }
 
@@ -90,7 +92,35 @@ public class CategoryViewModel extends AndroidViewModel {
         return repository.getCategoryByID(id);
     }
 
-    // --- LOCAL FILTER / SEARCH ---
+    public void sortCategories(int type) {
+        List<Category> masterList = allCategoriesLiveData.getValue();
+        if (masterList == null) masterList = new ArrayList<>();
+
+        List<Category> sorted = new ArrayList<>(masterList);
+
+        switch (type) {
+            case 0: // Mới nhất
+                sorted.sort((c1, c2) -> {
+                    if (c1.getCreateAt() == null || c2.getCreateAt() == null) return 0;
+                    return c2.getCreateAt().compareTo(c1.getCreateAt()); // DESC
+                });
+                break;
+
+            case 1: // Cũ nhất
+                sorted.sort((c1, c2) -> {
+                    if (c1.getCreateAt() == null || c2.getCreateAt() == null) return 0;
+                    return c1.getCreateAt().compareTo(c2.getCreateAt()); // ASC
+                });
+                break;
+
+            case 2: // Tên A-Z
+            default:
+                sorted.sort((c1, c2) -> c1.getName().compareToIgnoreCase(c2.getName()));
+                break;
+        }
+
+        displayedCategoriesLiveData.setValue(sorted);
+    }
 
     /**
      * Tìm kiếm category theo tên

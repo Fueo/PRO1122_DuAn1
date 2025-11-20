@@ -47,20 +47,14 @@ public class CategoryFilterFragment extends Fragment {
 
     private void setupSpinner() {
         LinkedList<String> data = new LinkedList<>(Arrays.asList(
-                "Sắp xếp A - Z",
-                "Sắp xếp Z - A"
+                "Mới nhất",
+                "Cũ nhất",
+                "Theo tên"
         ));
         spSort.attachDataSource(data);
 
         spSort.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
-            // Bạn cần thêm hàm sortByName vào CategoryViewModel nếu muốn dùng chức năng này
-            // Hiện tại tôi để logic tìm kiếm tạm thời
-            if (position == 0) {
-                // Logic sort A-Z
-                viewModel.searchCategories(""); // Reset về mặc định (thường là A-Z)
-            } else {
-                // Logic sort Z-A (Cần implement thêm trong ViewModel nếu cần)
-            }
+            viewModel.sortCategories(position);
         });
     }
 }

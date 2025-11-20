@@ -12,6 +12,7 @@ import com.example.fa25_duan1.view.home.AdminFragment;
 import com.example.fa25_duan1.view.management.account.AccountUpdateFragment;
 import com.example.fa25_duan1.view.management.author.AuthorUpdateFragment;
 import com.example.fa25_duan1.view.management.category.CategoryUpdateFragment;
+import com.example.fa25_duan1.view.management.product.ProductUpdateFragment;
 
 public class UpdateActivity extends AppCompatActivity {
 
@@ -55,6 +56,8 @@ public class UpdateActivity extends AppCompatActivity {
             return new AuthorUpdateFragment();
         } else if ("category".equals(fragmentName)) {
             return new CategoryUpdateFragment();
+        } else if ("product".equals(fragmentName)) {
+            return new ProductUpdateFragment();
         }
         return null;
     }

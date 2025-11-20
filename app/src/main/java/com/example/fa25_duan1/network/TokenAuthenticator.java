@@ -43,7 +43,7 @@ public class TokenAuthenticator implements Authenticator {
 
         // Gọi API refresh token đồng bộ
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BuildConfig.BASE_URL_ATHOME)
+                .baseUrl(BuildConfig.BASE_URL_ATSCHOOL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
