@@ -17,7 +17,7 @@ public class RetrofitClient {
     private final AuthorApi authorApi;
     private final CategoryApi categoryApi;
     private final ProductApi productApi;
-    private static final String BASE_URL = BuildConfig.BASE_URL_ATSCHOOL;
+    private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
 
     private RetrofitClient(Context context) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();

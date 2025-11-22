@@ -18,7 +18,7 @@ android {
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
-            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.7:3002/\"")
+            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.9:3002/\"")
             buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.88.30:3002/\"")
         }
 

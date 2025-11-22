@@ -73,6 +73,23 @@
             app:layout_constraintTop_toBottomOf="@id/iv_book_cover" />
 
         <TextView
+            android:id="@+id/tv_book_author"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:fontFamily="@font/robotoserif_regular"
+            android:text="Tên tác giả"
+            android:textColor="#757575"
+            android:textSize="12sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tv_book_title" />
+
+        <TextView
             android:id="@+id/tv_sale_price"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -84,7 +101,7 @@
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_book_title" />
+            app:layout_constraintTop_toBottomOf="@id/tv_book_author" />
 
         <TextView
             android:id="@+id/tv_original_price"

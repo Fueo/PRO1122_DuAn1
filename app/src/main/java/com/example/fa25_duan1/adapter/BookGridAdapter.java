@@ -1,27 +1,48 @@
 package com.example.fa25_duan1.adapter;
 
-import android.graphics.Paint;
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
+import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.model.Product;
+
 import java.text.DecimalFormat;
 import java.util.List;
-import com.example.fa25_duan1.model.Book;
-import com.example.fa25_duan1.R;
 
 public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookViewHolder> {
 
-    private List<Book> mListBooks;
-
+    private List<Product> mListProducts;
+    private Context context;
     private final DecimalFormat formatter = new DecimalFormat("#,### đ");
 
-    public BookGridAdapter(List<Book> mListBooks) {
-        this.mListBooks = mListBooks;
+    // 1. Khai báo biến Interface
+    private OnItemClickListener mListener;
+
+    // 2. Định nghĩa Interface
+    public interface OnItemClickListener {
+        void onItemClick(Product product);
+    }
+
+    // 3. Cập nhật Constructor để nhận Listener
+    public BookGridAdapter(Context context, List<Product> mListProducts, OnItemClickListener listener) {
+        this.context = context;
+        this.mListProducts = mListProducts;
+        this.mListener = listener;
+    }
+
+    // Hàm cập nhật dữ liệu mới
+    public void setProducts(List<Product> list) {
+        this.mListProducts = list;
+        notifyDataSetChanged();
     }
 
     @NonNull
@@ -33,39 +54,71 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
 
     @Override
     public void onBindViewHolder(@NonNull BookViewHolder holder, int position) {
-        Book book = mListBooks.get(position);
-        if (book == null) return;
+        Product product = mListProducts.get(position);
+        if (product == null) return;
 
+        // --- Load ảnh ---
+        if (product.getImage() != null && !product.getImage().isEmpty()) {
+            Glide.with(context)
+                    .load(product.getImage())
+                    .placeholder(R.drawable.book_cover_placeholder)
+                    .error(R.drawable.book_cover_placeholder)
+                    .into(holder.ivCover);
+        } else {
+            holder.ivCover.setImageResource(R.drawable.book_cover_placeholder);
+        }
 
+        // --- Set tên sách ---
+        holder.tvTitle.setText(product.getName());
 
-        holder.ivCover.setImageResource(book.getImageResId());
-        holder.tvTitle.setText(book.getTitle());
+        // --- MỚI: Set tên tác giả ---
+        if (product.getAuthor() != null && product.getAuthor().getName() != null) {
+            holder.tvAuthor.setText(product.getAuthor().getName());
+        } else {
+            holder.tvAuthor.setText("Đang cập nhật");
+        }
 
-        holder.tvSalePrice.setText(formatter.format(book.getSalePrice()));
+        // --- Set giá bán ---
+        holder.tvSalePrice.setText(formatter.format(product.getPrice()));
 
-        holder.tvOriginalPrice.setText(formatter.format(book.getOriginalPrice()));
-        holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+        // Ẩn giá gốc và giảm giá (hoặc bạn có thể xử lý logic hiển thị ở đây nếu muốn)
+        holder.tvOriginalPrice.setVisibility(View.INVISIBLE);
+        holder.tvDiscount.setVisibility(View.INVISIBLE);
 
-        holder.tvDiscount.setText(book.getDiscount());
-        holder.tvViewCount.setText("Lượt xem: " + book.getViewCount());
-        holder.tvLikeCount.setText("Lượt thích: " + book.getLikeCount());
+        // --- Set thống kê ---
+        String luotxem = "Lượt xem: " + product.getView();
+        String luotthich = "Lượt thích: " + product.getFavorite();
+        holder.tvViewCount.setText(luotxem);
+        holder.tvLikeCount.setText(luotthich);
+
+        // 4. Bắt sự kiện click vào toàn bộ Item
+        holder.itemView.setOnClickListener(view -> {
+            if (mListener != null) {
+                mListener.onItemClick(product);
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return mListBooks != null ? mListBooks.size() : 0;
+        return mListProducts != null ? mListProducts.size() : 0;
     }
 
     public static class BookViewHolder extends RecyclerView.ViewHolder {
         ImageView ivCover, ivFavorite;
-        TextView tvTitle, tvSalePrice, tvOriginalPrice, tvDiscount, tvViewCount, tvLikeCount;
+        // Thêm tvAuthor vào khai báo
+        TextView tvTitle, tvAuthor, tvSalePrice, tvOriginalPrice, tvDiscount, tvViewCount, tvLikeCount;
         Button btnBuyNow;
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
             ivCover = itemView.findViewById(R.id.ivImage);
             ivFavorite = itemView.findViewById(R.id.ivDelete);
+
             tvTitle = itemView.findViewById(R.id.tvName);
+            // Ánh xạ tvAuthor từ layout
+            tvAuthor = itemView.findViewById(R.id.tvAuthor);
+
             tvSalePrice = itemView.findViewById(R.id.tvPrice);
             tvOriginalPrice = itemView.findViewById(R.id.tv_original_price);
             tvDiscount = itemView.findViewById(R.id.tv_discount);

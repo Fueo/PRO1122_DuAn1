@@ -45,5 +45,8 @@
         <activity
             android:name=".view.management.ManageActivity"
             android:exported="false" />
+        <activity
+            android:name=".view.detail.ProductDetailActivity"
+            android:exported="false" />
     </application>
 </manifest>
