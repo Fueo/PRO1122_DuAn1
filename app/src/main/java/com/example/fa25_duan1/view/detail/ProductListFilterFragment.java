@@ -1,11 +1,11 @@
-package com.example.fa25_duan1.view.management.product;
+package com.example.fa25_duan1.view.detail;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox; // Import CheckBox
-import android.widget.CompoundButton; // Import
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
@@ -19,6 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.ProductFilterAdapter;
 import com.example.fa25_duan1.model.Category;
+import com.example.fa25_duan1.view.management.product.ProductFilterFragment;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
@@ -26,12 +27,12 @@ import net.cachapa.expandablelayout.ExpandableLayout;
 
 import org.angmarch.views.NiceSpinner;
 
-import java.util.ArrayList; // Import
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ProductFilterFragment extends Fragment {
+public class ProductListFilterFragment extends Fragment {
     private ImageView ivClose;
     private ConstraintLayout clFilter;
     private ExpandableLayout expandableLayout;
@@ -52,7 +53,7 @@ public class ProductFilterFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_productfilter, container, false);
+        return inflater.inflate(R.layout.fragment_productlistfilter, container, false);
     }
 
     @Override
@@ -66,19 +67,11 @@ public class ProductFilterFragment extends Fragment {
         spSort = view.findViewById(R.id.spSort);
         rvFilterOption = view.findViewById(R.id.rvFilterOption);
 
-        // CheckBox Trạng thái
-        cbSelling = view.findViewById(R.id.cbSelling);
-        cbNotSelling = view.findViewById(R.id.cbNotSelling);
-
         // CheckBox Giá
         cbPrice0 = view.findViewById(R.id.cbPrice0);
         cbPrice150 = view.findViewById(R.id.cbPrice150);
         cbPrice3 = view.findViewById(R.id.cbPrice3);
         cbPrice4 = view.findViewById(R.id.cbPrice4);
-
-        // Mặc định check "Đang bán" (Tuỳ logic của bạn)
-        cbSelling.setChecked(true);
-        cbNotSelling.setChecked(true); // Mặc định hiện cả 2
 
         viewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
         categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
@@ -128,9 +121,6 @@ public class ProductFilterFragment extends Fragment {
 
         // 5. Setup Listener cho các CheckBox (Lọc ngay khi bấm)
         CompoundButton.OnCheckedChangeListener filterListener = (buttonView, isChecked) -> applyFilters();
-
-        cbSelling.setOnCheckedChangeListener(filterListener);
-        cbNotSelling.setOnCheckedChangeListener(filterListener);
         cbPrice0.setOnCheckedChangeListener(filterListener);
         cbPrice150.setOnCheckedChangeListener(filterListener);
         cbPrice3.setOnCheckedChangeListener(filterListener);

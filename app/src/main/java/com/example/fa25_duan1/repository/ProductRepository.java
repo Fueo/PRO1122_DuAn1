@@ -70,6 +70,31 @@ public class ProductRepository {
         return data;
     }
 
+    // --- Get Products By Author ID ---
+    public LiveData<List<Product>> getProductsByAuthor(String authorId) {
+        MutableLiveData<List<Product>> data = new MutableLiveData<>();
+
+        productApi.getProductsByAuthor(authorId).enqueue(new Callback<ApiResponse<List<Product>>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<List<Product>>> call, @NonNull Response<ApiResponse<List<Product>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    // Trả về list data hoặc list rỗng nếu data null
+                    data.setValue(response.body().getData() != null ? response.body().getData() : new ArrayList<>());
+                } else {
+                    // Nếu lỗi server hoặc không tìm thấy, trả về list rỗng để UI không bị crash
+                    data.setValue(new ArrayList<>());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<List<Product>>> call, @NonNull Throwable t) {
+                Log.e("ProductRepo", "getProductsByAuthor Error: " + t.getMessage());
+                data.setValue(new ArrayList<>());
+            }
+        });
+        return data;
+    }
+
     // --- Add Product ---
     public LiveData<Product> addProductWithImage(RequestBody name,
                                                  RequestBody description,

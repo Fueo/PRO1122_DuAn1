@@ -26,6 +26,10 @@ public interface ProductApi {
     @GET("products/{id}")
     Call<ApiResponse<Product>> getProductByID(@Path("id") String id);
 
+    // GET: Lấy danh sách sản phẩm theo AuthorID
+    @GET("products/getProductByAuthor/{id}")
+    Call<ApiResponse<List<Product>>> getProductsByAuthor(@Path("id") String authorId);
+
     // POST: Thêm product có image (PRIVATE)
     // POST: Thêm product có image (PRIVATE) - ĐÃ SỬA THỨ TỰ
     @Multipart

@@ -13,7 +13,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Toast;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,6 +30,7 @@ import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import org.angmarch.views.NiceSpinner;
+
 import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -73,6 +74,9 @@ public class ProductUpdateFragment extends Fragment {
     private Map<String, String> categoryMap = new HashMap<>();
     private final String NO_CATEGORY_OPTION = "Chưa có danh mục";
 
+    // --- SỬA 1: Khai báo danh sách Status cố định ---
+    private final List<String> statusList = new LinkedList<>(Arrays.asList("Đang bán", "Ngừng kinh doanh"));
+
     private static final int PICK_IMAGE_REQUEST = 1005;
 
     // Định dạng ngày tháng
@@ -81,7 +85,6 @@ public class ProductUpdateFragment extends Fragment {
 
     // Định dạng tiền tệ
     private final NumberFormat currencyFormatter = new DecimalFormat("#,###");
-
 
     @Nullable
     @Override
@@ -117,7 +120,10 @@ public class ProductUpdateFragment extends Fragment {
         etDate.setFocusable(false);
         etDate.setClickable(true);
 
-        // 3. Load dữ liệu cho Spinners từ LiveData
+        // --- SỬA 2: Khởi tạo Spinner Status 1 lần duy nhất tại đây ---
+        spStatus.attachDataSource(statusList);
+
+        // 3. Load dữ liệu cho các Spinner khác (Author, Category)
         setupSpinners();
 
         // 4. Kiểm tra chế độ "Thêm mới" hay "Cập nhật"
@@ -127,6 +133,7 @@ public class ProductUpdateFragment extends Fragment {
 
         if (productId != null) {
             btnSave.setText("Cập nhật");
+            // Load chi tiết sản phẩm để hiển thị lên form
             loadProductDetail(productId);
         } else {
             btnSave.setText("Thêm mới");
@@ -145,30 +152,29 @@ public class ProductUpdateFragment extends Fragment {
         });
     }
 
-    /**
-     * Chuyển đổi chuỗi giá có định dạng (vd: "150.000đ", "150000") thành giá trị số (vd: "150000").
-     */
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (authorViewModel != null) authorViewModel.refreshData();
+        if (categoryViewModel != null) categoryViewModel.refreshData();
+    }
+
     private String parsePrice(String formattedPrice) {
         if (formattedPrice == null || formattedPrice.isEmpty()) return "0";
-
-        // Loại bỏ tất cả ký tự không phải số
         String finalPrice = formattedPrice.replaceAll("[^\\d]", "");
-
         return finalPrice.isEmpty() ? "0" : finalPrice;
     }
 
-
     /**
-     * Khởi tạo dữ liệu cho các Spinner từ ViewModel
+     * Khởi tạo dữ liệu cho các Spinner Author và Category
+     * (Đã xóa phần Status ở đây để tránh reset)
      */
     private void setupSpinners() {
-        // --- 1. SPINNER TRẠNG THÁI (STATUS) ---
-        List<String> statuses = new ArrayList<>(Arrays.asList("Đang bán", "Ngừng kinh doanh"));
-        spStatus.attachDataSource(statuses);
+        // --- SỬA 3: Xóa phần khởi tạo Status Spinner ở đây ---
 
-        // --- 2. SPINNER TÁC GIẢ (AUTHOR) ---
+        // --- AUTHOR SPINNER ---
         authorViewModel.getDisplayedAuthors().observe(getViewLifecycleOwner(), authors -> {
-            if (authors != null) {
+            if (authors != null && !authors.isEmpty()) {
                 List<String> authorNames = new ArrayList<>();
                 authorMap.clear();
 
@@ -176,19 +182,31 @@ public class ProductUpdateFragment extends Fragment {
                     authorNames.add(author.getName());
                     authorMap.put(author.getName(), author.getAuthorID());
                 }
-                spAuthor.attachDataSource(authorNames);
-                if (currentProduct != null) {
+
+                if (authors.size() == 1) {
+                    authorNames.add("");
+                    spAuthor.attachDataSource(authorNames);
+                    spAuthor.setSelectedIndex(0);
+                    spAuthor.setEnabled(false);
+                } else {
+                    spAuthor.attachDataSource(authorNames);
+                    spAuthor.setEnabled(true);
+                }
+
+                // Logic chọn lại Author khi đang update
+                if (productId != null && currentProduct != null && currentProduct.getAuthor() != null) {
                     selectSpinnerItem(spAuthor, currentProduct.getAuthor().getName(), authorNames);
                 }
             }
         });
 
-        // --- 3. SPINNER DANH MỤC (CATEGORY) ---
+        // --- CATEGORY SPINNER ---
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 List<String> categoryNames = new ArrayList<>();
                 categoryMap.clear();
 
+                // Luôn thêm tùy chọn "Chưa có danh mục" đầu tiên
                 categoryNames.add(NO_CATEGORY_OPTION);
 
                 for (Category category : categories) {
@@ -196,6 +214,8 @@ public class ProductUpdateFragment extends Fragment {
                     categoryMap.put(category.getName(), category.get_id());
                 }
                 spCategory.attachDataSource(categoryNames);
+
+                // Logic chọn lại Category khi đang update
                 if (currentProduct != null) {
                     String currentCategoryName = currentProduct.getCategory() != null ? currentProduct.getCategory().getName() : NO_CATEGORY_OPTION;
                     selectSpinnerItem(spCategory, currentCategoryName, categoryNames);
@@ -204,9 +224,6 @@ public class ProductUpdateFragment extends Fragment {
         });
     }
 
-    /**
-     * Hàm tiện ích để chọn mục trong NiceSpinner
-     */
     private void selectSpinnerItem(NiceSpinner spinner, String valueToSelect, List<String> dataSource) {
         int index = dataSource.indexOf(valueToSelect);
         if (index >= 0) {
@@ -214,20 +231,12 @@ public class ProductUpdateFragment extends Fragment {
         }
     }
 
-    /**
-     * Hiển thị DatePickerDialog và cập nhật etDate
-     */
     private void showDatePickerDialog() {
         final Calendar c = Calendar.getInstance();
-
         try {
             Date currentDisplayDate = displayFormat.parse(etDate.getText().toString());
-            if (currentDisplayDate != null) {
-                c.setTime(currentDisplayDate);
-            }
-        } catch (ParseException e) {
-            // Dùng ngày hiện tại
-        }
+            if (currentDisplayDate != null) c.setTime(currentDisplayDate);
+        } catch (ParseException e) { }
 
         int year = c.get(Calendar.YEAR);
         int month = c.get(Calendar.MONTH);
@@ -240,237 +249,154 @@ public class ProductUpdateFragment extends Fragment {
                     etDate.setText(date);
                 },
                 year, month, day);
-
         datePickerDialog.show();
     }
 
-
-    /**
-     * Load chi tiết Sản phẩm (Sách)
-     */
     private void loadProductDetail(String id) {
         productViewModel.getProductByID(id).observe(getViewLifecycleOwner(), product -> {
             if (product != null) {
                 this.currentProduct = product;
-
-                // Điền thông tin sách
                 etName.setText(product.getName());
                 etDescription.setText(product.getDescription());
                 etPages.setText(String.valueOf(product.getPages() > 0 ? product.getPages() : ""));
-                // XỬ LÝ DATE
+
                 if (product.getPublishDate() != null && !product.getPublishDate().isEmpty()) {
                     try {
                         SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
                         Date beDate = sourceFormat.parse(product.getPublishDate());
-                        if (beDate != null) {
-                            etDate.setText(displayFormat.format(beDate));
-                        }
+                        if (beDate != null) etDate.setText(displayFormat.format(beDate));
                     } catch (ParseException e) {
                         etDate.setText(product.getPublishDate());
-                        e.printStackTrace();
                     }
                 }
 
-                // HIỂN THỊ GIÁ BÁN ĐÃ ĐỊNH DẠNG (SAU KHI LOAD)
                 if (product.getPrice() > 0) {
                     String formattedPrice = currencyFormatter.format(product.getPrice()).replace(",", ".");
                     etPrice.setText(formattedPrice + "đ");
-                } else {
-                    etPrice.setText("");
-                }
+                } else { etPrice.setText(""); }
 
                 etQuantity.setText(String.valueOf(product.getQuantity() > 0 ? product.getQuantity() : ""));
 
-                // Load ảnh bìa/avatar
                 if (product.getImage() != null && !product.getImage().isEmpty()) {
-                    Glide.with(requireContext())
-                            .load(product.getImage())
-                            .placeholder(R.drawable.book_cover_placeholder)
-                            .error(R.drawable.book_cover_placeholder)
-                            .into(ivImage);
+                    Glide.with(requireContext()).load(product.getImage())
+                            .placeholder(R.drawable.book_cover_placeholder).error(R.drawable.book_cover_placeholder).into(ivImage);
                 }
 
-                // Chọn trạng thái đúng cho Spinner (từ boolean của model sang chuỗi hiển thị)
+                // --- SỬA 4: Logic chọn Status đơn giản và chính xác ---
+                // "Đang bán" (index 0) tương ứng true
+                // "Ngừng kinh doanh" (index 1) tương ứng false
                 if (product.isStatus()) {
-                    selectSpinnerItem(spStatus, "Đang bán", Arrays.asList("Đang bán", "Ngừng kinh doanh"));
+                    spStatus.setSelectedIndex(0); // Đang bán
                 } else {
-                    selectSpinnerItem(spStatus, "Ngừng kinh doanh", Arrays.asList("Đang bán", "Ngừng kinh doanh"));
+                    spStatus.setSelectedIndex(1); // Ngừng kinh doanh
                 }
 
+                // Gọi setupSpinners để cập nhật lựa chọn cho Author và Category
+                // Vì setupSpinners không còn chứa logic reset status nên status sẽ được giữ nguyên
                 setupSpinners();
+
             } else {
                 Toast.makeText(getContext(), "Không tìm thấy thông tin sách", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    /**
-     * Chuyển đổi ngày tháng hiển thị (dd/MM/yyyy) sang định dạng BE (yyyy-MM-dd)
-     */
     private String convertToBackendDate(String displayDate) {
         if (displayDate.isEmpty()) return "";
         try {
             Date dateObj = displayFormat.parse(displayDate);
-            if (dateObj != null) {
-                return backendFormat.format(dateObj);
-            }
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+            if (dateObj != null) return backendFormat.format(dateObj);
+        } catch (ParseException e) { e.printStackTrace(); }
         return "";
     }
 
-    /**
-     * Lấy ID Tác giả/Danh mục đã chọn, xử lý trường hợp "Chưa có danh mục" là null.
-     */
     private String getSelectedId(NiceSpinner spinner, Map<String, String> idMap) {
         String selectedName = (String) spinner.getSelectedItem();
-
-        if (selectedName == null || selectedName.equals(NO_CATEGORY_OPTION)) {
-            // Trả về null nếu người dùng chọn "Chưa có danh mục" hoặc không chọn gì
+        if (selectedName == null || selectedName.equals(NO_CATEGORY_OPTION) || selectedName.equals("")) {
             return null;
         }
-
-        // Trả về ID từ Map. Nếu không tìm thấy, trả về null.
         return idMap.getOrDefault(selectedName, null);
     }
 
-    /**
-     * Chuyển đổi trạng thái hiển thị sang boolean string ("true" hoặc "false").
-     */
     private String convertStatusToBooleanString(String statusName) {
-        if ("Đang bán".equals(statusName)) {
-            return "true";
-        } else {
-            return "false";
-        }
+        return "Đang bán".equals(statusName) ? "true" : "false";
     }
 
-
-    /**
-     * Kiểm tra dữ liệu nhập vào (Validate)
-     */
     private boolean validateInput() {
         String name = etName.getText().toString().trim();
         String description = etDescription.getText().toString().trim();
         String pages = etPages.getText().toString().trim();
         String price = etPrice.getText().toString().trim();
         String quantity = etQuantity.getText().toString().trim();
-        String authorId = getSelectedId(spAuthor, authorMap); // Kiểm tra ID tác giả
+        String authorId = getSelectedId(spAuthor, authorMap);
 
-        if (name.isEmpty()) {
-            etName.setError("Tên sách không được để trống");
-            etName.requestFocus();
-            return false;
-        }
-
-        if (description.isEmpty()) {
-            etDescription.setError("Mô tả không được để trống");
-            etDescription.requestFocus();
-            return false;
-        }
-
-        if (pages.isEmpty() || !pages.matches("\\d+")) {
-            etPages.setError("Số trang không hợp lệ");
-            etPages.requestFocus();
-            return false;
-        }
-
-        if (price.isEmpty() || parsePrice(price).equals("0")) {
-            etPrice.setError("Giá bán không được để trống");
-            etPrice.requestFocus();
-            return false;
-        }
+        if (name.isEmpty()) { etName.setError("Tên sách không được để trống"); etName.requestFocus(); return false; }
+        if (description.isEmpty()) { etDescription.setError("Mô tả không được để trống"); etDescription.requestFocus(); return false; }
+        if (pages.isEmpty() || !pages.matches("\\d+")) { etPages.setError("Số trang không hợp lệ"); etPages.requestFocus(); return false; }
+        if (price.isEmpty() || parsePrice(price).equals("0")) { etPrice.setError("Giá bán không được để trống"); etPrice.requestFocus(); return false; }
 
         if (authorId == null || authorId.isEmpty()) {
             Toast.makeText(getContext(), "Vui lòng chọn Tác giả cho sản phẩm.", Toast.LENGTH_LONG).show();
             return false;
         }
-
-        if (quantity.isEmpty() || !quantity.matches("\\d+")) {
-            etQuantity.setError("Số lượng không hợp lệ");
-            etQuantity.requestFocus();
-            return false;
-        }
+        if (quantity.isEmpty() || !quantity.matches("\\d+")) { etQuantity.setError("Số lượng không hợp lệ"); etQuantity.requestFocus(); return false; }
 
         return true;
     }
 
-    /**
-     * Xử lý thêm Sản phẩm (Sách) mới
-     */
     private void addProduct() {
         if (!validateInput()) return;
 
-        // Chuẩn bị dữ liệu
         String dateForBE = convertToBackendDate(etDate.getText().toString().trim());
         String priceForBE = parsePrice(etPrice.getText().toString().trim());
         String authorId = getSelectedId(spAuthor, authorMap);
         String categoryId = getSelectedId(spCategory, categoryMap);
         String statusForBE = convertStatusToBooleanString((String) spStatus.getSelectedItem());
 
-        // Thu thập các trường dữ liệu và tạo RequestBody
-        RequestBody nameBody = toRequestBody(etName.getText().toString().trim());
-        RequestBody descBody = toRequestBody(etDescription.getText().toString().trim());
-        RequestBody pagesBody = toRequestBody(etPages.getText().toString().trim());
-        RequestBody dateBody = toRequestBody(dateForBE);
-        RequestBody statusBody = toRequestBody(statusForBE);
-        RequestBody categoryBody = toRequestBody(categoryId);
-        RequestBody authorBody = toRequestBody(authorId);
-        RequestBody priceBody = toRequestBody(priceForBE);
-        RequestBody quantityBody = toRequestBody(etQuantity.getText().toString().trim());
-
-
-        MultipartBody.Part imagePart = prepareFilePart("image", selectedAvatarUri);
-
-        // GỌI HÀM VIEWMODEL VỚI THỨ TỰ ĐÃ ĐỒNG BỘ:
-        // name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image
         productViewModel.addProductWithImage(
-                nameBody, descBody, pagesBody, dateBody, statusBody, categoryBody, authorBody, priceBody, quantityBody,
-                imagePart
+                toRequestBody(etName.getText().toString().trim()),
+                toRequestBody(etDescription.getText().toString().trim()),
+                toRequestBody(etPages.getText().toString().trim()),
+                toRequestBody(dateForBE),
+                toRequestBody(statusForBE),
+                toRequestBody(categoryId),
+                toRequestBody(authorId),
+                toRequestBody(priceForBE),
+                toRequestBody(etQuantity.getText().toString().trim()),
+                prepareFilePart("image", selectedAvatarUri)
         ).observe(getViewLifecycleOwner(), product -> {
             if (product != null) {
                 Toast.makeText(getContext(), "Thêm sách thành công", Toast.LENGTH_SHORT).show();
                 requireActivity().setResult(Activity.RESULT_OK);
                 requireActivity().finish();
             } else {
-                Toast.makeText(getContext(), "Thêm thất bại. Vui lòng thử lại.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), "Thêm thất bại.", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    /**
-     * Xử lý cập nhật Sản phẩm (Sách)
-     */
     private void updateProduct() {
         if (currentProduct == null) return;
         if (!validateInput()) return;
 
-        // Chuẩn bị dữ liệu
         String dateForBE = convertToBackendDate(etDate.getText().toString().trim());
         String priceForBE = parsePrice(etPrice.getText().toString().trim());
         String authorId = getSelectedId(spAuthor, authorMap);
         String categoryId = getSelectedId(spCategory, categoryMap);
         String statusForBE = convertStatusToBooleanString((String) spStatus.getSelectedItem());
 
-        // Thu thập các trường dữ liệu và tạo RequestBody
-        RequestBody nameBody = toRequestBody(etName.getText().toString().trim());
-        RequestBody descBody = toRequestBody(etDescription.getText().toString().trim());
-        RequestBody pagesBody = toRequestBody(etPages.getText().toString().trim());
-        RequestBody dateBody = toRequestBody(dateForBE);
-        RequestBody statusBody = toRequestBody(statusForBE);
-        RequestBody categoryBody = toRequestBody(categoryId);
-        RequestBody authorBody = toRequestBody(authorId);
-        RequestBody priceBody = toRequestBody(priceForBE);
-        RequestBody quantityBody = toRequestBody(etQuantity.getText().toString().trim());
-
-        MultipartBody.Part imagePart = prepareFilePart("image", selectedAvatarUri);
-
-        // GỌI HÀM VIEWMODEL VỚI THỨ TỰ ĐÃ ĐỒNG BỘ:
-        // productId, name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image
         productViewModel.updateProductWithImage(
-                productId, nameBody, descBody, pagesBody, dateBody, statusBody, categoryBody, authorBody, priceBody, quantityBody,
-                imagePart
+                productId,
+                toRequestBody(etName.getText().toString().trim()),
+                toRequestBody(etDescription.getText().toString().trim()),
+                toRequestBody(etPages.getText().toString().trim()),
+                toRequestBody(dateForBE),
+                toRequestBody(statusForBE),
+                toRequestBody(categoryId),
+                toRequestBody(authorId),
+                toRequestBody(priceForBE),
+                toRequestBody(etQuantity.getText().toString().trim()),
+                prepareFilePart("image", selectedAvatarUri)
         ).observe(getViewLifecycleOwner(), product -> {
             if (product != null) {
                 Toast.makeText(getContext(), "Cập nhật thành công", Toast.LENGTH_SHORT).show();
@@ -511,8 +437,9 @@ public class ProductUpdateFragment extends Fragment {
     }
 
     private RequestBody toRequestBody(String value) {
-        // Chuyển null thành chuỗi rỗng để tránh crash khi tạo RequestBody
-        if (value == null) value = "";
+        if (value == null) {
+            return null;
+        }
         return RequestBody.create(MediaType.parse("text/plain"), value);
     }
 }

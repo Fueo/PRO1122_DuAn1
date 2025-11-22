@@ -16,7 +16,7 @@ import java.util.List;
 
 public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAdapter.BookViewHolder> {
 
-    private List<Book> mListBooks;
+    private List<Book> mListBooks; // Tên biến là mListBooks
 
     private final DecimalFormat formatter = new DecimalFormat("#,### đ");
 
@@ -29,6 +29,12 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
     public BookViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_book_horizontal, parent, false);
         return new BookViewHolder(view);
+    }
+
+    // Đã sửa lỗi tên biến ở đây
+    public void setBooks(List<Book> list) {
+        this.mListBooks = list; // Sửa mBooks thành mListBooks cho khớp với biến đã khai báo
+        notifyDataSetChanged();
     }
 
     @Override
@@ -64,15 +70,15 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivCover = itemView.findViewById(R.id.ivImage);
-            ivFavorite = itemView.findViewById(R.id.ivDelete);
-            tvTitle = itemView.findViewById(R.id.tvName);
-            tvSalePrice = itemView.findViewById(R.id.tvPrice);
+            ivCover = itemView.findViewById(R.id.iv_book_cover);
+            ivFavorite = itemView.findViewById(R.id.iv_favorite);
+            tvTitle = itemView.findViewById(R.id.tv_book_title);
+            tvSalePrice = itemView.findViewById(R.id.tv_sale_price);
             tvOriginalPrice = itemView.findViewById(R.id.tv_original_price);
             tvDiscount = itemView.findViewById(R.id.tv_discount);
             tvViewCount = itemView.findViewById(R.id.tv_view_count);
             tvLikeCount = itemView.findViewById(R.id.tv_like_count);
-            btnBuyNow = itemView.findViewById(R.id.btnEdit);
+            btnBuyNow = itemView.findViewById(R.id.btn_buy_now);
         }
     }
 }

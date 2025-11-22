@@ -15,7 +15,7 @@
         android:paddingBottom="12dp">
 
         <ImageView
-            android:id="@+id/ivImage"
+            android:id="@+id/iv_book_cover"
             android:layout_width="0dp"
             android:layout_height="0dp"
             android:scaleType="centerCrop"
@@ -26,7 +26,7 @@
             tools:src="@tools:sample/backgrounds/scenic" />
 
         <ImageView
-            android:id="@+id/ivDelete"
+            android:id="@+id/iv_favorite"
             android:layout_width="26dp"
             android:layout_height="26dp"
             android:layout_marginStart="8dp"
@@ -54,7 +54,7 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
-            android:id="@+id/tvName"
+            android:id="@+id/tv_book_title"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -70,10 +70,10 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ivImage" />
+            app:layout_constraintTop_toBottomOf="@id/iv_book_cover" />
 
         <TextView
-            android:id="@+id/tvPrice"
+            android:id="@+id/tv_sale_price"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
@@ -84,7 +84,7 @@
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvName" />
+            app:layout_constraintTop_toBottomOf="@id/tv_book_title" />
 
         <TextView
             android:id="@+id/tv_original_price"
@@ -95,11 +95,11 @@
             android:text="50.000 đ"
             android:textColor="@color/gray_text"
             android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@id/tvPrice"
-            app:layout_constraintStart_toEndOf="@id/tvPrice" />
+            app:layout_constraintBottom_toBottomOf="@id/tv_sale_price"
+            app:layout_constraintStart_toEndOf="@id/tv_sale_price" />
 
         <Button
-            android:id="@+id/btnEdit"
+            android:id="@+id/btn_buy_now"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
@@ -113,7 +113,7 @@
             app:backgroundTint="@color/blue"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvPrice" />
+            app:layout_constraintTop_toBottomOf="@id/tv_sale_price" />
 
         <TextView
             android:id="@+id/tv_view_count"
@@ -126,7 +126,7 @@
             android:textColor="@color/gray_text"
             android:textSize="8sp"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnEdit" />
+            app:layout_constraintTop_toBottomOf="@id/btn_buy_now" />
 
         <TextView
             android:id="@+id/tv_like_count"

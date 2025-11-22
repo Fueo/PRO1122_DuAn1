@@ -143,7 +143,7 @@
                 android:fontFamily="@font/robotoserif_medium"
                 android:minHeight="48dp"
                 android:paddingStart="0dp"
-                android:text="Ghi nhớ mật khẩu"
+                android:text="Ghi nhớ đăng nhập"
                 android:textColor="@color/white"
                 android:textSize="14sp"
                 app:layout_constraintStart_toStartOf="parent"

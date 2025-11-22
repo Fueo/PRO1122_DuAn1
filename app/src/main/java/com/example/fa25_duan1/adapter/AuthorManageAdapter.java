@@ -8,11 +8,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.Author;
+import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import java.util.List;
 
@@ -24,17 +26,27 @@ public class AuthorManageAdapter extends RecyclerView.Adapter<AuthorManageAdapte
     private final Context context;
     private final OnItemClickListener listener;
 
-    // Interface để handle sự kiện click ra bên ngoài (Fragment/Activity)
+    // THÊM: ViewModel và LifecycleOwner
+    private final ProductViewModel productViewModel;
+    private final LifecycleOwner lifecycleOwner;
+
     public interface OnItemClickListener {
         void onEditClick(Author author);
         void onDeleteClick(Author author);
         void onItemClick(Author author);
     }
 
-    public AuthorManageAdapter(Context context, List<Author> authorList, OnItemClickListener listener) {
+    // CẬP NHẬT: Constructor nhận thêm viewModel và lifecycleOwner
+    public AuthorManageAdapter(Context context,
+                               List<Author> authorList,
+                               OnItemClickListener listener,
+                               ProductViewModel productViewModel,
+                               LifecycleOwner lifecycleOwner) {
         this.context = context;
         this.authorList = authorList;
         this.listener = listener;
+        this.productViewModel = productViewModel;
+        this.lifecycleOwner = lifecycleOwner;
     }
 
     public void setData(List<Author> authors) {
@@ -49,11 +61,10 @@ public class AuthorManageAdapter extends RecyclerView.Adapter<AuthorManageAdapte
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            // Ánh xạ ID theo file xml bạn cung cấp
             ivEdit = itemView.findViewById(R.id.ivEdit);
             ivDelete = itemView.findViewById(R.id.ivDelete);
             tvName = itemView.findViewById(R.id.tvName);
-            tvInfo = itemView.findViewById(R.id.tvInfo); // Thay vì tvTag
+            tvInfo = itemView.findViewById(R.id.tvInfo);
             cvAvatar = itemView.findViewById(R.id.cvAvatar);
         }
     }
@@ -74,7 +85,7 @@ public class AuthorManageAdapter extends RecyclerView.Adapter<AuthorManageAdapte
         if (author.getAvatar() != null && !author.getAvatar().isEmpty()) {
             Glide.with(context)
                     .load(author.getAvatar())
-                    .placeholder(R.drawable.ic_avatar_placeholder) // Đảm bảo bạn có ảnh này
+                    .placeholder(R.drawable.ic_avatar_placeholder)
                     .error(R.drawable.ic_avatar_placeholder)
                     .into(holder.cvAvatar);
         } else {
@@ -84,9 +95,22 @@ public class AuthorManageAdapter extends RecyclerView.Adapter<AuthorManageAdapte
         // 2. Hiển thị Tên
         holder.tvName.setText(author.getName());
 
-        // 3. Hiển thị Info (Description)
-        String description = "Tác giả của 5 đầu sách";
-        holder.tvInfo.setText(description);
+        // 3. XỬ LÝ SỐ LƯỢNG SÁCH (Gọi ViewModel)
+        // Đặt text mặc định trước khi load xong
+        holder.tvInfo.setText("Đang tải dữ liệu...");
+
+        if (author.getAuthorID() != null) {
+            // Gọi hàm lấy danh sách sách theo AuthorID đã viết ở bước trước
+            productViewModel.getProductsByAuthor(author.getAuthorID()).observe(lifecycleOwner, products -> {
+                // Kiểm tra ViewHolder còn khớp với position không để tránh lỗi hiển thị khi scroll nhanh
+                if (holder.getAdapterPosition() == position) {
+                    int count = (products != null) ? products.size() : 0;
+                    holder.tvInfo.setText("Tác giả của " + count + " đầu sách");
+                }
+            });
+        } else {
+            holder.tvInfo.setText("Tác giả này chưa có viết tác phẩm nào");
+        }
 
         // 4. Sự kiện Click
         holder.ivEdit.setOnClickListener(v -> listener.onEditClick(author));

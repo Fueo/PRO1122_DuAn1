@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,6 +25,7 @@ import com.example.fa25_duan1.adapter.RankingBookAdapter;
 import com.example.fa25_duan1.model.Banner;
 import com.example.fa25_duan1.model.Book;
 import com.example.fa25_duan1.model.Category;
+import com.example.fa25_duan1.view.detail.ProductFragment;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +36,11 @@ public class HomeFragment extends Fragment {
     private LinearLayout layoutIndicators;
     private RecyclerView rvBooksGrid, rvCategories, rvBooksHorizontal, rvRankingCategories, rvRankingBooks;
     private List<Banner> mListBanners;
+    private View btnSeeMore; // Nút xem thêm
+
+    // Khai báo Adapter ở cấp Class để có thể cập nhật từ setupCategories
+    private BookHorizontalAdapter bookHorizontalAdapter;
+    private RankingBookAdapter rankingBookAdapter;
 
     @Nullable
     @Override
@@ -50,11 +55,29 @@ public class HomeFragment extends Fragment {
         rvRankingCategories = view.findViewById(R.id.rv_ranking_categories);
         rvRankingBooks = view.findViewById(R.id.rv_ranking_books);
 
+        // Ánh xạ nút Xem thêm
+        btnSeeMore = view.findViewById(R.id.btn_see_more);
+
         setupBanner();
-        setupBookGrid();
-        setupCategories();
+
+        // Khởi tạo Adapter sách trước để tránh lỗi null khi click category
         setupHorizontalBooks();
         setupRankingBooks();
+
+        // Setup Category sau cùng để gắn sự kiện click
+        setupCategories();
+
+        setupBookGrid();
+
+        // --- SỰ KIỆN CLICK NÚT XEM THÊM ---
+        if (btnSeeMore != null) {
+            btnSeeMore.setOnClickListener(v -> {
+                if (getActivity() instanceof HomeActivity) {
+                    // Chuyển sang ProductFragment khi bấm nút
+                    ((HomeActivity) getActivity()).loadFragment(new ProductFragment(), true);
+                }
+            });
+        }
 
         return view;
     }
@@ -118,54 +141,96 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupCategories() {
+        // Dữ liệu Category mẫu
         List<Category> categories = new ArrayList<>();
-        // Mặc định chọn tab đầu tiên (true)
         categories.add(new Category("Sách tham khảo", true));
         categories.add(new Category("Văn học", false));
         categories.add(new Category("Kinh tế", false));
         categories.add(new Category("Kỹ năng sống", false));
 
-        // --- ĐÃ CẬP NHẬT: Truyền Listener vào Adapter ---
-        CategoryAdapter adapter = new CategoryAdapter(getContext(), categories, new CategoryAdapter.ICategoryClickListener() {
+        // Adapter cho danh sách Category (Phần sách mới ra mắt)
+        CategoryAdapter adapterTop = new CategoryAdapter(new ArrayList<>(categories), new CategoryAdapter.OnCategoryClickListener() {
             @Override
             public void onCategoryClick(Category category) {
-                // Xử lý khi click vào 1 tab
-                // Ví dụ: Toast tên category được chọn
-                Toast.makeText(getContext(), "Bạn chọn: " + category.getName(), Toast.LENGTH_SHORT).show();
+                // Lọc sách theo category được chọn
+                List<Book> newBooks = getBooksByCategory(category.getName());
 
-                // TODO: Gọi hàm load lại sách theo category ở đây nếu muốn
-                // loadBooksByCategory(category.getName());
+                // Cập nhật Adapter Sách ngang
+                if (bookHorizontalAdapter != null) {
+                    bookHorizontalAdapter.setBooks(newBooks);
+                }
             }
         });
-
         rvCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvCategories.setAdapter(adapter);
+        rvCategories.setAdapter(adapterTop);
 
-        // Lưu ý: Nếu dùng chung adapter thì ấn ở trên, ở dưới cũng sẽ nhảy theo
+        // Adapter cho danh sách Category (Phần Bảng xếp hạng)
+        List<Category> rankingCategories = new ArrayList<>();
+        rankingCategories.add(new Category("Sách tham khảo", true));
+        rankingCategories.add(new Category("Văn học", false));
+        rankingCategories.add(new Category("Kinh tế", false));
+        rankingCategories.add(new Category("Kỹ năng sống", false));
+
+        CategoryAdapter adapterRanking = new CategoryAdapter(rankingCategories, new CategoryAdapter.OnCategoryClickListener() {
+            @Override
+            public void onCategoryClick(Category category) {
+                // Lọc sách ranking theo category
+                List<Book> newBooks = getBooksByCategory(category.getName());
+
+                // Cập nhật Adapter Ranking
+                if (rankingBookAdapter != null) {
+                    rankingBookAdapter.setBooks(newBooks);
+                }
+            }
+        });
         rvRankingCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvRankingCategories.setAdapter(adapter);
+        rvRankingCategories.setAdapter(adapterRanking);
     }
 
     private void setupHorizontalBooks() {
-        List<Book> books = getDummyBooks();
-        BookHorizontalAdapter adapter = new BookHorizontalAdapter(books);
+        // Mặc định load sách category đầu tiên
+        List<Book> books = getBooksByCategory("Sách tham khảo");
+
+        bookHorizontalAdapter = new BookHorizontalAdapter(books);
         rvBooksHorizontal.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvBooksHorizontal.setAdapter(adapter);
+        rvBooksHorizontal.setAdapter(bookHorizontalAdapter);
     }
 
     private void setupRankingBooks() {
-        List<Book> books = getDummyBooks();
-        RankingBookAdapter adapter = new RankingBookAdapter(books);
+        // Mặc định load sách category đầu tiên
+        List<Book> books = getBooksByCategory("Sách tham khảo");
+
+        rankingBookAdapter = new RankingBookAdapter(books);
         rvRankingBooks.setLayoutManager(new LinearLayoutManager(getContext()));
-        rvRankingBooks.setAdapter(adapter);
+        rvRankingBooks.setAdapter(rankingBookAdapter);
     }
 
-    private List<Book> getDummyBooks() {
+    private List<Book> getBooksByCategory(String categoryName) {
         List<Book> list = new ArrayList<>();
-        list.add(new Book("Thằng Huyện - Con Hầu", "Nguyễn Thế Hà", R.drawable.book_cover_placeholder, 32000, 50000, "-20%", 3636, 1200));
-        list.add(new Book("Mắt Biếc", "Nguyễn Nhật Ánh", R.drawable.book_cover_placeholder, 80000, 100000, "-20%", 5000, 2300));
-        list.add(new Book("Nhà Giả Kim", "Paulo Coelho", R.drawable.book_cover_placeholder, 65000, 75000, "-15%", 9000, 4500));
-        list.add(new Book("Tắt Đèn", "Ngô Tất Tố", R.drawable.book_cover_placeholder, 40000, 45000, "-10%", 2000, 800));
+        // Giả lập dữ liệu trả về
+        switch (categoryName) {
+            case "Văn học":
+                list.add(new Book("Mắt Biếc", "Nguyễn Nhật Ánh", R.drawable.book_cover_placeholder, 80000, 100000, "-20%", 5000, 2300));
+                list.add(new Book("Tắt Đèn", "Ngô Tất Tố", R.drawable.book_cover_placeholder, 40000, 45000, "-10%", 2000, 800));
+                list.add(new Book("Số Đỏ", "Vũ Trọng Phụng", R.drawable.book_cover_placeholder, 50000, 60000, "-15%", 1000, 500));
+                break;
+            case "Kinh tế":
+                list.add(new Book("Cha Giàu Cha Nghèo", "Robert Kiyosaki", R.drawable.book_cover_placeholder, 90000, 120000, "-25%", 8000, 4000));
+                list.add(new Book("Chiến Tranh Tiền Tệ", "Song Hongbing", R.drawable.book_cover_placeholder, 150000, 200000, "-25%", 1200, 300));
+                list.add(new Book("Kinh Tế Học", "Paul A. Samuelson", R.drawable.book_cover_placeholder, 250000, 300000, "-15%", 500, 100));
+                break;
+            case "Kỹ năng sống":
+                list.add(new Book("Đắc Nhân Tâm", "Dale Carnegie", R.drawable.book_cover_placeholder, 70000, 85000, "-18%", 9999, 5000));
+                list.add(new Book("Nhà Giả Kim", "Paulo Coelho", R.drawable.book_cover_placeholder, 65000, 75000, "-15%", 9000, 4500));
+                list.add(new Book("Tuổi Trẻ Đáng Giá Bao Nhiêu", "Rosie Nguyễn", R.drawable.book_cover_placeholder, 60000, 80000, "-25%", 7000, 3500));
+                break;
+            case "Sách tham khảo":
+            default:
+                list.add(new Book("Thằng Huyện - Con Hầu", "Nguyễn Thế Hà", R.drawable.book_cover_placeholder, 32000, 50000, "-20%", 3636, 1200));
+                list.add(new Book("Giải Tích 12", "Bộ Giáo Dục", R.drawable.book_cover_placeholder, 15000, 15000, "0%", 5000, 100));
+                list.add(new Book("Vật Lý Đại Cương", "Lương Duyên Bình", R.drawable.book_cover_placeholder, 45000, 50000, "-10%", 1500, 200));
+                break;
+        }
         return list;
     }
 

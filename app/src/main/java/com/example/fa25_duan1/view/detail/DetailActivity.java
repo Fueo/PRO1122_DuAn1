@@ -54,7 +54,8 @@ public class DetailActivity extends AppCompatActivity {
             return new CheckoutFragment();
         } else if ("orderhistory".equals(fragmentName)) {
         return new OrderHistoryFragment();
-
+        }  else if ("product".equals(fragmentName)) {
+        return new ProductFragment();
     }
 
         return null;

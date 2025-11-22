@@ -23,6 +23,18 @@
         app:layout_constraintBottom_toTopOf="@+id/btnAdd"
         />
 
+    <include
+        android:id="@+id/layout_empty"
+        layout="@layout/fragment_none"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@+id/fragment_filter"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:visibility="gone" />
+
     <Button
         android:id="@+id/btnAdd"
         android:layout_width="180dp"
@@ -40,13 +52,5 @@
         app:backgroundTint="@null"
         android:paddingLeft="24dp"
         android:paddingRight="24dp" />
-
-    <include
-        android:id="@+id/layout_empty"
-        layout="@layout/fragment_none"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"
-        tools:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

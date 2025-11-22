@@ -7,18 +7,16 @@
     android:clipChildren="false"
     android:clipToPadding="false">
 
-
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="80dp"
-
         android:background="@drawable/bg_account_card">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/cv_avatar"
             android:layout_width="50dp"
             android:layout_height="50dp"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="15dp"
             android:src="@drawable/ic_cate_placeholder"
             app:civ_border_color="@color/blue"
             app:civ_border_width="2dp"
@@ -28,24 +26,34 @@
 
         <TextView
             android:id="@+id/tv_name"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="Sách thiếu nhi"
             android:fontFamily="@font/robotoserif_bold"
             android:textColor="@color/blue"
             android:textSize="17sp"
             android:textStyle="bold"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="15dp"
+            android:layout_marginEnd="10dp"
+            android:ellipsize="end"
+            android:maxLines="1"
             app:layout_constraintStart_toEndOf="@+id/cv_avatar"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent" />
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/iv_edit"/>
 
         <ImageView
             android:id="@+id/iv_delete"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
             android:layout_marginEnd="15dp"
             android:src="@drawable/ic_managedelete"
+            android:background="@drawable/bg_button_action_red"
+            android:padding="8dp"
+            app:tint="#D32F2F"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -53,16 +61,21 @@
 
         <ImageView
             android:id="@+id/iv_edit"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:layout_marginEnd="20dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="10dp"
             android:src="@drawable/ic_manageedit"
+            android:background="@drawable/bg_button_action_blue"
+            android:padding="8dp"
+            app:tint="#1976D2"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
             app:layout_constraintTop_toTopOf="@+id/iv_delete"
             app:layout_constraintBottom_toBottomOf="@+id/iv_delete"
             app:layout_constraintEnd_toStartOf="@+id/iv_delete"
             />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

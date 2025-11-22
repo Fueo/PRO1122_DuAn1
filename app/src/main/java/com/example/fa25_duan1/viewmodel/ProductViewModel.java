@@ -78,6 +78,8 @@ public class ProductViewModel extends AndroidViewModel {
         });
     }
 
+
+
     // --- CRUD ---
 
     public LiveData<Product> addProductWithImage(RequestBody name,
@@ -113,6 +115,13 @@ public class ProductViewModel extends AndroidViewModel {
 
     public LiveData<Product> getProductByID(String id) {
         return repository.getProductByID(id);
+    }
+
+    /**
+     * Lấy danh sách sản phẩm của một tác giả cụ thể
+     */
+    public LiveData<List<Product>> getProductsByAuthor(String authorId) {
+        return repository.getProductsByAuthor(authorId);
     }
 
     // --- TÌM KIẾM ---
@@ -197,5 +206,68 @@ public class ProductViewModel extends AndroidViewModel {
         });
 
         displayedProductsLiveData.setValue(listToSort);
+    }
+
+    public void filterProducts(boolean showSelling, boolean showStopped,
+                               List<Integer> priceRanges,
+                               List<String> categoryIds) {
+
+        // Lấy danh sách gốc
+        List<Product> masterList = allProductsLiveData.getValue();
+        if (masterList == null) masterList = new ArrayList<>();
+
+        List<Product> result = new ArrayList<>();
+
+        for (Product p : masterList) {
+            // 1. LỌC TRẠNG THÁI (Status)
+            boolean statusMatch = false;
+            // Nếu sản phẩm đang bán VÀ user có tick chọn "Đang bán" -> Khớp
+            if (p.isStatus() && showSelling) statusMatch = true;
+            // Nếu sản phẩm ngừng bán VÀ user có tick chọn "Ngừng bán" -> Khớp
+            if (!p.isStatus() && showStopped) statusMatch = true;
+
+            // Nếu không khớp trạng thái nào -> Bỏ qua sản phẩm này
+            if (!statusMatch) continue;
+
+
+            // 2. LỌC GIÁ (Price)
+            boolean priceMatch = false;
+            if (priceRanges == null || priceRanges.isEmpty()) {
+                // Nếu không chọn khoảng giá nào -> Mặc định lấy tất cả
+                priceMatch = true;
+            } else {
+                double price = p.getPrice();
+                for (int range : priceRanges) {
+                    if (range == 0 && price >= 0 && price <= 150000) priceMatch = true;
+                    if (range == 1 && price > 150000 && price <= 300000) priceMatch = true;
+                    if (range == 2 && price > 300000 && price <= 500000) priceMatch = true;
+                    if (range == 3 && price > 500000) priceMatch = true;
+                }
+            }
+            if (!priceMatch) continue;
+
+
+            // 3. LỌC DANH MỤC (Category)
+            boolean categoryMatch = false;
+            if (categoryIds == null || categoryIds.isEmpty()) {
+                // Nếu không chọn danh mục nào -> Mặc định lấy tất cả
+                categoryMatch = true;
+            } else {
+                // Lấy ID danh mục của sản phẩm.
+                // Nếu sản phẩm chưa có danh mục (null), ta quy định ID là "0" (khớp với logic bên Fragment)
+                String pCatId = (p.getCategory() != null) ? p.getCategory().get_id() : "0";
+
+                if (categoryIds.contains(pCatId)) {
+                    categoryMatch = true;
+                }
+            }
+            if (!categoryMatch) continue;
+
+            // Nếu vượt qua cả 3 vòng lọc -> Thêm vào kết quả
+            result.add(p);
+        }
+
+        // Cập nhật lên UI
+        displayedProductsLiveData.setValue(result);
     }
 }

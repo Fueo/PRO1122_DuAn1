@@ -3,11 +3,11 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="200dp"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="2dp">
+    android:layout_margin="6dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="4dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -20,54 +20,41 @@
             android:layout_height="0dp"
             android:scaleType="centerCrop"
             app:layout_constraintDimensionRatio="3:4"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
             tools:src="@tools:sample/backgrounds/scenic" />
 
         <ImageView
             android:id="@+id/ivDelete"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_button_action_red"
+            android:padding="8dp"
             android:src="@drawable/ic_managedelete"
-            android:background="#CCFFFFFF"
-            android:layout_marginTop="5dp"
-            android:layout_marginStart="5dp"
+            app:tint="#D32F2F"
+            android:clickable="true"
+            android:focusable="true"
+            android:foreground="?attr/selectableItemBackgroundBorderless"
+            android:elevation="2dp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
-
-<!--        <TextView-->
-<!--            android:id="@+id/tv_discount"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginTop="8dp"-->
-<!--            android:layout_marginEnd="8dp"-->
-<!--            android:paddingStart="8dp"-->
-<!--            android:paddingEnd="8dp"-->
-<!--            android:paddingTop="4dp"-->
-<!--            android:paddingBottom="4dp"-->
-<!--            android:text="-20%"-->
-<!--            android:background="@drawable/badge_discount"-->
-<!--            android:textColor="@color/white"-->
-<!--            android:textSize="12sp"-->
-<!--            android:textStyle="bold"-->
-<!--            app:layout_constraintEnd_toEndOf="parent"-->
-<!--            app:layout_constraintTop_toTopOf="parent" />-->
-
         <TextView
             android:id="@+id/tvName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginStart="10dp"
+            android:layout_marginTop="10dp"
+            android:layout_marginEnd="10dp"
             android:ellipsize="end"
+            android:fontFamily="@font/robotoserif_bold"
             android:maxLines="2"
             android:minLines="2"
-            android:fontFamily="@font/robotoserif_bold"
             android:text="Thằng Huyện - Con Hầu"
             android:textColor="@android:color/black"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -75,72 +62,74 @@
 
         <TextView
             android:id="@+id/tvPrice"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:layout_marginTop="4dp"
+            android:layout_marginEnd="10dp"
             android:fontFamily="@font/robotoserif_bold"
             android:text="32.000 đ"
             android:textColor="@color/blue"
-            android:textSize="16sp"
+            android:textSize="15sp"
             android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/tvName"
             app:layout_constraintTop_toBottomOf="@id/tvName" />
 
-<!--        <TextView-->
-<!--            android:id="@+id/tv_original_price"-->
-<!--            android:layout_width="wrap_content"-->
-<!--            android:layout_height="wrap_content"-->
-<!--            android:layout_marginStart="8dp"-->
-<!--            android:fontFamily="@font/robotoserif_regular"-->
-<!--            android:text="50.000 đ"-->
-<!--            android:textColor="@color/gray_text"-->
-<!--            android:textSize="12sp"-->
-<!--            app:layout_constraintBottom_toBottomOf="@id/tvPrice"-->
-<!--            app:layout_constraintStart_toEndOf="@id/tvPrice" />-->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_status_processing"
+            android:fontFamily="@font/robotoserif_regular"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:text="Đang bán"
+            android:textColor="#0486E9"
+            android:textSize="12sp"
+            app:layout_constraintStart_toStartOf="@+id/tvName"
+            app:layout_constraintTop_toBottomOf="@+id/tvPrice" />
 
         <Button
             android:id="@+id/btnEdit"
             android:layout_width="0dp"
             android:layout_height="40dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp"
-            android:text="Chỉnh sửa"
+            android:layout_marginTop="12dp"
+            android:layout_marginHorizontal="10dp"
             android:fontFamily="@font/robotoserif_bold"
+            android:text="Chỉnh sửa"
             android:textAllCaps="false"
             android:textColor="@color/white"
-            android:textSize="10sp"
+            android:textSize="12sp"
             app:backgroundTint="@color/blue"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvPrice" />
+            app:layout_constraintTop_toBottomOf="@id/tvStatus" />
 
         <TextView
             android:id="@+id/tvTitleQuantity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:text="Tồn kho:"
             android:fontFamily="@font/robotoserif_regular"
+            android:text="Tồn kho:"
             android:textColor="@color/gray_text"
             android:textSize="12sp"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/btnEdit"
             app:layout_constraintTop_toBottomOf="@id/btnEdit" />
 
         <TextView
             android:id="@+id/tvQuantity"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="2"
+            android:layout_marginStart="4dp"
             android:fontFamily="@font/robotoserif_regular"
+            android:text="2"
             android:textColor="@color/gray_text"
             android:textSize="12sp"
+            app:layout_constraintBottom_toBottomOf="@+id/tvTitleQuantity"
             app:layout_constraintStart_toEndOf="@+id/tvTitleQuantity"
-            app:layout_constraintTop_toTopOf="@+id/tvTitleQuantity"
-            app:layout_constraintBottom_toBottomOf="@+id/tvTitleQuantity"/>
+            app:layout_constraintTop_toTopOf="@+id/tvTitleQuantity" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </androidx.cardview.widget.CardView>

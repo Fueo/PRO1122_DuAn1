@@ -15,7 +15,7 @@ import java.util.List;
 
 public class RankingBookAdapter extends RecyclerView.Adapter<RankingBookAdapter.RankingViewHolder> {
 
-    private List<Book> mListBooks;
+    private List<Book> mListBooks; // Tên biến là mListBooks
 
     public RankingBookAdapter(List<Book> mListBooks) {
         this.mListBooks = mListBooks;
@@ -40,6 +40,12 @@ public class RankingBookAdapter extends RecyclerView.Adapter<RankingBookAdapter.
         holder.tvLikeCount.setText(String.valueOf(book.getLikeCount()));
     }
 
+    // --- ĐÃ SỬA LẠI TÊN BIẾN Ở ĐÂY ---
+    public void setBooks(List<Book> list) {
+        this.mListBooks = list; // Sửa mBooks thành mListBooks
+        notifyDataSetChanged();
+    }
+
     @Override
     public int getItemCount() {
         return mListBooks != null ? mListBooks.size() : 0;
@@ -52,10 +58,10 @@ public class RankingBookAdapter extends RecyclerView.Adapter<RankingBookAdapter.
         public RankingViewHolder(@NonNull View itemView) {
             super(itemView);
             tvRankNumber = itemView.findViewById(R.id.tv_rank_number);
-            tvTitle = itemView.findViewById(R.id.tvName);
+            tvTitle = itemView.findViewById(R.id.tv_book_title);
             tvAuthor = itemView.findViewById(R.id.tv_author);
             tvLikeCount = itemView.findViewById(R.id.tv_like_count);
-            ivCover = itemView.findViewById(R.id.ivImage);
+            ivCover = itemView.findViewById(R.id.iv_book_cover);
         }
     }
 }

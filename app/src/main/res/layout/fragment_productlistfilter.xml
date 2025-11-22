@@ -18,6 +18,7 @@
             android:gravity="center_vertical"
             android:textSize="16sp"
             android:padding="0dp"
+            android:backgroundTint="@color/white_background"
             android:fontFamily="@font/robotoserif_regular"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
@@ -98,89 +99,18 @@
                     />
 
                 <TextView
-                    android:id="@+id/tvCondition"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="5dp"
-                    android:textColor="@color/black"
-                    android:fontFamily="@font/robotoserif_regular"
-                    android:textSize="14sp"
-                    android:text="Trạng thái"
-                    android:padding="0dp"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/tv_filter2"
-                    />
-
-                <LinearLayout
-                    android:id="@+id/layout_status"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:layout_marginTop="10dp"
-                    app:layout_constraintTop_toBottomOf="@+id/tvCondition"
-                    app:layout_constraintStart_toStartOf="parent">
-                    <LinearLayout
-                        android:id="@+id/condition1"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_weight="1">
-                        <CheckBox
-                            android:id="@+id/cbSelling"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:buttonTint="@color/blue"/>
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
-                            android:text="Đang bán"
-                            android:maxLines="1"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:textColor="#333333"
-                            android:textSize="14sp"/>
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/condition2"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:layout_weight="1">
-                        <CheckBox
-                            android:id="@+id/cbNotSelling"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:buttonTint="@color/blue"/>
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
-                            android:text="Ngừng bán"
-                            android:maxLines="1"
-                            android:textColor="#333333"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/robotoserif_regular"/>
-                    </LinearLayout>
-                </LinearLayout>
-
-                <TextView
                     android:id="@+id/tvCondition2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="5dp"
-                    android:layout_marginTop="15dp"
+                    android:layout_marginTop="5dp"
                     android:textColor="@color/black"
                     android:fontFamily="@font/robotoserif_regular"
                     android:textSize="14sp"
                     android:text="Giá"
                     android:padding="0dp"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@+id/layout_status"
+                    app:layout_constraintTop_toBottomOf="@id/tv_filter2"
                     />
 
                 <LinearLayout
@@ -190,7 +120,6 @@
                     android:layout_marginTop="10dp"
                     app:layout_constraintTop_toBottomOf="@+id/tvCondition2"
                     app:layout_constraintStart_toStartOf="parent">
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -203,19 +132,13 @@
                             android:layout_height="20dp"
                             android:buttonTint="@color/blue"/>
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginStart="16dp"
                             android:text="0đ - 150.000đ"
                             android:fontFamily="@font/robotoserif_regular"
                             android:textColor="#333333"
-                            android:textSize="14sp"
-                            android:maxLines="1"
-                            app:autoSizeTextType="uniform"
-                            app:autoSizeMinTextSize="10sp"
-                            app:autoSizeMaxTextSize="14sp"
-                            />
+                            android:textSize="14sp"/>
                     </LinearLayout>
 
                     <LinearLayout
@@ -230,18 +153,13 @@
                             android:layout_height="20dp"
                             android:buttonTint="@color/blue"/>
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginStart="16dp"
                             android:text="150.000đ - 300.000đ"
                             android:textColor="#333333"
                             android:textSize="14sp"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:maxLines="1"
-                            app:autoSizeTextType="uniform"
-                            app:autoSizeMinTextSize="10sp"
-                            app:autoSizeMaxTextSize="14sp"/>
+                            android:fontFamily="@font/robotoserif_regular"/>
                     </LinearLayout>
                 </LinearLayout>
 
@@ -253,7 +171,6 @@
                     android:layout_marginTop="40dp"
                     app:layout_constraintTop_toBottomOf="@+id/tvCondition2"
                     app:layout_constraintStart_toStartOf="parent">
-
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -266,18 +183,13 @@
                             android:layout_height="20dp"
                             android:buttonTint="@color/blue"/>
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginStart="16dp"
                             android:text="300.000đ - 500.000đ"
                             android:fontFamily="@font/robotoserif_regular"
                             android:textColor="#333333"
-                            android:textSize="14sp"
-                            android:maxLines="1"
-                            app:autoSizeTextType="uniform"
-                            app:autoSizeMinTextSize="10sp"
-                            app:autoSizeMaxTextSize="14sp"/>
+                            android:textSize="14sp"/>
                     </LinearLayout>
 
                     <LinearLayout
@@ -292,18 +204,13 @@
                             android:layout_height="20dp"
                             android:buttonTint="@color/blue"/>
                         <TextView
-                            android:layout_width="0dp"
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:layout_marginStart="8dp"
+                            android:layout_marginStart="16dp"
                             android:text="500.000đ - Trở lên"
                             android:textColor="#333333"
                             android:textSize="14sp"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:maxLines="1"
-                            app:autoSizeTextType="uniform"
-                            app:autoSizeMinTextSize="10sp"
-                            app:autoSizeMaxTextSize="14sp"/>
+                            android:fontFamily="@font/robotoserif_regular"/>
                     </LinearLayout>
                 </LinearLayout>
 
@@ -338,5 +245,6 @@
         </androidx.cardview.widget.CardView>
 
     </net.cachapa.expandablelayout.ExpandableLayout>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>
