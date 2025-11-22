@@ -27,11 +27,14 @@
         android:layout_marginStart="10dp"
         android:layout_marginEnd="10dp"
         android:hint="Sách văn học hiện đại..."
+        android:textSize="12dp"
         android:paddingStart="8dp"
         android:paddingEnd="16dp"
         android:background="@drawable/bg_search_bar"
         android:drawableStart="@drawable/ic_search"
         android:drawablePadding="7dp"
+        android:maxLines="1"
+        android:imeOptions="actionSearch"
         android:textColorHint="@color/black"
         android:textColor="@color/black"
         android:inputType="text"
@@ -39,39 +42,6 @@
         app:layout_constraintTop_toBottomOf="@id/iv_logo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toStartOf="@id/fl_cart_container" />
-
-    <!-- Khung giỏ hàng -->
-    <FrameLayout
-        android:id="@+id/fl_favorite_container"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/et_search"
-        app:layout_constraintBottom_toBottomOf="@id/et_search">
-
-        <!-- Vòng tròn nền trắng -->
-        <ImageView
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@drawable/ic_cart"
-            android:contentDescription="Vòng trắng" />
-
-
-        <!-- Số lượng (huy hiệu đỏ) -->
-        <TextView
-            android:id="@+id/tv_badge"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_gravity="top|end"
-            android:background="@drawable/bg_badge_red"
-            android:gravity="center"
-            android:text="1"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            />
-    </FrameLayout>
 
     <!-- Khung giỏ hàng -->
     <FrameLayout

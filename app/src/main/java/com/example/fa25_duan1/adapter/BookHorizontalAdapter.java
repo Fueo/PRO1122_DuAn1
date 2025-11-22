@@ -26,8 +26,11 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
 
     // Interface cho sự kiện click
     private OnItemClickListener mListener;
+
+    // 1. SỬA INTERFACE: Thêm hàm onBuyClick
     public interface OnItemClickListener {
-        void onItemClick(Product product);
+        void onItemClick(Product product); // Hàm xem chi tiết
+        void onBuyClick(Product product);  // Hàm mua ngay
     }
 
     public BookHorizontalAdapter(Context context, List<Product> mListProducts, OnItemClickListener listener) {
@@ -53,7 +56,7 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
         Product product = mListProducts.get(position);
         if (product == null) return;
 
-        // 1. Load ảnh bằng Glide
+        // Load ảnh
         if (product.getImage() != null && !product.getImage().isEmpty()) {
             Glide.with(context)
                     .load(product.getImage())
@@ -64,34 +67,30 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
             holder.ivCover.setImageResource(R.drawable.book_cover_placeholder);
         }
 
-        // 2. Set tên sách
         holder.tvTitle.setText(product.getName());
 
-        // 3. MỚI: Set tên tác giả
         if (product.getAuthor() != null && product.getAuthor().getName() != null) {
             holder.tvAuthor.setText(product.getAuthor().getName());
         } else {
             holder.tvAuthor.setText("Đang cập nhật");
         }
 
-        // 4. Set giá
         holder.tvSalePrice.setText(formatter.format(product.getPrice()));
-
-        // 5. Ẩn các trường không dùng
         holder.tvOriginalPrice.setVisibility(View.INVISIBLE);
         holder.tvDiscount.setVisibility(View.INVISIBLE);
-
-        // 6. Set view/like
         holder.tvViewCount.setText("Lượt xem: " + product.getView());
         holder.tvLikeCount.setText("Lượt thích: " + product.getFavorite());
 
-        // 7. Sự kiện click
+        // 2. SỬA SỰ KIỆN CLICK
+
+        // Click vào khung -> Xem chi tiết
         holder.itemView.setOnClickListener(v -> {
             if(mListener != null) mListener.onItemClick(product);
         });
 
+        // Click vào nút Mua -> Gọi hàm onBuyClick
         holder.btnBuyNow.setOnClickListener(v -> {
-            if(mListener != null) mListener.onItemClick(product);
+            if(mListener != null) mListener.onBuyClick(product);
         });
     }
 
@@ -102,7 +101,6 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
 
     public static class BookViewHolder extends RecyclerView.ViewHolder {
         ImageView ivCover, ivFavorite;
-        // Thêm tvAuthor vào ViewHolder
         TextView tvTitle, tvAuthor, tvSalePrice, tvOriginalPrice, tvDiscount, tvViewCount, tvLikeCount;
         Button btnBuyNow;
 
@@ -110,11 +108,8 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
             super(itemView);
             ivCover = itemView.findViewById(R.id.iv_book_cover);
             ivFavorite = itemView.findViewById(R.id.iv_favorite);
-
             tvTitle = itemView.findViewById(R.id.tv_book_title);
-            // Ánh xạ TextView Tác giả từ layout XML mới sửa
             tvAuthor = itemView.findViewById(R.id.tv_book_author);
-
             tvSalePrice = itemView.findViewById(R.id.tv_sale_price);
             tvOriginalPrice = itemView.findViewById(R.id.tv_original_price);
             tvDiscount = itemView.findViewById(R.id.tv_discount);

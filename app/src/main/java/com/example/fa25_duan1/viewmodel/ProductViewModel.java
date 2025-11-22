@@ -39,73 +39,50 @@ public class ProductViewModel extends AndroidViewModel {
         return displayedProductsLiveData;
     }
 
+    // ... (Hàm refreshData giữ nguyên) ...
     public void refreshData() {
-        // ... (Giữ nguyên)
         if (currentRepoSource != null) {
             displayedProductsLiveData.removeSource(currentRepoSource);
         }
-
         currentRepoSource = repository.getAllProducts();
-
         displayedProductsLiveData.addSource(currentRepoSource, products -> {
-            if (products == null) {
-                products = new ArrayList<>();
-            }
-
+            if (products == null) products = new ArrayList<>();
             allProductsLiveData.setValue(products);
-
+            // Sắp xếp mặc định (mới nhất)
             List<Product> sorted = new ArrayList<>(products);
             SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-
             sorted.sort((p1, p2) -> {
                 try {
                     if (p1.getCreatedAt() == null || p2.getCreatedAt() == null) return 0;
-
                     Date date1 = isoFormat.parse(p1.getCreatedAt());
                     Date date2 = isoFormat.parse(p2.getCreatedAt());
-
-                    // So sánh theo Date
                     return p2.getCreatedAt().compareTo(p1.getCreatedAt());
-
                 } catch (ParseException e) {
-                    // Xử lý khi parse lỗi (ví dụ: dữ liệu createdAt bị sai định dạng)
-                    Log.e("ViewModel", "Date parsing error for product sort: " + e.getMessage());
-                    return 0; // Không sắp xếp nếu lỗi
+                    return 0;
                 }
             });
             displayedProductsLiveData.setValue(sorted);
-            Log.d("ProductViewModel", "Data refreshed. Loaded " + products.size() + " products.");
         });
     }
 
+    // 🆕 Search Products By Name (Server-side)
+    // Hàm này dùng khi bạn muốn tìm kiếm trực tiếp từ server thay vì filter list có sẵn
+    public LiveData<List<Product>> searchProductsByNameApi(String name) {
+        return repository.searchProductsByName(name);
+    }
 
+    // 🆕 Get Random Products (Server-side)
+    // Hàm này dùng cho tính năng "Đọc gì hôm nay" (Random) nếu muốn lấy ngẫu nhiên thật sự từ server
+    public LiveData<List<Product>> getRandomProductsApi(int limit) {
+        return repository.getRandomProducts(limit);
+    }
 
-    // --- CRUD ---
-
-    public LiveData<Product> addProductWithImage(RequestBody name,
-                                                 RequestBody description,
-                                                 RequestBody pages, // Sửa thứ tự
-                                                 RequestBody publishDate, // Sửa thứ tự
-                                                 RequestBody status, // Sửa thứ tự
-                                                 RequestBody categoryID, // Sửa thứ tự
-                                                 RequestBody authorID, // Sửa thứ tự
-                                                 RequestBody price, // Sửa thứ tự
-                                                 RequestBody quantity, // Sửa thứ tự
-                                                 MultipartBody.Part image) {
+    // ... (Các hàm CRUD giữ nguyên) ...
+    public LiveData<Product> addProductWithImage(RequestBody name, RequestBody description, RequestBody pages, RequestBody publishDate, RequestBody status, RequestBody categoryID, RequestBody authorID, RequestBody price, RequestBody quantity, MultipartBody.Part image) {
         return repository.addProductWithImage(name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image);
     }
 
-    public LiveData<Product> updateProductWithImage(String id,
-                                                    RequestBody name,
-                                                    RequestBody description,
-                                                    RequestBody pages, // Sửa thứ tự
-                                                    RequestBody publishDate, // Sửa thứ tự
-                                                    RequestBody status, // Sửa thứ tự
-                                                    RequestBody categoryID, // Sửa thứ tự
-                                                    RequestBody authorID, // Sửa thứ tự
-                                                    RequestBody price, // Sửa thứ tự
-                                                    RequestBody quantity, // Sửa thứ tự
-                                                    MultipartBody.Part image) {
+    public LiveData<Product> updateProductWithImage(String id, RequestBody name, RequestBody description, RequestBody pages, RequestBody publishDate, RequestBody status, RequestBody categoryID, RequestBody authorID, RequestBody price, RequestBody quantity, MultipartBody.Part image) {
         return repository.updateProductWithImage(id, name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image);
     }
 
@@ -117,123 +94,74 @@ public class ProductViewModel extends AndroidViewModel {
         return repository.getProductByID(id);
     }
 
-    /**
-     * Lấy danh sách sản phẩm của một tác giả cụ thể
-     */
     public LiveData<List<Product>> getProductsByAuthor(String authorId) {
         return repository.getProductsByAuthor(authorId);
     }
 
-    // --- TÌM KIẾM ---
-    // ... (Giữ nguyên các hàm tìm kiếm và sắp xếp) ...
-    /**
-     * Tìm kiếm sản phẩm theo tên
-     */
+    public LiveData<List<Product>> getProductsByCategory(String categoryId) {
+        return repository.getProductsByCategory(categoryId);
+    }
+
+    // ... (Các hàm searchProducts, sortByCreateAt, filterProducts giữ nguyên - Client side logic) ...
+    // Bạn vẫn có thể giữ lại các hàm search/filter client-side này nếu muốn lọc trên danh sách đã tải về
+    // thay vì gọi API search mới mỗi lần gõ phím.
+
     public void searchProducts(String query, String type) {
-        // Lấy danh sách sản phẩm gốc (master list)
         List<Product> masterList = allProductsLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
 
-        // 1. Xử lý trường hợp chuỗi tìm kiếm rỗng
         if (query == null || query.trim().isEmpty()) {
-            // Nếu query rỗng, refresh lại data để trả về danh sách đã sắp xếp mặc định
             refreshData();
             return;
         }
 
         String q = query.toLowerCase().trim();
         List<Product> result = new ArrayList<>();
-
-        // Định nghĩa loại tìm kiếm (an toàn hơn)
         final String searchType = (type != null) ? type.toLowerCase() : "";
 
         for (Product p : masterList) {
             boolean match = false;
-
-            // --- 2. Logic tìm kiếm sử dụng SWITCH CASE ---
             switch (searchType) {
                 case "name":
-                    // Tìm kiếm theo tên sản phẩm
-                    if (p.getName() != null && p.getName().toLowerCase().contains(q)) {
-                        match = true;
-                    }
+                    if (p.getName() != null && p.getName().toLowerCase().contains(q)) match = true;
                     break;
-
                 case "author":
-                    // Tìm kiếm theo tên tác giả (Sử dụng đối tượng Author đã được parse)
                     Author author = p.getAuthor();
-                    if (author != null && author.getName() != null &&
-                            author.getName().toLowerCase().contains(q)) {
-                        match = true;
-                    }
+                    if (author != null && author.getName() != null && author.getName().toLowerCase().contains(q)) match = true;
                     break;
-
-                // Tùy chọn: Thêm các loại tìm kiếm khác ở đây (ví dụ: case "category")
-
                 default:
-                    // Tùy chọn: Nếu không chỉ định loại, tìm kiếm theo tên SP là mặc định
-                    if (p.getName() != null && p.getName().toLowerCase().contains(q)) {
-                        match = true;
-                    }
+                    if (p.getName() != null && p.getName().toLowerCase().contains(q)) match = true;
                     break;
             }
-
-            if (match) {
-                result.add(p);
-            }
+            if (match) result.add(p);
         }
-
-        // 3. Cập nhật LiveData hiển thị
         displayedProductsLiveData.setValue(result);
     }
 
-    // --- SẮP XẾP ---
-
-    /**
-     * Sắp xếp sản phẩm theo ngày tạo (createdAt)
-     */
     public void sortByCreateAt(boolean newestFirst) {
         List<Product> current = displayedProductsLiveData.getValue();
         if (current == null || current.isEmpty()) return;
-
         List<Product> listToSort = new ArrayList<>(current);
-
         listToSort.sort((p1, p2) -> {
             if (p1.getCreatedAt() == null || p2.getCreatedAt() == null) return 0;
-            return newestFirst ?
-                    p2.getCreatedAt().compareTo(p1.getCreatedAt()) :
-                    p1.getCreatedAt().compareTo(p2.getCreatedAt());
+            return newestFirst ? p2.getCreatedAt().compareTo(p1.getCreatedAt()) : p1.getCreatedAt().compareTo(p2.getCreatedAt());
         });
-
         displayedProductsLiveData.setValue(listToSort);
     }
 
-    public void filterProducts(boolean showSelling, boolean showStopped,
-                               List<Integer> priceRanges,
-                               List<String> categoryIds) {
-
-        // Lấy danh sách gốc
+    public void filterProducts(boolean showSelling, boolean showStopped, List<Integer> priceRanges, List<String> categoryIds) {
         List<Product> masterList = allProductsLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
-
         List<Product> result = new ArrayList<>();
 
         for (Product p : masterList) {
-            // 1. LỌC TRẠNG THÁI (Status)
             boolean statusMatch = false;
-            // Nếu sản phẩm đang bán VÀ user có tick chọn "Đang bán" -> Khớp
             if (p.isStatus() && showSelling) statusMatch = true;
-            // Nếu sản phẩm ngừng bán VÀ user có tick chọn "Ngừng bán" -> Khớp
             if (!p.isStatus() && showStopped) statusMatch = true;
-
-            // Nếu không khớp trạng thái nào -> Bỏ qua sản phẩm này
             if (!statusMatch) continue;
 
-
-            // 2. LỌC GIÁ (Price)
             boolean priceMatch = false;
             if (priceRanges == null || priceRanges.isEmpty()) {
-                // Nếu không chọn khoảng giá nào -> Mặc định lấy tất cả
                 priceMatch = true;
             } else {
                 double price = p.getPrice();
@@ -246,28 +174,17 @@ public class ProductViewModel extends AndroidViewModel {
             }
             if (!priceMatch) continue;
 
-
-            // 3. LỌC DANH MỤC (Category)
             boolean categoryMatch = false;
             if (categoryIds == null || categoryIds.isEmpty()) {
-                // Nếu không chọn danh mục nào -> Mặc định lấy tất cả
                 categoryMatch = true;
             } else {
-                // Lấy ID danh mục của sản phẩm.
-                // Nếu sản phẩm chưa có danh mục (null), ta quy định ID là "0" (khớp với logic bên Fragment)
                 String pCatId = (p.getCategory() != null) ? p.getCategory().get_id() : "0";
-
-                if (categoryIds.contains(pCatId)) {
-                    categoryMatch = true;
-                }
+                if (categoryIds.contains(pCatId)) categoryMatch = true;
             }
             if (!categoryMatch) continue;
 
-            // Nếu vượt qua cả 3 vòng lọc -> Thêm vào kết quả
             result.add(p);
         }
-
-        // Cập nhật lên UI
         displayedProductsLiveData.setValue(result);
     }
 }

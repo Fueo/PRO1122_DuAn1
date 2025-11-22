@@ -15,12 +15,26 @@ import retrofit2.http.POST;
 import retrofit2.http.PUT;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
+import retrofit2.http.Query;
 
 public interface ProductApi {
 
     // GET: Lấy tất cả products (PUBLIC)
     @GET("products/")
     Call<ApiResponse<List<Product>>> getAllProducts();
+
+    @GET("products/")
+    Call<ApiResponse<List<Product>>> getProductsByCategory(@Query("categoryID") String categoryId);
+
+    // 🆕 GET: Tìm kiếm sản phẩm theo tên (PUBLIC)
+    // API: /api/products/search?name=keyword
+    @GET("products/search")
+    Call<ApiResponse<List<Product>>> searchProductsByName(@Query("name") String name);
+
+    // 🆕 GET: Lấy danh sách sản phẩm ngẫu nhiên (PUBLIC)
+    // API: /api/products/random/:limit
+    @GET("products/random/{limit}")
+    Call<ApiResponse<List<Product>>> getRandomProducts(@Path("limit") int limit);
 
     // GET: Lấy product theo ID (PUBLIC)
     @GET("products/{id}")
@@ -30,41 +44,39 @@ public interface ProductApi {
     @GET("products/getProductByAuthor/{id}")
     Call<ApiResponse<List<Product>>> getProductsByAuthor(@Path("id") String authorId);
 
-    // POST: Thêm product có image (PRIVATE)
-    // POST: Thêm product có image (PRIVATE) - ĐÃ SỬA THỨ TỰ
+
+    // ... (Các method POST, PUT, DELETE giữ nguyên như cũ) ...
     @Multipart
     @POST("products/add")
     Call<ApiResponse<Product>> addProductWithImage(
             @Part("name") RequestBody name,
             @Part("description") RequestBody description,
-            @Part("pages") RequestBody pages, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("publishDate") RequestBody publishDate, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("status") RequestBody status, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("categoryID") RequestBody categoryID, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("authorID") RequestBody authorID, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("price") RequestBody price, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("quantity") RequestBody quantity, // ĐÃ ĐỔI VỊ TRÍ
+            @Part("pages") RequestBody pages,
+            @Part("publishDate") RequestBody publishDate,
+            @Part("status") RequestBody status,
+            @Part("categoryID") RequestBody categoryID,
+            @Part("authorID") RequestBody authorID,
+            @Part("price") RequestBody price,
+            @Part("quantity") RequestBody quantity,
             @Part MultipartBody.Part image
     );
 
-    // PUT: Cập nhật product có kèm image (PRIVATE) - ĐÃ SỬA THỨ TỰ
     @Multipart
     @PUT("products/update/{id}")
     Call<ApiResponse<Product>> updateProductWithImage(
             @Path("id") String id,
             @Part("name") RequestBody name,
             @Part("description") RequestBody description,
-            @Part("pages") RequestBody pages, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("publishDate") RequestBody publishDate, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("status") RequestBody status, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("categoryID") RequestBody categoryID, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("authorID") RequestBody authorID, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("price") RequestBody price, // ĐÃ ĐỔI VỊ TRÍ
-            @Part("quantity") RequestBody quantity, // ĐÃ ĐỔI VỊ TRÍ
+            @Part("pages") RequestBody pages,
+            @Part("publishDate") RequestBody publishDate,
+            @Part("status") RequestBody status,
+            @Part("categoryID") RequestBody categoryID,
+            @Part("authorID") RequestBody authorID,
+            @Part("price") RequestBody price,
+            @Part("quantity") RequestBody quantity,
             @Part MultipartBody.Part image
     );
 
-    // DELETE: Xóa product theo ID (PRIVATE)
     @DELETE("products/delete/{id}")
     Call<Void> deleteProduct(@Path("id") String id);
 }

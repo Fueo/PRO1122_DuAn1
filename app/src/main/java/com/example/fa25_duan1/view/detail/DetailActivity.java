@@ -9,7 +9,7 @@ import androidx.fragment.app.Fragment;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.view.cart.CartFragment;
 import com.example.fa25_duan1.view.cart.CheckoutFragment;
-import com.example.fa25_duan1.view.home.AdminFragment;
+import com.example.fa25_duan1.view.home.ProductFragment;
 
 public class DetailActivity extends AppCompatActivity {
 

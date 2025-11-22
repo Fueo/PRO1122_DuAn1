@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -28,9 +29,9 @@ import com.example.fa25_duan1.view.welcome.WelcomeActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 
 public class UserFragment extends Fragment {
-    RelativeLayout rlProfile, rlHistory;
-    LinearLayout rlLogout;
+    LinearLayout rlProfile, rlHistory;
     TextView tvName, tvRole, tvPhone, tvEmail;
+    Button btnLogout;
     ImageView ivProfile;
     AuthViewModel authViewModel;
 
@@ -42,7 +43,7 @@ public class UserFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
         rlProfile = view.findViewById(R.id.rlProfile);
         rlHistory = view.findViewById(R.id.rlHistory);
-        rlLogout = view.findViewById(R.id.rlLogout);
+        btnLogout = view.findViewById(R.id.btnLogout);
         tvName = view.findViewById(R.id.tvName);
         tvRole = view.findViewById(R.id.tvRole);
         tvPhone = view.findViewById(R.id.tvPhone);
@@ -101,7 +102,7 @@ public class UserFragment extends Fragment {
             }
         });
 
-        rlLogout.setOnClickListener(v -> {
+        btnLogout.setOnClickListener(v -> {
             showLogoutDialogConfirm();
         });
     }

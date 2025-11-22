@@ -25,15 +25,22 @@
             app:layout_constraintEnd_toEndOf="parent"
             tools:src="@tools:sample/backgrounds/scenic" />
 
+
         <ImageView
-            android:id="@+id/ivDelete"
-            android:layout_width="26dp"
-            android:layout_height="26dp"
+            android:id="@+id/iv_favorite"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
-            android:src="@drawable/tim"
+            android:background="@drawable/bg_circle_white"
+            android:clickable="true"
+            android:elevation="2dp"
+            android:focusable="true"
+            android:padding="6dp"
+            android:src="@drawable/ic_heart_outline_gray"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/ic_heart_filled_red" />
 
         <TextView
             android:id="@+id/tv_discount"

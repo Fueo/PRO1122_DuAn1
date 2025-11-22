@@ -29,4 +29,12 @@
         app:spanCount="2"
         tools:listitem="@layout/item_book" />
 
+    <include
+        android:id="@+id/layout_empty"
+        layout="@layout/fragment_none"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        tools:visibility="gone" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
