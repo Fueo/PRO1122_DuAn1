@@ -20,7 +20,10 @@ import com.example.fa25_duan1.model.CartItem;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.google.android.material.button.MaterialButton;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class CartFragment extends Fragment implements CartAdapter.OnCartItemClickListener {
 
@@ -31,10 +34,10 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
     private TextView tvSubtotal, tvShippingFee, tvTotal;
     private MaterialButton btnBack, btnContinue;
 
-    // Khai báo thêm các View để điều khiển ẩn/hiện
-    private View layoutEmptyCart; // Layout rỗng (được include)
-    private View scrollArea;      // Vùng nội dung chính (ScrollView)
-    private View bottomBar;       // Thanh button bên dưới
+    // Các View điều khiển ẩn/hiện
+    private View layoutEmptyCart;
+    private View scrollArea;
+    private View bottomBar;
 
     @Nullable
     @Override
@@ -46,7 +49,7 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Ánh xạ View
+        // 1. Ánh xạ View (Đã kiểm tra khớp với XML)
         recyclerView = view.findViewById(R.id.recycler_view_cart);
         tvSubtotal = view.findViewById(R.id.tv_subtotal);
         tvShippingFee = view.findViewById(R.id.tv_shipping_fee);
@@ -54,108 +57,117 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
         btnBack = view.findViewById(R.id.btn_back);
         btnContinue = view.findViewById(R.id.btn_continue);
 
-        // Ánh xạ các view layout
         layoutEmptyCart = view.findViewById(R.id.layout_empty_cart);
         scrollArea = view.findViewById(R.id.scroll_area);
-        bottomBar = view.findViewById(R.id.bottom_bar);
+        bottomBar = view.findViewById(R.id.bottom_bar); // ID này đã khớp với XML mới
 
-        // 2. Tạo dữ liệu mẫu (Bạn có thể thay bằng logic lấy từ DB/API)
+        // 2. Tạo dữ liệu mẫu
         cartItems = new ArrayList<>();
         cartItems.add(new CartItem("1", "Và Rồi Chẳng Còn Ai", 75000, 1, "https://picsum.photos/200"));
-        cartItems.add(new CartItem("2", "Harry Potter và Hòn Đá Phù Thủy", 120000, 2, "https://picsum.photos/201"));
+        cartItems.add(new CartItem("2", "Harry Potter", 120000, 2, "https://picsum.photos/201"));
         cartItems.add(new CartItem("3", "Đắc Nhân Tâm", 95000, 1, "https://picsum.photos/202"));
 
         // 3. Setup RecyclerView
-        cartAdapter = new CartAdapter(getContext(), cartItems, this);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(cartAdapter);
+        if (getContext() != null) {
+            cartAdapter = new CartAdapter(getContext(), cartItems, this);
+            recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+            recyclerView.setAdapter(cartAdapter);
+        }
 
-        // 4. Cập nhật giao diện lần đầu
+        // 4. Cập nhật giao diện
         updateOrderSummary();
-        checkEmptyState(); // <--- Kiểm tra rỗng ngay khi vào màn hình
+        checkEmptyState();
 
-        // 5. Xử lý sự kiện nút bấm
+        // 5. Xử lý sự kiện
         btnBack.setOnClickListener(v -> {
-            requireActivity().onBackPressed();
+            if (getActivity() != null) {
+                getActivity().onBackPressed();
+            }
         });
 
         btnContinue.setOnClickListener(v -> {
-            // Chỉ cho đi tiếp nếu giỏ hàng có đồ
             if (cartItems != null && !cartItems.isEmpty()) {
-                Intent intent = new Intent(view.getContext(), DetailActivity.class);
+                Intent intent = new Intent(requireContext(), DetailActivity.class);
                 intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang thanh toán");
                 intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "checkout");
                 startActivity(intent);
             } else {
-                Toast.makeText(getContext(), "Giỏ hàng đang trống!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(requireContext(), "Giỏ hàng đang trống!", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    /**
-     * Hàm kiểm tra danh sách để ẩn hiện giao diện tương ứng
-     */
     private void checkEmptyState() {
         if (cartItems == null || cartItems.isEmpty()) {
-            // Nếu rỗng: Hiện layout Empty, Ẩn nội dung chính & bottom bar
-            layoutEmptyCart.setVisibility(View.VISIBLE);
-            scrollArea.setVisibility(View.GONE);
-            bottomBar.setVisibility(View.GONE);
+            if (layoutEmptyCart != null) layoutEmptyCart.setVisibility(View.VISIBLE);
+            if (scrollArea != null) scrollArea.setVisibility(View.GONE);
+            if (bottomBar != null) bottomBar.setVisibility(View.GONE);
         } else {
-            // Nếu có hàng: Ẩn layout Empty, Hiện nội dung chính & bottom bar
-            layoutEmptyCart.setVisibility(View.GONE);
-            scrollArea.setVisibility(View.VISIBLE);
-            bottomBar.setVisibility(View.VISIBLE);
+            if (layoutEmptyCart != null) layoutEmptyCart.setVisibility(View.GONE);
+            if (scrollArea != null) scrollArea.setVisibility(View.VISIBLE);
+            if (bottomBar != null) bottomBar.setVisibility(View.VISIBLE);
         }
     }
 
-    // Cập nhật tổng tiền
     private void updateOrderSummary() {
-        if (cartItems.isEmpty()) {
-            tvSubtotal.setText("0 VNĐ");
-            tvShippingFee.setText("0 VNĐ");
-            tvTotal.setText("0 VNĐ");
+        // Format tiền tệ Việt Nam (dùng dấu chấm phân cách hàng nghìn)
+        DecimalFormat formatter = new DecimalFormat("###,###,###");
+
+        if (cartItems == null || cartItems.isEmpty()) {
+            tvSubtotal.setText("0 đ");
+            tvShippingFee.setText("0 đ");
+            tvTotal.setText("0 đ");
             return;
         }
 
-        int subtotal = 0;
+        long subtotal = 0;
         for (CartItem item : cartItems) {
-            subtotal += item.getPrice() * item.getQuantity();
+            subtotal += (long) item.getPrice() * item.getQuantity();
         }
-        int shippingFee = 25000; // Ví dụ phí cố định
-        int total = subtotal + shippingFee;
+        long shippingFee = 25000;
+        long total = subtotal + shippingFee;
 
-        tvSubtotal.setText(String.format("%,.0f VNĐ", (double)subtotal));
-        tvShippingFee.setText(String.format("%,.0f VNĐ", (double)shippingFee));
-        tvTotal.setText(String.format("%,.0f VNĐ", (double)total));
+        // Thay thế dấu phẩy mặc định bằng dấu chấm nếu cần (hoặc dùng Locale)
+        // Cách đơn giản nhất để ra 300.000 đ:
+        String strSubtotal = formatter.format(subtotal).replace(",", ".") + " đ";
+        String strShipping = formatter.format(shippingFee).replace(",", ".") + " đ";
+        String strTotal = formatter.format(total).replace(",", ".") + " đ";
+
+        tvSubtotal.setText(strSubtotal);
+        tvShippingFee.setText(strShipping);
+        tvTotal.setText(strTotal);
     }
 
-    // ------------------- CartAdapter.OnCartItemClickListener -------------------
+    // ------------------- Interface Implementation -------------------
+
     @Override
     public void onIncreaseClick(CartItem item, int position) {
-        item.setQuantity(item.getQuantity() + 1);
-        cartAdapter.notifyItemChanged(position);
-        updateOrderSummary();
+        if (item != null) {
+            item.setQuantity(item.getQuantity() + 1);
+            if (cartAdapter != null) cartAdapter.notifyItemChanged(position);
+            updateOrderSummary();
+        }
     }
 
     @Override
     public void onDecreaseClick(CartItem item, int position) {
-        if (item.getQuantity() > 1) {
+        if (item != null && item.getQuantity() > 1) {
             item.setQuantity(item.getQuantity() - 1);
-            cartAdapter.notifyItemChanged(position);
+            if (cartAdapter != null) cartAdapter.notifyItemChanged(position);
             updateOrderSummary();
         }
     }
 
     @Override
     public void onDeleteClick(CartItem item, int position) {
-        cartItems.remove(position);
-        cartAdapter.notifyItemRemoved(position);
-
-        // Cập nhật lại range để tránh lỗi index khi xóa item giữa list
-        cartAdapter.notifyItemRangeChanged(position, cartItems.size());
-
-        updateOrderSummary();
-        checkEmptyState(); // <--- Quan trọng: Kiểm tra lại sau khi xóa item
+        if (cartItems != null && position >= 0 && position < cartItems.size()) {
+            cartItems.remove(position);
+            if (cartAdapter != null) {
+                cartAdapter.notifyItemRemoved(position);
+                cartAdapter.notifyItemRangeChanged(position, cartItems.size());
+            }
+            updateOrderSummary();
+            checkEmptyState();
+        }
     }
 }

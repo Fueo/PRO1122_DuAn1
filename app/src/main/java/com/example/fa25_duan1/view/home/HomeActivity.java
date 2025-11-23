@@ -2,8 +2,11 @@ package com.example.fa25_duan1.view.home;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View; // Import View
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -13,7 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.User;
-import com.example.fa25_duan1.view.home.ProductFragment; // Import ProductFragment
+import com.example.fa25_duan1.view.home.ProductFragment;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
@@ -21,6 +24,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private AuthViewModel authViewModel;
+    private View layoutLoading; // Khai báo biến Layout Loading
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,69 +33,58 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
+        layoutLoading = findViewById(R.id.layout_loading); // Ánh xạ Layout Loading
 
-        // 1. Luôn nạp Header mặc định
+        // 1. Nạp Header
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_header, new HeaderHomeFragment())
                 .commit();
 
-        // 2. Xử lý Logic hiển thị Fragment nội dung (Search hoặc Home)
+        // 2. Xử lý Intent
         handleIntent(getIntent());
 
-        // 3. Setup ViewModel và phân quyền
+        // 3. Setup ViewModel
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
         checkUserRole();
 
-        // 4. Bắt sự kiện click menu dưới đáy
+        // 4. Click Menu
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-
+            // Logic chọn Fragment
+            Fragment selectedFragment = null;
             if (id == R.id.nav_home) {
-                loadFragment(new HomeFragment(), true);
+                selectedFragment = new HomeFragment();
             } else if (id == R.id.nav_favorite) {
-                loadFragment(new FavoriteFragment(), true);
+                selectedFragment = new FavoriteFragment();
             } else if (id == R.id.nav_profile) {
-                loadFragment(new UserFragment(), true);
+                selectedFragment = new UserFragment();
             } else if (id == R.id.nav_admin) {
-                loadFragment(new AdminFragment(), true);
+                selectedFragment = new AdminFragment();
+            }
+
+            if (selectedFragment != null) {
+                loadFragment(selectedFragment, true);
             }
             return true;
         });
     }
 
-    /**
-     * Hàm quan trọng: Giúp nhận Intent mới khi Activity đang chạy (SingleTop)
-     * Ví dụ: Đang ở Home -> vào Detail -> Search -> quay lại Home để hiện kết quả
-     */
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-        setIntent(intent); // Cập nhật intent mới
-        handleIntent(intent); // Xử lý lại logic hiển thị
+        setIntent(intent);
+        handleIntent(intent);
     }
 
-    /**
-     * Tách logic xử lý Intent ra hàm riêng để dùng chung cho onCreate và onNewIntent
-     */
     private void handleIntent(Intent intent) {
         if (intent != null && "product".equals(intent.getStringExtra("target_fragment"))) {
-            // --- TRƯỜNG HỢP 1: Có yêu cầu TÌM KIẾM ---
             String query = intent.getStringExtra("search_query");
-
             ProductFragment productFragment = new ProductFragment();
             Bundle args = new Bundle();
             args.putString("search_query", query);
             productFragment.setArguments(args);
-
-            // Load Fragment tìm kiếm
             loadFragment(productFragment, true);
-
-            // (Tùy chọn) Bỏ chọn item trên BottomNav để người dùng biết đang ở màn hình khác
-            // bottomNavigationView.getMenu().setGroupCheckable(0, true, false);
         } else {
-            // --- TRƯỜNG HỢP 2: Mặc định vào HOME ---
-            // Chỉ load HomeFragment nếu đây là lần đầu tạo Activity (savedInstanceState == null)
-            // Hoặc nếu gọi từ onNewIntent mà không có cờ search
             loadFragment(new HomeFragment(), true);
         }
     }
@@ -102,22 +95,44 @@ public class HomeActivity extends AppCompatActivity {
                 User user = response.getData();
                 Menu menu = bottomNavigationView.getMenu();
                 MenuItem adminItem = menu.findItem(R.id.nav_admin);
-
                 if (adminItem != null) {
-                    // Nếu role == 0 (User thường) -> Ẩn tab Admin
-                    // Nếu role == 1 (Admin) -> Hiện tab Admin
                     adminItem.setVisible(user.getRole() != 0);
                 }
             }
         });
     }
 
+    // --- CẬP NHẬT HÀM LOAD FRAGMENT ---
     public void loadFragment(@NonNull Fragment fragment, boolean showBottomNav) {
+        // 1. Hiện Loading ngay lập tức
+        showLoading();
+
+        // 2. Thực hiện chuyển Fragment
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_content, fragment)
-                .addToBackStack(null) // Lưu vào backstack để nút Back hoạt động
+                .addToBackStack(null)
                 .commit();
 
         bottomNavigationView.setVisibility(showBottomNav ? BottomNavigationView.VISIBLE : BottomNavigationView.GONE);
+
+        // 3. Ẩn Loading sau 1 khoảng thời gian (Ví dụ 800ms) để tạo hiệu ứng mượt
+        // Đây là cách đơn giản nhất: Giả lập thời gian load
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            hideLoading();
+        }, 800);
+    }
+
+    // Hàm hiển thị Loading (Public để Fragment có thể gọi nếu cần)
+    public void showLoading() {
+        if (layoutLoading != null) {
+            layoutLoading.setVisibility(View.VISIBLE);
+        }
+    }
+
+    // Hàm ẩn Loading (Public để Fragment gọi khi data thật đã về)
+    public void hideLoading() {
+        if (layoutLoading != null) {
+            layoutLoading.setVisibility(View.GONE);
+        }
     }
 }

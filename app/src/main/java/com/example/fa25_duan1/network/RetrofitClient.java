@@ -17,6 +17,7 @@ public class RetrofitClient {
     private final AuthorApi authorApi;
     private final CategoryApi categoryApi;
     private final ProductApi productApi;
+    private final FavoriteApi favoriteApi;
     private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
 
     private RetrofitClient(Context context) {
@@ -40,6 +41,7 @@ public class RetrofitClient {
         authorApi = retrofit.create(AuthorApi.class);
         categoryApi = retrofit.create(CategoryApi.class);
         productApi = retrofit.create(ProductApi.class);
+        favoriteApi = retrofit.create(FavoriteApi.class);
     }
 
     public static synchronized RetrofitClient getInstance(Context context) {
@@ -68,4 +70,6 @@ public class RetrofitClient {
     public ProductApi getProductApi() {
         return productApi;
     }
+
+    public FavoriteApi getFavoriteApi() {return favoriteApi; }
 }

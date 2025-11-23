@@ -68,6 +68,7 @@ public class ProductManageAdapter extends RecyclerView.Adapter<ProductManageAdap
 
         // 2. Tên và Giá
         holder.tvName.setText(product.getName());
+        holder.tvAuthor.setText(product.getAuthor().getName());
 
         NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("vi", "VN"));
         String formattedPrice = format.format(product.getPrice()).replace("₫", " đ");
@@ -120,7 +121,7 @@ public class ProductManageAdapter extends RecyclerView.Adapter<ProductManageAdap
         Button btnEdit;
         TextView tvQuantity;
         TextView tvStatus; // --- KHAI BÁO THÊM ---
-
+        TextView tvAuthor;
         public ProductViewHolder(@NonNull View itemView) {
             super(itemView);
             ivImage = itemView.findViewById(R.id.ivImage);
@@ -129,7 +130,8 @@ public class ProductManageAdapter extends RecyclerView.Adapter<ProductManageAdap
             tvPrice = itemView.findViewById(R.id.tvPrice);
             btnEdit = itemView.findViewById(R.id.btnEdit);
             tvQuantity = itemView.findViewById(R.id.tvQuantity);
-            tvStatus = itemView.findViewById(R.id.tvStatus); // --- ÁNH XẠ THÊM ---
+            tvStatus = itemView.findViewById(R.id.tvStatus);
+            tvAuthor = itemView.findViewById(R.id.tvAuthor);
         }
     }
 }

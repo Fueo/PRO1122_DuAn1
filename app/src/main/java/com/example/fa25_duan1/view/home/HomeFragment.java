@@ -32,6 +32,7 @@ import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.model.Product;
 import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
+import com.example.fa25_duan1.viewmodel.FavoriteViewModel; // 1. Import ViewModel
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import java.util.ArrayList;
@@ -51,8 +52,9 @@ public class HomeFragment extends Fragment {
 
     private ProductViewModel productViewModel;
     private CategoryViewModel categoryViewModel;
+    private FavoriteViewModel favoriteViewModel; // 2. Khai báo biến ViewModel
 
-    // Biến lưu observer hiện tại để tránh memory leak khi click nhiều lần
+    // Biến lưu observer hiện tại
     private LiveData<List<Product>> currentTopBooksLiveData;
     private Observer<List<Product>> currentTopBooksObserver;
 
@@ -66,20 +68,16 @@ public class HomeFragment extends Fragment {
 
         initViews(view);
         setupBanner();
+        setupLayoutManagers(); // Tách hàm này ra cho gọn
 
-        // Setup RecyclerView layouts
-        rvCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvRankingCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvBooksHorizontal.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
-        rvRankingBooks.setLayoutManager(new LinearLayoutManager(getContext()));
+        // Khởi tạo ViewModel trước để dùng trong setupAdapters (nếu cần) hoặc ngược lại
+        // Ở đây ta init ViewModel trước để đảm bảo biến không null
+        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
+        categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class); // 3. Init FavoriteViewModel
 
-        rvBooksGrid.setLayoutManager(new GridLayoutManager(getContext(), 2));
-        rvBooksGrid.setNestedScrollingEnabled(false);
-
-        // Khởi tạo Adapter rỗng trước
         setupAdapters();
-
-        setupViewModel();
+        setupDataObservation(); // Đổi tên hàm setupViewModel cũ thành setupDataObservation cho rõ nghĩa
 
         if (btnSeeMore != null) {
             btnSeeMore.setOnClickListener(v -> {
@@ -103,23 +101,53 @@ public class HomeFragment extends Fragment {
         btnSeeMore = view.findViewById(R.id.btn_see_more);
     }
 
+    private void setupLayoutManagers() {
+        rvCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvRankingCategories.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvBooksHorizontal.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
+        rvRankingBooks.setLayoutManager(new LinearLayoutManager(getContext()));
+        rvBooksGrid.setLayoutManager(new GridLayoutManager(getContext(), 2));
+        rvBooksGrid.setNestedScrollingEnabled(false);
+    }
+
     private void setupAdapters() {
-        // 1. Adapter Grid (Sách gợi ý/Random)
-        bookGridAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), product -> openDetail(product));
+        // 1. Adapter Grid (Sách gợi ý/Random) - Cập nhật Interface mới
+        bookGridAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), new BookGridAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Product product) {
+                openDetail(product);
+            }
+
+            @Override
+            public void onFavoriteClick(String productId) {
+                // Gọi ViewModel để xử lý thêm/xóa tim
+                favoriteViewModel.toggleFavorite(productId);
+            }
+        });
         rvBooksGrid.setAdapter(bookGridAdapter);
 
-        // 2. Adapter Horizontal (Sách mới theo danh mục)
+        // 2. Adapter Horizontal (Sách mới theo danh mục) - Cập nhật Interface mới
         bookHorizontalAdapter = new BookHorizontalAdapter(getContext(), new ArrayList<>(), new BookHorizontalAdapter.OnItemClickListener() {
             @Override
-            public void onItemClick(Product product) { openDetail(product); }
+            public void onItemClick(Product product) {
+                openDetail(product);
+            }
+
             @Override
             public void onBuyClick(Product product) {
                 Toast.makeText(requireContext(), "Đã thêm " + product.getName() + " vào giỏ!", Toast.LENGTH_SHORT).show();
+                // TODO: Gọi logic thêm vào giỏ hàng ở đây
+            }
+
+            @Override
+            public void onFavoriteClick(String productId) {
+                // Gọi ViewModel để xử lý thêm/xóa tim
+                favoriteViewModel.toggleFavorite(productId);
             }
         });
         rvBooksHorizontal.setAdapter(bookHorizontalAdapter);
 
-        // 3. Adapter Ranking (BXH theo danh mục)
+        // 3. Adapter Ranking (Nếu bạn chưa sửa adapter này thì giữ nguyên, nếu sửa rồi thì thêm onFavoriteClick tương tự)
         rankingBookAdapter = new RankingBookAdapter(getContext(), new ArrayList<>(), product -> openDetail(product));
         rvRankingBooks.setAdapter(rankingBookAdapter);
     }
@@ -130,58 +158,65 @@ public class HomeFragment extends Fragment {
         startActivity(intent);
     }
 
-    private void setupViewModel() {
-        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-        categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
-
+    private void setupDataObservation() {
         // --- PHẦN 1: LOAD SÁCH RANDOM (GRID VIEW) ---
-        // Gọi API lấy 8 sách ngẫu nhiên từ server
         productViewModel.getRandomProductsApi(8).observe(getViewLifecycleOwner(), products -> {
             if (products != null) {
                 bookGridAdapter.setProducts(products);
             }
         });
 
-        // --- PHẦN 2: LOAD DANH MỤC & SETUP TABS ---
+        // --- PHẦN 2: LOAD DANH MỤC ---
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null && !categories.isEmpty()) {
                 setupCategoryTabs(categories);
             }
         });
+
+        // --- PHẦN 3: OBSERVE FAVORITE (MỚI QUAN TRỌNG) ---
+        // Lắng nghe thay đổi của danh sách yêu thích để cập nhật icon tim
+        favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
+            // Truyền list ID vào Grid Adapter
+            if (bookGridAdapter != null) {
+                bookGridAdapter.setFavoriteIds(ids);
+            }
+
+            // Truyền list ID vào Horizontal Adapter
+            if (bookHorizontalAdapter != null) {
+                bookHorizontalAdapter.setFavoriteIds(ids);
+            }
+
+            // Nếu RankingBookAdapter cũng đã được sửa để có favorite, hãy gọi:
+            // if (rankingBookAdapter != null) rankingBookAdapter.setFavoriteIds(ids);
+        });
     }
 
-    // Thiết lập Tabs cho cả phần Sách Mới (Top) và BXH (Ranking)
+    // --- CÁC HÀM XỬ LÝ TAB & BANNER (GIỮ NGUYÊN) ---
+
     private void setupCategoryTabs(List<Category> categories) {
-        // --- A. Tabs cho Sách Mới (Horizontal) ---
         List<Category> topCats = copyCategories(categories);
-        // Mặc định chọn tab đầu tiên
         if (!topCats.isEmpty()) {
             topCats.get(0).setSelected(true);
-            loadTopBooksByCategory(topCats.get(0).get_id()); // Load dữ liệu ngay
+            loadTopBooksByCategory(topCats.get(0).get_id());
         }
 
         CategoryAdapter adapterTop = new CategoryAdapter(topCats, category -> {
-            // Khi click tab
             loadTopBooksByCategory(category.get_id());
         });
         rvCategories.setAdapter(adapterTop);
 
-        // --- B. Tabs cho BXH (Ranking) ---
         List<Category> rankCats = copyCategories(categories);
-        // Mặc định chọn tab đầu tiên
         if (!rankCats.isEmpty()) {
             rankCats.get(0).setSelected(true);
-            loadRankingBooksByCategory(rankCats.get(0).get_id()); // Load dữ liệu ngay
+            loadRankingBooksByCategory(rankCats.get(0).get_id());
         }
 
         CategoryAdapter adapterRanking = new CategoryAdapter(rankCats, category -> {
-            // Khi click tab
             loadRankingBooksByCategory(category.get_id());
         });
         rvRankingCategories.setAdapter(adapterRanking);
     }
 
-    // Helper copy list để tránh thay đổi trạng thái selected lẫn lộn giữa 2 recyclerview
     private List<Category> copyCategories(List<Category> source) {
         List<Category> dest = new ArrayList<>();
         for (Category c : source) {
@@ -190,47 +225,32 @@ public class HomeFragment extends Fragment {
         return dest;
     }
 
-    // --- LOGIC GỌI API KHI CHỌN TAB ---
-
-    // 1. Load Sách theo Category (Horizontal List)
     private void loadTopBooksByCategory(String categoryId) {
-        // Xóa observer cũ nếu có (để tránh chồng chéo dữ liệu khi click nhanh)
         if (currentTopBooksLiveData != null && currentTopBooksObserver != null) {
             currentTopBooksLiveData.removeObserver(currentTopBooksObserver);
         }
-
         currentTopBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentTopBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
             bookHorizontalAdapter.setProducts(products);
         };
-
-        // Observe LiveData mới từ API
         currentTopBooksLiveData.observe(getViewLifecycleOwner(), currentTopBooksObserver);
     }
 
-    // 2. Load Sách theo Category cho BXH (Ranking List)
     private void loadRankingBooksByCategory(String categoryId) {
-        // Xóa observer cũ
         if (currentRankingBooksLiveData != null && currentRankingBooksObserver != null) {
             currentRankingBooksLiveData.removeObserver(currentRankingBooksObserver);
         }
-
         currentRankingBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentRankingBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
-
-            // Logic sắp xếp Client-side: Lấy về list category đó -> Sort theo favorite -> Cắt top 5
             Collections.sort(products, (p1, p2) -> Integer.compare(p2.getFavorite(), p1.getFavorite()));
-
             int limit = Math.min(products.size(), 5);
             rankingBookAdapter.setProducts(products.subList(0, limit));
         };
-
         currentRankingBooksLiveData.observe(getViewLifecycleOwner(), currentRankingBooksObserver);
     }
 
-    // --- Banner Setup (Không đổi) ---
     private void setupBanner() {
         List<Banner> mListBanners = new ArrayList<>();
         mListBanners.add(new Banner("Giấc mơ Mỹ", "Huyền Chip", R.drawable.banner));
@@ -253,7 +273,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupIndicators(int count) {
-        layoutIndicators.removeAllViews(); // Reset indicators
+        layoutIndicators.removeAllViews();
         ImageView[] indicators = new ImageView[count];
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);

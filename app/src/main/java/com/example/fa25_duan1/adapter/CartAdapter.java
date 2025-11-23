@@ -5,6 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
+import android.widget.ImageView; // 1. Thêm import ImageView
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -13,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.CartItem;
-import com.google.android.material.imageview.ShapeableImageView;
 
 import java.util.List;
 
@@ -49,13 +49,10 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
                 .placeholder(R.drawable.book_cover_placeholder)
                 .into(holder.ivBookCover);
 
-        // --- SỬA LỖI TẠI ĐÂY ---
-
         // Xử lý nút Xóa
         holder.btnDelete.setOnClickListener(v -> {
             int currentPos = holder.getBindingAdapterPosition();
             if (currentPos != RecyclerView.NO_POSITION && listener != null) {
-                // Lấy lại item từ danh sách theo vị trí mới nhất để đảm bảo chính xác
                 listener.onDeleteClick(cartItems.get(currentPos), currentPos);
             }
         });
@@ -83,14 +80,18 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     }
 
     public static class CartViewHolder extends RecyclerView.ViewHolder {
-        ShapeableImageView ivBookCover;
+        // 2. SỬA TẠI ĐÂY: Đổi ShapeableImageView thành ImageView
+        ImageView ivBookCover;
+
         TextView tvTitle, tvPrice, tvQuantity;
         ImageButton btnDelete, btnIncrease, btnDecrease;
 
         public CartViewHolder(@NonNull View itemView) {
             super(itemView);
-            ivBookCover = itemView.findViewById(R.id.ivImage);
-            tvTitle = itemView.findViewById(R.id.tvName);
+            // 3. Ánh xạ bình thường, không ép kiểu sai nữa
+            ivBookCover = itemView.findViewById(R.id.iv_book_cover);
+
+            tvTitle = itemView.findViewById(R.id.tv_book_title);
             tvPrice = itemView.findViewById(R.id.tv_book_price);
             tvQuantity = itemView.findViewById(R.id.tv_quantity);
             btnDelete = itemView.findViewById(R.id.btn_delete_item);

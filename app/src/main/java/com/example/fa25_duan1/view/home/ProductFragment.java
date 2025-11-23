@@ -1,11 +1,11 @@
 package com.example.fa25_duan1.view.home;
 
+import android.content.Intent; // 1. Thêm import Intent
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
-// import android.widget.LinearLayout; // Không cần thiết nữa nếu dùng View chung
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,7 +17,9 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.BookGridAdapter;
 import com.example.fa25_duan1.model.Product;
+import com.example.fa25_duan1.view.detail.ProductDetailActivity; // 2. Thêm import Detail Activity
 import com.example.fa25_duan1.view.detail.ProductListFilterFragment;
+import com.example.fa25_duan1.viewmodel.FavoriteViewModel; // 3. Thêm import FavoriteViewModel
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import java.util.ArrayList;
@@ -26,10 +28,13 @@ import java.util.List;
 public class ProductFragment extends Fragment {
 
     private RecyclerView rvProducts;
-    private View layoutEmpty; // SỬA: Đổi từ LinearLayout thành View để an toàn với thẻ <include>
-    private View fragmentFilterContainer; // Thêm biến để ẩn hiện khung Filter
+    private View layoutEmpty;
+    private View fragmentFilterContainer;
     private BookGridAdapter bookGridAdapter;
+
     private ProductViewModel productViewModel;
+    private FavoriteViewModel favoriteViewModel; // 4. Khai báo FavoriteViewModel
+
     private String searchQuery = null;
 
     @Nullable
@@ -39,38 +44,36 @@ public class ProductFragment extends Fragment {
 
         initViews(view);
 
-        // Nhận dữ liệu tìm kiếm từ Bundle
         if (getArguments() != null) {
             searchQuery = getArguments().getString("search_query");
         }
 
+        // Khởi tạo ViewModel sớm để dùng trong setupProductGrid
+        productViewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class); // 5. Init FavoriteViewModel
+
         setupLogicBasedOnSearch(savedInstanceState);
         setupProductGrid();
-        setupViewModel();
+        setupDataObservation(); // Đổi tên hàm setupViewModel cũ cho rõ nghĩa
 
         return view;
     }
 
     private void initViews(View view) {
         rvProducts = view.findViewById(R.id.rv_products);
-        layoutEmpty = view.findViewById(R.id.layout_empty); // Ánh xạ layout empty
-        fragmentFilterContainer = view.findViewById(R.id.fragment_filter); // Ánh xạ khung filter
+        layoutEmpty = view.findViewById(R.id.layout_empty);
+        fragmentFilterContainer = view.findViewById(R.id.fragment_filter);
     }
 
     private void setupLogicBasedOnSearch(Bundle savedInstanceState) {
         if (searchQuery != null && !searchQuery.isEmpty()) {
-            // TRƯỜNG HỢP TÌM KIẾM:
-            // Ẩn khung Filter đi để dành chỗ hiển thị kết quả tìm kiếm
             if (fragmentFilterContainer != null) {
                 fragmentFilterContainer.setVisibility(View.GONE);
             }
         } else {
-            // TRƯỜNG HỢP MẶC ĐỊNH:
-            // Hiện khung Filter
             if (fragmentFilterContainer != null) {
                 fragmentFilterContainer.setVisibility(View.VISIBLE);
             }
-            // Nạp Fragment Filter vào FrameLayout
             if (savedInstanceState == null) {
                 requireActivity().getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_filter, new ProductListFilterFragment())
@@ -80,9 +83,21 @@ public class ProductFragment extends Fragment {
     }
 
     private void setupProductGrid() {
-        bookGridAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), product -> {
-            // Xử lý khi click vào item sách
-            Toast.makeText(requireActivity(), "Xem: " + product.getName(), Toast.LENGTH_SHORT).show();
+        // 6. CẬP NHẬT ADAPTER VỚI INTERFACE MỚI
+        bookGridAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), new BookGridAdapter.OnItemClickListener() {
+            @Override
+            public void onItemClick(Product product) {
+                // Chuyển sang màn hình chi tiết
+                Intent intent = new Intent(getActivity(), ProductDetailActivity.class);
+                intent.putExtra("product_id", product.getId());
+                startActivity(intent);
+            }
+
+            @Override
+            public void onFavoriteClick(String productId) {
+                // Gọi ViewModel để xử lý thêm/xóa tim
+                favoriteViewModel.toggleFavorite(productId);
+            }
         });
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(getContext(), 2);
@@ -90,36 +105,35 @@ public class ProductFragment extends Fragment {
         rvProducts.setAdapter(bookGridAdapter);
     }
 
-    private void setupViewModel() {
-        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-
+    private void setupDataObservation() {
+        // --- PHẦN 1: OBSERVE SẢN PHẨM ---
         if (searchQuery != null && !searchQuery.isEmpty()) {
-            // Gọi API Search
             productViewModel.searchProductsByNameApi(searchQuery).observe(getViewLifecycleOwner(), products -> {
                 checkDataAndShow(products);
             });
         } else {
-            // Gọi API lấy danh sách hiển thị (đã qua lọc hoặc mặc định)
             productViewModel.getDisplayedProducts().observe(getViewLifecycleOwner(), products -> {
                 checkDataAndShow(products);
             });
         }
+
+        // --- PHẦN 2: OBSERVE FAVORITE (MỚI) ---
+        // Lắng nghe danh sách các ID đã like để cập nhật tim đỏ/trắng
+        favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
+            if (bookGridAdapter != null) {
+                bookGridAdapter.setFavoriteIds(ids);
+            }
+        });
     }
 
-    // Hàm xử lý ẩn hiện layout Empty/RecyclerView
     private void checkDataAndShow(List<Product> products) {
         if (products == null || products.isEmpty()) {
-            // KHÔNG CÓ DỮ LIỆU:
-            rvProducts.setVisibility(View.GONE);    // Ẩn danh sách
-            layoutEmpty.setVisibility(View.VISIBLE); // Hiện layout empty
-
-            // Set list rỗng để tránh lỗi adapter
+            rvProducts.setVisibility(View.GONE);
+            layoutEmpty.setVisibility(View.VISIBLE);
             bookGridAdapter.setProducts(new ArrayList<>());
         } else {
-            // CÓ DỮ LIỆU:
-            rvProducts.setVisibility(View.VISIBLE); // Hiện danh sách
-            layoutEmpty.setVisibility(View.GONE);   // Ẩn layout empty
-
+            rvProducts.setVisibility(View.VISIBLE);
+            layoutEmpty.setVisibility(View.GONE);
             bookGridAdapter.setProducts(products);
         }
     }

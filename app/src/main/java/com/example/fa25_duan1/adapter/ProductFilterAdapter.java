@@ -73,11 +73,10 @@ public class ProductFilterAdapter extends RecyclerView.Adapter<ProductFilterAdap
         });
 
         // Xử lý sự kiện khi click trực tiếp vào CheckBox (để đảm bảo đồng bộ)
-        holder.cbCategory.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            category.setSelected(isChecked); // Cập nhật trạng thái trong model
-            if (listener != null) {
-                listener.onCategorySelected(category, isChecked);
-            }
+        holder.cbCategory.setOnClickListener(v -> {
+            boolean isChecked = holder.cbCategory.isChecked();
+            category.setSelected(isChecked); // Cập nhật model
+            listener.onCategorySelected(category, isChecked); // Gọi callback
         });
     }
 
