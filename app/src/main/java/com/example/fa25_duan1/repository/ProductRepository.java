@@ -159,6 +159,28 @@ public class ProductRepository {
         return data;
     }
 
+    public LiveData<Product> viewProduct(String id) {
+        MutableLiveData<Product> data = new MutableLiveData<>();
+        productApi.viewProduct(id).enqueue(new Callback<ApiResponse<Product>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Product>> call, @NonNull Response<ApiResponse<Product>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    // Trả về sản phẩm với số view mới
+                    data.setValue(response.body().getData());
+                } else {
+                    data.setValue(null);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Product>> call, @NonNull Throwable t) {
+                Log.e("ProductRepo", "viewProduct Error: " + t.getMessage());
+                data.setValue(null);
+            }
+        });
+        return data;
+    }
+
     public LiveData<Product> addProductWithImage(RequestBody name, RequestBody description, RequestBody pages, RequestBody publishDate, RequestBody status, RequestBody categoryID, RequestBody authorID, RequestBody price, RequestBody quantity, MultipartBody.Part image) {
         MutableLiveData<Product> result = new MutableLiveData<>();
         productApi.addProductWithImage(name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image).enqueue(new Callback<ApiResponse<Product>>() {

@@ -31,8 +31,9 @@ import com.example.fa25_duan1.model.Banner;
 import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.model.Product;
 import com.example.fa25_duan1.view.detail.ProductDetailActivity;
+import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
-import com.example.fa25_duan1.viewmodel.FavoriteViewModel; // 1. Import ViewModel
+import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import java.util.ArrayList;
@@ -49,17 +50,21 @@ public class HomeFragment extends Fragment {
     private BookHorizontalAdapter bookHorizontalAdapter;
     private RankingBookAdapter rankingBookAdapter;
     private BookGridAdapter bookGridAdapter;
-
+    private CartViewModel cartViewModel;
     private ProductViewModel productViewModel;
     private CategoryViewModel categoryViewModel;
-    private FavoriteViewModel favoriteViewModel; // 2. Khai báo biến ViewModel
+    private FavoriteViewModel favoriteViewModel;
 
-    // Biến lưu observer hiện tại
     private LiveData<List<Product>> currentTopBooksLiveData;
     private Observer<List<Product>> currentTopBooksObserver;
-
     private LiveData<List<Product>> currentRankingBooksLiveData;
     private Observer<List<Product>> currentRankingBooksObserver;
+
+    // --- BIẾN TOÀN CỤC QUAN TRỌNG ---
+    // 1. Biến lưu ID đang chọn
+    private String currentSelectedCategoryId = null;
+    // 2. Biến lưu danh sách Category dự phòng
+    private List<Category> mCategoryList = new ArrayList<>();
 
     @Nullable
     @Override
@@ -68,21 +73,49 @@ public class HomeFragment extends Fragment {
 
         initViews(view);
         setupBanner();
-        setupLayoutManagers(); // Tách hàm này ra cho gọn
+        setupLayoutManagers();
 
-        // Khởi tạo ViewModel trước để dùng trong setupAdapters (nếu cần) hoặc ngược lại
-        // Ở đây ta init ViewModel trước để đảm bảo biến không null
+        // Khởi tạo ViewModel
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-        categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
-        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class); // 3. Init FavoriteViewModel
-
+        categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
+        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
         setupAdapters();
-        setupDataObservation(); // Đổi tên hàm setupViewModel cũ thành setupDataObservation cho rõ nghĩa
+        setupDataObservation();
 
+        // --- SỬA LỖI NÚT XEM THÊM (LOGIC 3 TẦNG) ---
         if (btnSeeMore != null) {
             btnSeeMore.setOnClickListener(v -> {
-                if (getActivity() instanceof HomeActivity) {
-                    ((HomeActivity) getActivity()).loadFragment(new ProductFragment(), true);
+                ProductFragment productFragment = new ProductFragment();
+                Bundle args = new Bundle();
+
+                // Tầng 1: Lấy từ biến đang chọn (nếu user đã click hoặc logic setup đã chạy)
+                String idToSend = currentSelectedCategoryId;
+
+                // Tầng 2: Nếu Tầng 1 null, lấy phần tử đầu tiên từ list dự phòng
+                if (idToSend == null && !mCategoryList.isEmpty()) {
+                    idToSend = mCategoryList.get(0).get_id();
+                }
+
+                // Tầng 3: Nếu list dự phòng rỗng (rất hiếm), chọc thẳng vào ViewModel lấy mới nhất
+                if (idToSend == null) {
+                    List<Category> liveDataValue = categoryViewModel.getDisplayedCategories().getValue();
+                    if (liveDataValue != null && !liveDataValue.isEmpty()) {
+                        idToSend = liveDataValue.get(0).get_id();
+                    }
+                }
+
+                // Đóng gói và gửi đi nếu tìm thấy ID
+                if (idToSend != null) {
+                    args.putString("category_id", idToSend);
+                    productFragment.setArguments(args);
+
+                    if (getActivity() instanceof HomeActivity) {
+                        ((HomeActivity) getActivity()).loadFragment(productFragment, true);
+                    }
+                } else {
+                    // Trường hợp không có mạng hoặc không có danh mục nào
+                    Toast.makeText(getContext(), "Đang tải dữ liệu danh mục...", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -111,106 +144,139 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupAdapters() {
-        // 1. Adapter Grid (Sách gợi ý/Random) - Cập nhật Interface mới
+        // --- Grid Adapter ---
         bookGridAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), new BookGridAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Product product) {
-                openDetail(product);
+                // SỬA Ở ĐÂY: Lấy ID từ product và truyền vào
+                openDetail(product.getId());
             }
 
             @Override
             public void onFavoriteClick(String productId) {
-                // Gọi ViewModel để xử lý thêm/xóa tim
                 favoriteViewModel.toggleFavorite(productId);
+            }
+
+            @Override
+            public void onAddToCartClick(Product product) {
+                addToCart(product);
             }
         });
         rvBooksGrid.setAdapter(bookGridAdapter);
 
-        // 2. Adapter Horizontal (Sách mới theo danh mục) - Cập nhật Interface mới
+        // --- Horizontal Adapter ---
         bookHorizontalAdapter = new BookHorizontalAdapter(getContext(), new ArrayList<>(), new BookHorizontalAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Product product) {
-                openDetail(product);
+                // SỬA Ở ĐÂY
+                openDetail(product.getId());
             }
 
             @Override
             public void onBuyClick(Product product) {
-                Toast.makeText(requireContext(), "Đã thêm " + product.getName() + " vào giỏ!", Toast.LENGTH_SHORT).show();
-                // TODO: Gọi logic thêm vào giỏ hàng ở đây
+                // Xử lý mua ngay
             }
 
             @Override
             public void onFavoriteClick(String productId) {
-                // Gọi ViewModel để xử lý thêm/xóa tim
                 favoriteViewModel.toggleFavorite(productId);
+            }
+
+            @Override
+            public void onAddToCartClick(Product product) {
+                addToCart(product);
             }
         });
         rvBooksHorizontal.setAdapter(bookHorizontalAdapter);
 
-        // 3. Adapter Ranking (Nếu bạn chưa sửa adapter này thì giữ nguyên, nếu sửa rồi thì thêm onFavoriteClick tương tự)
-        rankingBookAdapter = new RankingBookAdapter(getContext(), new ArrayList<>(), product -> openDetail(product));
+        // --- Ranking Adapter ---
+        // SỬA Ở ĐÂY: Dùng lambda expression để lấy ID truyền vào
+        rankingBookAdapter = new RankingBookAdapter(getContext(), new ArrayList<>(), product -> {
+            openDetail(product.getId());
+        });
         rvRankingBooks.setAdapter(rankingBookAdapter);
     }
 
-    private void openDetail(Product product) {
+    private void addToCart(Product product) {
+        if (product != null) {
+            cartViewModel.increaseQuantity(product.getId());
+        }
+    }
+
+    private void openDetail(String productId) {
         Intent intent = new Intent(getActivity(), ProductDetailActivity.class);
-        intent.putExtra("product_id", product.getId());
+        // Truyền thẳng ID nhận được vào Intent
+        intent.putExtra("product_id", productId);
         startActivity(intent);
     }
 
     private void setupDataObservation() {
-        // --- PHẦN 1: LOAD SÁCH RANDOM (GRID VIEW) ---
+        // 1. Random Products
         productViewModel.getRandomProductsApi(8).observe(getViewLifecycleOwner(), products -> {
-            if (products != null) {
-                bookGridAdapter.setProducts(products);
-            }
+            if (products != null) bookGridAdapter.setProducts(products);
         });
 
-        // --- PHẦN 2: LOAD DANH MỤC ---
+        // 2. Categories
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null && !categories.isEmpty()) {
+                // A. Lưu vào list dự phòng ngay lập tức
+                mCategoryList.clear();
+                mCategoryList.addAll(categories);
+
+                // B. Nếu chưa có ID nào được chọn, gán mặc định là cái đầu tiên
+                if (currentSelectedCategoryId == null) {
+                    currentSelectedCategoryId = categories.get(0).get_id();
+                }
+
+                // C. Setup giao diện Tabs
                 setupCategoryTabs(categories);
             }
         });
 
-        // --- PHẦN 3: OBSERVE FAVORITE (MỚI QUAN TRỌNG) ---
-        // Lắng nghe thay đổi của danh sách yêu thích để cập nhật icon tim
+        // 3. Favorites
         favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
-            // Truyền list ID vào Grid Adapter
-            if (bookGridAdapter != null) {
-                bookGridAdapter.setFavoriteIds(ids);
-            }
-
-            // Truyền list ID vào Horizontal Adapter
-            if (bookHorizontalAdapter != null) {
-                bookHorizontalAdapter.setFavoriteIds(ids);
-            }
-
-            // Nếu RankingBookAdapter cũng đã được sửa để có favorite, hãy gọi:
-            // if (rankingBookAdapter != null) rankingBookAdapter.setFavoriteIds(ids);
+            if (bookGridAdapter != null) bookGridAdapter.setFavoriteIds(ids);
+            if (bookHorizontalAdapter != null) bookHorizontalAdapter.setFavoriteIds(ids);
         });
     }
 
-    // --- CÁC HÀM XỬ LÝ TAB & BANNER (GIỮ NGUYÊN) ---
-
     private void setupCategoryTabs(List<Category> categories) {
         List<Category> topCats = copyCategories(categories);
+
         if (!topCats.isEmpty()) {
-            topCats.get(0).setSelected(true);
-            loadTopBooksByCategory(topCats.get(0).get_id());
+            boolean found = false;
+            // Duyệt để tìm xem ID nào đang được chọn để highlight
+            for (Category c : topCats) {
+                if (c.get_id().equals(currentSelectedCategoryId)) {
+                    c.setSelected(true);
+                    found = true;
+                    break;
+                }
+            }
+
+            // Nếu không tìm thấy (ví dụ lần đầu chạy), chọn cái đầu tiên
+            if (!found) {
+                topCats.get(0).setSelected(true);
+                currentSelectedCategoryId = topCats.get(0).get_id();
+            }
+
+            // Load sách theo ID đang chọn
+            loadTopBooksByCategory(currentSelectedCategoryId);
         }
 
         CategoryAdapter adapterTop = new CategoryAdapter(topCats, category -> {
+            // Cập nhật ID khi người dùng bấm chọn
+            currentSelectedCategoryId = category.get_id();
             loadTopBooksByCategory(category.get_id());
         });
         rvCategories.setAdapter(adapterTop);
 
+        // --- Phần Ranking (Giữ nguyên) ---
         List<Category> rankCats = copyCategories(categories);
         if (!rankCats.isEmpty()) {
             rankCats.get(0).setSelected(true);
             loadRankingBooksByCategory(rankCats.get(0).get_id());
         }
-
         CategoryAdapter adapterRanking = new CategoryAdapter(rankCats, category -> {
             loadRankingBooksByCategory(category.get_id());
         });
@@ -219,16 +285,12 @@ public class HomeFragment extends Fragment {
 
     private List<Category> copyCategories(List<Category> source) {
         List<Category> dest = new ArrayList<>();
-        for (Category c : source) {
-            dest.add(new Category(c.getName(), c.getCreateAt(), c.get_id(), false));
-        }
+        for (Category c : source) dest.add(new Category(c.getName(), c.getCreateAt(), c.get_id(), false));
         return dest;
     }
 
     private void loadTopBooksByCategory(String categoryId) {
-        if (currentTopBooksLiveData != null && currentTopBooksObserver != null) {
-            currentTopBooksLiveData.removeObserver(currentTopBooksObserver);
-        }
+        if (currentTopBooksLiveData != null && currentTopBooksObserver != null) currentTopBooksLiveData.removeObserver(currentTopBooksObserver);
         currentTopBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentTopBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
@@ -238,9 +300,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadRankingBooksByCategory(String categoryId) {
-        if (currentRankingBooksLiveData != null && currentRankingBooksObserver != null) {
-            currentRankingBooksLiveData.removeObserver(currentRankingBooksObserver);
-        }
+        if (currentRankingBooksLiveData != null && currentRankingBooksObserver != null) currentRankingBooksLiveData.removeObserver(currentRankingBooksObserver);
         currentRankingBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentRankingBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
@@ -257,26 +317,20 @@ public class HomeFragment extends Fragment {
         mListBanners.add(new Banner("Đắc Nhân Tâm", "Dale Carnegie", R.drawable.banner));
         mListBanners.add(new Banner("Nhà Giả Kim", "Paulo Coelho", R.drawable.banner));
         mListBanners.add(new Banner("Tắt Đèn", "Ngô Tất Tố", R.drawable.banner));
-
         BannerAdapter adapter = new BannerAdapter(mListBanners);
         viewPagerBanner.setAdapter(adapter);
         setupIndicators(mListBanners.size());
         setCurrentIndicator(0);
-
         viewPagerBanner.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
             @Override
-            public void onPageSelected(int position) {
-                super.onPageSelected(position);
-                setCurrentIndicator(position);
-            }
+            public void onPageSelected(int position) { super.onPageSelected(position); setCurrentIndicator(position); }
         });
     }
 
     private void setupIndicators(int count) {
         layoutIndicators.removeAllViews();
         ImageView[] indicators = new ImageView[count];
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         layoutParams.setMargins(8, 0, 8, 0);
         for (int i = 0; i < indicators.length; i++) {
             indicators[i] = new ImageView(getContext());
@@ -290,8 +344,7 @@ public class HomeFragment extends Fragment {
         int childCount = layoutIndicators.getChildCount();
         for (int i = 0; i < childCount; i++) {
             ImageView imageView = (ImageView) layoutIndicators.getChildAt(i);
-            imageView.setImageDrawable(ContextCompat.getDrawable(requireContext(),
-                    i == position ? R.drawable.bg_indicator_active : R.drawable.bg_indicator_inactive));
+            imageView.setImageDrawable(ContextCompat.getDrawable(requireContext(), i == position ? R.drawable.bg_indicator_active : R.drawable.bg_indicator_inactive));
         }
     }
 }

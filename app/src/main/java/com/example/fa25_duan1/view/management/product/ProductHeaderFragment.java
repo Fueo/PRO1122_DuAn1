@@ -101,8 +101,6 @@ public class ProductHeaderFragment extends Fragment {
      */
     private void searchProductsFromHeader(String query) {
         if (viewModel == null) return;
-
-        // ❌ SỬA LỖI: Thay vì searchAuthors, gọi searchProducts và truyền type
         viewModel.searchProducts(query, currentSearchType);
     }
 }

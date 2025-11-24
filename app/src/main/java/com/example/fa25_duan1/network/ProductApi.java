@@ -44,6 +44,9 @@ public interface ProductApi {
     @GET("products/getProductByAuthor/{id}")
     Call<ApiResponse<List<Product>>> getProductsByAuthor(@Path("id") String authorId);
 
+    // GET: Lấy thông tin sản phẩm và tăng lượt view
+    @GET("products/view/{id}")
+    Call<ApiResponse<Product>> viewProduct(@Path("id") String id);
 
     // ... (Các method POST, PUT, DELETE giữ nguyên như cũ) ...
     @Multipart

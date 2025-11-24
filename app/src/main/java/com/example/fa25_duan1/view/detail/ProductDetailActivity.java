@@ -20,7 +20,7 @@ public class ProductDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_detail);
-
+        String productId = getIntent().getStringExtra("product_id");
         if (savedInstanceState == null) {
             // 1. Lấy title từ intent
 
@@ -32,6 +32,11 @@ public class ProductDetailActivity extends AppCompatActivity {
 
             // 3. Load ContentFragment từ intent
             Fragment contentFragment = new DetailFragment();
+
+            Bundle args = new Bundle();
+            args.putString("product_id", productId);
+            contentFragment.setArguments(args);
+
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_content, contentFragment)
                         .commit();

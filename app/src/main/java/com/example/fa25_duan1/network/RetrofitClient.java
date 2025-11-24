@@ -12,21 +12,26 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class RetrofitClient {
 
     private static RetrofitClient instance = null;
+
+    // Các API Interface
     private final AuthApi authApi;
     private final UserApi userApi;
     private final AuthorApi authorApi;
     private final CategoryApi categoryApi;
     private final ProductApi productApi;
+    private final CartApi cartApi;       // Khai báo biến
     private final FavoriteApi favoriteApi;
+
     private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
 
+    // --- SỬA LẠI CONSTRUCTOR: Bỏ tham số CartApi thừa ---
     private RetrofitClient(Context context) {
         HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
         logging.setLevel(HttpLoggingInterceptor.Level.BODY);
 
         OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(new AuthInterceptor(context)) // thêm token interceptor
-                .authenticator(new TokenAuthenticator(context))
+                .addInterceptor(new AuthInterceptor(context)) // Thêm token vào header
+                .authenticator(new TokenAuthenticator(context)) // Xử lý refresh token
                 .addInterceptor(logging)
                 .build();
 
@@ -36,12 +41,16 @@ public class RetrofitClient {
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
+        // Khởi tạo các API
         authApi = retrofit.create(AuthApi.class);
         userApi = retrofit.create(UserApi.class);
         authorApi = retrofit.create(AuthorApi.class);
         categoryApi = retrofit.create(CategoryApi.class);
         productApi = retrofit.create(ProductApi.class);
         favoriteApi = retrofit.create(FavoriteApi.class);
+
+        // --- KHỞI TẠO CART API TẠI ĐÂY ---
+        cartApi = retrofit.create(CartApi.class);
     }
 
     public static synchronized RetrofitClient getInstance(Context context) {
@@ -51,6 +60,7 @@ public class RetrofitClient {
         return instance;
     }
 
+    // Getters
     public AuthApi getAuthApi() {
         return authApi;
     }
@@ -71,5 +81,11 @@ public class RetrofitClient {
         return productApi;
     }
 
-    public FavoriteApi getFavoriteApi() {return favoriteApi; }
+    public FavoriteApi getFavoriteApi() {
+        return favoriteApi;
+    }
+
+    public CartApi getCartApi() {
+        return cartApi;
+    }
 }

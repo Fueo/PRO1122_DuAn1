@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:scrollbars="none"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mã giảm giá (Code)"
+                android:fontFamily="@font/robotoserif_bold"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/edtCode"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_edit_input"
+                android:paddingHorizontal="12dp"
+                android:hint="VD: SALE50"
+                android:inputType="textCapCharacters"
+                android:maxLines="1"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Mô tả"
+                android:fontFamily="@font/robotoserif_bold"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/edtDescription"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_edit_input"
+                android:paddingHorizontal="12dp"
+                android:hint="Mô tả ngắn gọn..."
+                android:inputType="text"
+                android:maxLines="1"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loại giảm giá"
+                android:fontFamily="@font/robotoserif_bold"
+                android:textSize="16sp" />
+
+            <RadioGroup
+                android:id="@+id/rgDiscountType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp">
+
+                <RadioButton
+                    android:id="@+id/rbTypePercent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Theo phần trăm (%)"
+                    android:checked="true"
+                    android:layout_marginEnd="16dp"
+                    android:fontFamily="@font/robotoserif_regular"/>
+
+                <RadioButton
+                    android:id="@+id/rbTypeAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Theo số tiền (VNĐ)"
+                    android:fontFamily="@font/robotoserif_regular"/>
+            </RadioGroup>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:animateLayoutChanges="true">
+
+                <LinearLayout
+                    android:id="@+id/layoutInputPercent"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Giá trị (%)"
+                        android:fontFamily="@font/robotoserif_bold"
+                        android:textSize="14sp"/>
+                    <EditText
+                        android:id="@+id/edtPercent"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/bg_edit_input"
+                        android:paddingHorizontal="12dp"
+                        android:hint="Nhập 0-100"
+                        android:inputType="number"
+                        android:gravity="center_vertical"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layoutInputAmount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Số tiền giảm (VNĐ)"
+                        android:fontFamily="@font/robotoserif_bold"
+                        android:textSize="14sp"/>
+                    <EditText
+                        android:id="@+id/edtAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="16dp"
+                        android:background="@drawable/bg_edit_input"
+                        android:paddingHorizontal="12dp"
+                        android:hint="VD: 50000"
+                        android:inputType="number"
+                        android:gravity="center_vertical"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Số lượng voucher"
+                android:fontFamily="@font/robotoserif_bold"
+                android:textSize="16sp" />
+
+            <EditText
+                android:id="@+id/edtQuantity"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:background="@drawable/bg_edit_input"
+                android:paddingHorizontal="12dp"
+                android:hint="Tổng số lượng phát hành"
+                android:inputType="number" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hạn sử dụng"
+                android:fontFamily="@font/robotoserif_bold"
+                android:textSize="16sp" />
+
+            <TextView
+                android:id="@+id/tvExpiryDate"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_edit_input"
+                android:paddingHorizontal="12dp"
+                android:text="Chọn ngày..."
+                android:gravity="center_vertical"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:drawableEnd="@android:drawable/ic_menu_my_calendar"/>
+
+            <Button
+                android:id="@+id/btnSaveDiscount"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="32dp"
+                android:text="Lưu mã giảm giá"
+                android:fontFamily="@font/robotoserif_bold"
+                android:background="@drawable/btn_blue_rounded"
+                app:backgroundTint="@null"
+                android:textColor="@color/white"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

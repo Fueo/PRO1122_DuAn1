@@ -5,7 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
-import android.widget.ImageView; // 1. Thêm import ImageView
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -39,38 +39,28 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     @Override
     public void onBindViewHolder(@NonNull CartViewHolder holder, int position) {
         CartItem item = cartItems.get(position);
+
+        // Sử dụng các Getter thông minh đã viết trong Model
         holder.tvTitle.setText(item.getTitle());
-        holder.tvPrice.setText(String.format("%,.0f VNĐ", item.getPrice() * item.getQuantity()));
+        holder.tvPrice.setText(String.format("%,.0f VNĐ", item.getPrice()));
         holder.tvQuantity.setText(String.valueOf(item.getQuantity()));
 
-        // Load hình với Glide
         Glide.with(context)
                 .load(item.getImageUrl())
                 .placeholder(R.drawable.book_cover_placeholder)
                 .into(holder.ivBookCover);
 
-        // Xử lý nút Xóa
+        // Sự kiện click
         holder.btnDelete.setOnClickListener(v -> {
-            int currentPos = holder.getBindingAdapterPosition();
-            if (currentPos != RecyclerView.NO_POSITION && listener != null) {
-                listener.onDeleteClick(cartItems.get(currentPos), currentPos);
-            }
+            if (listener != null) listener.onDeleteClick(item, holder.getBindingAdapterPosition());
         });
 
-        // Xử lý nút Tăng
         holder.btnIncrease.setOnClickListener(v -> {
-            int currentPos = holder.getBindingAdapterPosition();
-            if (currentPos != RecyclerView.NO_POSITION && listener != null) {
-                listener.onIncreaseClick(cartItems.get(currentPos), currentPos);
-            }
+            if (listener != null) listener.onIncreaseClick(item, holder.getBindingAdapterPosition());
         });
 
-        // Xử lý nút Giảm
         holder.btnDecrease.setOnClickListener(v -> {
-            int currentPos = holder.getBindingAdapterPosition();
-            if (currentPos != RecyclerView.NO_POSITION && listener != null) {
-                listener.onDecreaseClick(cartItems.get(currentPos), currentPos);
-            }
+            if (listener != null) listener.onDecreaseClick(item, holder.getBindingAdapterPosition());
         });
     }
 
@@ -80,17 +70,13 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
     }
 
     public static class CartViewHolder extends RecyclerView.ViewHolder {
-        // 2. SỬA TẠI ĐÂY: Đổi ShapeableImageView thành ImageView
-        ImageView ivBookCover;
-
+        ImageView ivBookCover; // Đã sửa thành ImageView thường
         TextView tvTitle, tvPrice, tvQuantity;
         ImageButton btnDelete, btnIncrease, btnDecrease;
 
         public CartViewHolder(@NonNull View itemView) {
             super(itemView);
-            // 3. Ánh xạ bình thường, không ép kiểu sai nữa
             ivBookCover = itemView.findViewById(R.id.iv_book_cover);
-
             tvTitle = itemView.findViewById(R.id.tv_book_title);
             tvPrice = itemView.findViewById(R.id.tv_book_price);
             tvQuantity = itemView.findViewById(R.id.tv_quantity);
@@ -100,7 +86,6 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
         }
     }
 
-    // Interface xử lý sự kiện
     public interface OnCartItemClickListener {
         void onIncreaseClick(CartItem item, int position);
         void onDecreaseClick(CartItem item, int position);

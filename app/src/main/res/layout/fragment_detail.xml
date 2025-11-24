@@ -267,54 +267,63 @@
 
     </androidx.core.widget.NestedScrollView>
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/bottom_action_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="8dp"
-        android:background="@color/gray"
-        android:elevation="8dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:layout_gravity="bottom">
+        android:layout_gravity="bottom"
+        android:background="@color/white"
+        android:elevation="16dp"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_add_to_cart"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_marginEnd="12dp"
+            android:fontFamily="@font/robotoserif_bold"
+            android:paddingVertical="14dp"
             android:text="Thêm vào giỏ"
-            android:textColor="@color/white"
-            android:layout_marginEnd="8dp"
-            android:paddingVertical="12dp"
-            app:cornerRadius="5dp"
-            app:backgroundTint="@color/blue"
-            app:icon="@drawable/ic_shopping_cart"
-            app:iconTint="@color/white"
-            android:fontFamily="@font/robotoserif_regular"
             android:textAllCaps="false"
-            android:textSize="12dp"
-            app:iconGravity="textStart" />
+            android:textColor="@color/blue"
+            android:textSize="14sp"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_shopping_cart"
+            app:iconGravity="textStart"
+            app:iconTint="@color/blue"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/btnEdit"
+            app:layout_constraintHorizontal_weight="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:strokeColor="@color/blue"
+            app:strokeWidth="1dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEdit"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:fontFamily="@font/robotoserif_bold"
+            android:paddingVertical="14dp"
             android:text="Mua ngay"
-            android:textSize="12dp"
-            android:textColor="@color/blue"
-            android:layout_marginStart="8dp"
-            android:paddingVertical="12dp"
-            app:cornerRadius="5dp"
-            app:backgroundTint="@color/white"
-            app:strokeColor="@color/blue"
             android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            app:backgroundTint="@color/blue"
+            app:cornerRadius="12dp"
+            app:elevation="4dp"
             app:icon="@drawable/ic_credit_card"
-            app:iconTint="@color/blue"
-            app:iconGravity="textStart" />
+            app:iconGravity="textStart"
+            app:iconTint="@color/white"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_weight="0.5"
+            app:layout_constraintStart_toEndOf="@+id/btn_add_to_cart"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    </LinearLayout>
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

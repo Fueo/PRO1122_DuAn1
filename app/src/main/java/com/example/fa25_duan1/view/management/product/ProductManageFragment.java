@@ -96,6 +96,8 @@ public class ProductManageFragment extends Fragment {
                 openUpdateActivity(null);
             }
         });
+
+        viewModel.refreshData();
     }
 
     // --- HÀM QUAN TRỌNG: XỬ LÝ ẨN/HIỆN ---

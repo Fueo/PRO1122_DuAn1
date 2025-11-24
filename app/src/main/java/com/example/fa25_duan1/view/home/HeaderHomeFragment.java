@@ -16,16 +16,19 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.view.home.HomeActivity; // Import HomeActivity
+import com.example.fa25_duan1.view.cart.CartFragment;
 import com.example.fa25_duan1.view.detail.DetailActivity;
-import com.example.fa25_duan1.view.home.ProductFragment; // Import ProductFragment
+import com.example.fa25_duan1.viewmodel.CartViewModel;
 
 public class HeaderHomeFragment extends Fragment {
 
     private FrameLayout flCart;
-    private EditText etSearch; // Khai báo biến EditText
+    private EditText etSearch;
+    private CartViewModel cartViewModel;
+    private TextView tvBadge;
 
     @Nullable
     @Override
@@ -38,50 +41,80 @@ public class HeaderHomeFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         flCart = view.findViewById(R.id.fl_cart_container);
-        etSearch = view.findViewById(R.id.et_search); // Ánh xạ
+        etSearch = view.findViewById(R.id.et_search);
+        tvBadge = view.findViewById(R.id.tv_badge);
 
-        // 1. Xử lý click giỏ hàng
+        // 1. Setup Badge và gọi dữ liệu lần đầu
+        setupCartBadge();
+
+        // 2. Xử lý tìm kiếm
+        etSearch.setOnEditorActionListener((v, actionId, event) -> {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH ||
+                    actionId == EditorInfo.IME_ACTION_DONE ||
+                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
+
+                String query = etSearch.getText().toString().trim();
+                if (!query.isEmpty()) {
+                    performSearch(query);
+                }
+                return true;
+            }
+            return false;
+        });
+    }
+
+    // --- QUAN TRỌNG: Cập nhật lại giỏ hàng khi quay lại màn hình này ---
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (cartViewModel != null) {
+            // Gọi hàm fetchCart() theo đúng tên trong ViewModel của bạn
+            cartViewModel.fetchCart();
+        }
+    }
+
+    private void setupCartBadge() {
+        // Khởi tạo ViewModel
+        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
+
+        // --- SỬA LỖI ĐẾM BADGE ---
+        // Thay vì observe getTotalQuantity (cộng dồn số lượng), hãy observe getCartItems (danh sách item)
+        cartViewModel.getCartItems().observe(getViewLifecycleOwner(), items -> {
+            // items.size() chính là số lượng đầu sản phẩm (unique product)
+            int count = (items == null) ? 0 : items.size();
+
+            if (count > 0) {
+                tvBadge.setVisibility(View.VISIBLE);
+                tvBadge.setText(String.valueOf(count));
+            } else {
+                tvBadge.setVisibility(View.GONE);
+            }
+        });
+
+        // Gọi API lấy giỏ hàng ngay lập tức
+        cartViewModel.fetchCart();
+
+        // Xử lý click icon giỏ hàng
         flCart.setOnClickListener(v -> {
-            Intent intent = new Intent(view.getContext(), DetailActivity.class);
+            Intent intent = new Intent(getContext(), DetailActivity.class);
             intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
             intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
             startActivity(intent);
         });
-
-        // 2. Xử lý tìm kiếm khi ấn Enter/Search trên bàn phím
-        etSearch.setOnEditorActionListener(new TextView.OnEditorActionListener() {
-            @Override
-            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH ||
-                        actionId == EditorInfo.IME_ACTION_DONE ||
-                        (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
-
-                    String query = etSearch.getText().toString().trim();
-                    if (!query.isEmpty()) {
-                        performSearch(query);
-                    }
-                    return true;
-                }
-                return false;
-            }
-        });
     }
 
     private void performSearch(String query) {
-        // Ẩn bàn phím sau khi ấn search
         View view = getActivity().getCurrentFocus();
         if (view != null) {
             InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
 
-        // Tạo ProductFragment và truyền keyword
         ProductFragment productFragment = new ProductFragment();
         Bundle args = new Bundle();
-        args.putString("search_query", query); // Key quan trọng
+        args.putString("search_query", query);
         productFragment.setArguments(args);
 
-        // Chuyển Fragment (Giả sử HomeActivity có hàm loadFragment)
         if (getActivity() instanceof HomeActivity) {
             ((HomeActivity) getActivity()).loadFragment(productFragment, true);
         }

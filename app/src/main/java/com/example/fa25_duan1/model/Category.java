@@ -43,4 +43,8 @@ public class Category {
     public void setCreateAt(String createAt) {
         this.createAt = createAt;
     }
+
+    public void setCateID(String cateID) {
+        this.cateID = cateID;
+    }
 }

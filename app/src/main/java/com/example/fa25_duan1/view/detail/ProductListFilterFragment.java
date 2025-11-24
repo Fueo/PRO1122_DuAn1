@@ -24,48 +24,36 @@ import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
-
 import org.angmarch.views.NiceSpinner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 
 public class ProductListFilterFragment extends Fragment {
 
     private View view;
-    // Header controls
     private ConstraintLayout clFilter;
     private ExpandableLayout expandableLayout;
     private ImageView ivClose;
     private NiceSpinner spSort;
-
-    // Toggle controls
     private TextView tvFilterLabel;
     private ImageView ivFilterIcon;
-
-    // RecyclerView Category (Ngang)
     private RecyclerView rvCategories;
 
-    // CheckBox Giá
     private CheckBox cbPrice0, cbPrice150, cbPrice3, cbPrice4;
 
-    // ViewModels & Adapter
     private ProductViewModel viewModel;
     private CategoryViewModel categoryViewModel;
     private CategoryProductAdapter categoryAdapter;
 
-    // Quản lý đa chọn Category
-    private final Set<String> selectedCategoryIds = new HashSet<>();
+    private String currentSelectedCategoryId = "ALL";
     private List<Category> mCategoryList = new ArrayList<>();
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Sử dụng layout gộp (đảm bảo tên file XML đúng là fragment_productfilter hoặc tên bạn đã đặt)
         view = inflater.inflate(R.layout.fragment_productfilter, container, false);
         return view;
     }
@@ -76,13 +64,28 @@ public class ProductListFilterFragment extends Fragment {
 
         initViews(view);
         initViewModels();
+
+        // 1. Nhận ID
+        if (getArguments() != null && getArguments().containsKey("category_id")) {
+            String passedId = getArguments().getString("category_id");
+            if (passedId != null && !passedId.isEmpty()) {
+                currentSelectedCategoryId = passedId;
+            }
+        }
+
+        // 2. Gọi API
+        if ("ALL".equals(currentSelectedCategoryId)) {
+            viewModel.refreshData();
+        } else {
+            viewModel.filterProductsByCategoryApi(currentSelectedCategoryId);
+        }
+
         setupCategoryRecyclerView();
         setupSpinner();
         setupEvents();
     }
 
     private void initViews(View view) {
-        // 1. Ánh xạ các View cơ bản
         clFilter = view.findViewById(R.id.clFilter);
         expandableLayout = view.findViewById(R.id.expandable_layout);
         ivClose = view.findViewById(R.id.ivClose);
@@ -91,16 +94,13 @@ public class ProductListFilterFragment extends Fragment {
         ivFilterIcon = view.findViewById(R.id.ivFilter);
         rvCategories = view.findViewById(R.id.rvCategories);
 
-        // 2. Ánh xạ CheckBox Giá
         cbPrice0 = view.findViewById(R.id.cbPrice0);
         cbPrice150 = view.findViewById(R.id.cbPrice150);
         cbPrice3 = view.findViewById(R.id.cbPrice3);
         cbPrice4 = view.findViewById(R.id.cbPrice4);
 
-        // 3. ẨN PHẦN LỌC TRẠNG THÁI (Vì đây là màn hình khách hàng)
         View tvStatusLabel = view.findViewById(R.id.tvCondition);
         View layoutStatus = view.findViewById(R.id.layout_status);
-
         if (tvStatusLabel != null) tvStatusLabel.setVisibility(View.GONE);
         if (layoutStatus != null) layoutStatus.setVisibility(View.GONE);
     }
@@ -111,78 +111,88 @@ public class ProductListFilterFragment extends Fragment {
     }
 
     private void setupCategoryRecyclerView() {
-        // Init Adapter với callback xử lý click
         categoryAdapter = new CategoryProductAdapter(requireContext(), new ArrayList<>(), (category, position) -> {
             handleCategoryClick(category);
         });
 
-        // Setup LayoutManager (Ngang)
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false);
         rvCategories.setLayoutManager(layoutManager);
         rvCategories.setAdapter(categoryAdapter);
 
-        // Observe Data từ ViewModel
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 mCategoryList.clear();
 
-                // Tạo mục "Tất cả"
+                // 1. Tạo mục "Tất cả"
                 Category allCategory = new Category("Tất cả", true);
                 allCategory.setCreateAt("ALL");
+
+                // --- SỬA: Dùng setCateID ---
+                allCategory.setCateID("ALL");
+                // --------------------------
+
                 mCategoryList.add(allCategory);
 
-                // Thêm danh sách từ API
+                // 2. Thêm danh sách API
                 for (Category c : categories) {
                     c.setSelected(false);
                     mCategoryList.add(c);
                 }
 
-                categoryAdapter.setCategoryList(mCategoryList);
+                updateCategorySelectionUI();
             }
         });
     }
 
     private void handleCategoryClick(Category clickedCategory) {
+        // --- SỬA: Dùng getCateID ---
         String cateId = clickedCategory.get_id();
+        // --------------------------
 
-        // Logic chọn/bỏ chọn
-        if (cateId == null || cateId.equals("ALL")) {
-            selectedCategoryIds.clear(); // Chọn tất cả -> Xóa các filter con
+        if (cateId == null) cateId = "ALL";
+
+        if (currentSelectedCategoryId.equals(cateId)) return;
+
+        currentSelectedCategoryId = cateId;
+        updateCategorySelectionUI();
+
+        if (currentSelectedCategoryId.equals("ALL")) {
+            viewModel.refreshData();
         } else {
-            if (selectedCategoryIds.contains(cateId)) {
-                selectedCategoryIds.remove(cateId);
-            } else {
-                selectedCategoryIds.add(cateId);
-            }
+            viewModel.filterProductsByCategoryApi(currentSelectedCategoryId);
         }
 
-        updateCategorySelectionUI();
         applyFilters();
     }
 
     private void updateCategorySelectionUI() {
-        boolean isAllSelected = selectedCategoryIds.isEmpty();
+        int selectedPosition = 0;
+        for (int i = 0; i < mCategoryList.size(); i++) {
+            Category c = mCategoryList.get(i);
 
-        for (Category c : mCategoryList) {
+            // --- SỬA: Dùng getCateID ---
             String id = c.get_id();
-            if (id == null || id.equals("ALL")) {
-                c.setSelected(isAllSelected);
+            // --------------------------
+
+            if (id == null) id = "ALL";
+
+            if (id.equals(currentSelectedCategoryId)) {
+                c.setSelected(true);
+                selectedPosition = i;
             } else {
-                c.setSelected(selectedCategoryIds.contains(id));
+                c.setSelected(false);
             }
         }
-        categoryAdapter.notifyDataSetChanged();
+
+        categoryAdapter.setCategoryList(mCategoryList);
+        rvCategories.smoothScrollToPosition(selectedPosition);
     }
 
     private void setupSpinner() {
         LinkedList<String> data = new LinkedList<>(Arrays.asList(
-                "Mới nhất",       // 0
-                "Cũ nhất",        // 1
-                "Giá tăng dần",   // 2
-                "Giá giảm dần"    // 3
+                "Mới nhất", "Cũ nhất", "Giá tăng dần", "Giá giảm dần"
         ));
         spSort.attachDataSource(data);
-
         spSort.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
             switch (position) {
                 case 0: viewModel.sortProducts(ProductViewModel.SORT_DATE_NEWEST); break;
@@ -194,16 +204,12 @@ public class ProductListFilterFragment extends Fragment {
     }
 
     private void setupEvents() {
-        // Toggle Filter
         View.OnClickListener toggleListener = v -> toggleFilter();
         tvFilterLabel.setOnClickListener(toggleListener);
         ivFilterIcon.setOnClickListener(toggleListener);
-
         ivClose.setOnClickListener(v -> expandableLayout.collapse());
 
-        // Lắng nghe sự kiện checkbox giá
         CompoundButton.OnCheckedChangeListener filterListener = (buttonView, isChecked) -> applyFilters();
-
         cbPrice0.setOnCheckedChangeListener(filterListener);
         cbPrice150.setOnCheckedChangeListener(filterListener);
         cbPrice3.setOnCheckedChangeListener(filterListener);
@@ -211,31 +217,18 @@ public class ProductListFilterFragment extends Fragment {
     }
 
     private void toggleFilter() {
-        if (expandableLayout.isExpanded()) {
-            expandableLayout.collapse();
-        } else {
-            expandableLayout.expand();
-        }
+        if (expandableLayout.isExpanded()) expandableLayout.collapse();
+        else expandableLayout.expand();
     }
 
-    /**
-     * Thu thập dữ liệu và gọi ViewModel
-     */
     private void applyFilters() {
-        // 1. Khoảng giá
         List<Integer> priceRanges = new ArrayList<>();
         if (cbPrice0.isChecked()) priceRanges.add(0);
         if (cbPrice150.isChecked()) priceRanges.add(1);
         if (cbPrice3.isChecked()) priceRanges.add(2);
         if (cbPrice4.isChecked()) priceRanges.add(3);
 
-        // 2. Danh mục
-        List<String> categoriesToFilter = new ArrayList<>(selectedCategoryIds);
-
-        // 3. Gọi ViewModel
-        // Vì đây là App khách hàng, ta HARDCODE trạng thái:
-        // showSelling = true (Chỉ hiện hàng đang bán)
-        // showStopped = false (Ẩn hàng ngừng kinh doanh)
-        viewModel.filterProducts(true, false, priceRanges, categoriesToFilter);
+        List<String> emptyCategories = new ArrayList<>();
+        viewModel.filterProducts(true, false, priceRanges, emptyCategories);
     }
 }

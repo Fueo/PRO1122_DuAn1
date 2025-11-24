@@ -3,12 +3,12 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/header_container"
     android:layout_width="match_parent"
     android:layout_height="120dp"
     android:paddingHorizontal="8dp"
     android:background="@color/blue">
 
-    <!-- Logo CloudyBooks -->
     <ImageView
         android:id="@+id/iv_logo"
         android:layout_width="150dp"
@@ -19,8 +19,6 @@
         android:contentDescription="Logo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-    <!-- Ô tìm kiếm -->
 
     <ImageView
         android:id="@+id/iv_back"
@@ -56,7 +54,6 @@
         app:layout_constraintStart_toEndOf="@id/iv_back"
         app:layout_constraintEnd_toStartOf="@id/fl_favorite_container" />
 
-    <!-- Khung giỏ hàng -->
     <FrameLayout
         android:id="@+id/fl_favorite_container"
         android:layout_width="50dp"
@@ -66,16 +63,15 @@
         app:layout_constraintTop_toTopOf="@+id/et_search"
         app:layout_constraintBottom_toBottomOf="@id/et_search">
 
-        <!-- Vòng tròn nền trắng -->
         <ImageView
+            android:id="@+id/iv_favorite"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/ic_header_favorite"
-            android:contentDescription="Vòng trắng" />
+            android:contentDescription="Yêu thích" />
 
     </FrameLayout>
 
-    <!-- Khung giỏ hàng -->
     <FrameLayout
         android:id="@+id/fl_cart_container"
         android:layout_width="50dp"
@@ -84,15 +80,13 @@
         app:layout_constraintTop_toTopOf="@id/et_search"
         app:layout_constraintBottom_toBottomOf="@id/et_search">
 
-        <!-- Vòng tròn nền trắng -->
         <ImageView
+            android:id="@+id/iv_cart"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@drawable/ic_cart"
-            android:contentDescription="Vòng trắng" />
+            android:contentDescription="Giỏ hàng" />
 
-
-        <!-- Số lượng (huy hiệu đỏ) -->
         <TextView
             android:id="@+id/tv_badge"
             android:layout_width="20dp"
@@ -104,6 +98,7 @@
             android:textColor="@android:color/white"
             android:textSize="12sp"
             android:textStyle="bold"
+            android:visibility="gone"
             />
     </FrameLayout>
 
