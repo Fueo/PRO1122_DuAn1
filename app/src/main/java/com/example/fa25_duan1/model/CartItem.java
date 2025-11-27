@@ -4,18 +4,22 @@ import com.google.gson.annotations.SerializedName;
 
 public class CartItem {
     @SerializedName("_id")
-    private String id; // ID của dòng trong giỏ hàng
+    private String id;
 
     @SerializedName("productId")
-    private Product product; // Object Product chi tiết từ Backend
+    private Product product;
 
     @SerializedName("quantity")
     private int quantity;
 
+    // 🔹 MỚI: Nhận giá tiền được lưu trong collection Cart
+    @SerializedName("price")
+    private double price;
+
     public CartItem() {
     }
 
-    // --- Getter & Setter ---
+    // --- Getter & Setter chuẩn ---
 
     public String getId() {
         return id;
@@ -41,13 +45,22 @@ public class CartItem {
         this.quantity = quantity;
     }
 
-    // --- SMART GETTERS (Để Adapter cũ không bị lỗi) ---
+    // Setter cho price (nếu cần thiết)
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
+    // --- SMART GETTERS (Dùng cho Adapter) ---
 
     public String getTitle() {
         return (product != null) ? product.getName() : "Sản phẩm lỗi/Ngừng kinh doanh";
     }
 
+    // 🔹 CẬP NHẬT: Lấy giá từ bảng Cart. Nếu = 0 (data cũ) thì lấy từ Product
     public double getPrice() {
+        if (price > 0) {
+            return price;
+        }
         return (product != null) ? product.getPrice() : 0;
     }
 

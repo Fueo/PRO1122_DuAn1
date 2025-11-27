@@ -43,4 +43,14 @@ public class AuthViewModel extends AndroidViewModel {
     public LiveData<RefreshTokenResponse> logout(String refreshToken) {
         return repository.logout(refreshToken);
     }
+
+    public LiveData<ApiResponse<User>> updateProfile(String name, String email, String phone, String address, String avatar) {
+        // Truyền avatar sang repository
+        return repository.updateProfile(name, email, phone, address, avatar);
+    }
+
+
+    public LiveData<ApiResponse<Void>> changePassword(String currentPassword, String newPassword) {
+        return repository.changePassword(currentPassword, newPassword);
+    }
 }

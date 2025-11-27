@@ -19,23 +19,29 @@ import com.example.fa25_duan1.model.Order;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
+import java.text.DecimalFormat;
 import java.util.List;
 
 public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHolder> {
 
     private Context context;
     private List<Order> orders;
+    private OnOrderActionListener actionListener;
 
-    public OrderAdapter(Context context, List<Order> orders) {
+    public interface OnOrderActionListener {
+        void onCancelOrder(String orderId);
+    }
+
+    public OrderAdapter(Context context, List<Order> orders, OnOrderActionListener listener) {
         this.context = context;
         this.orders = orders;
+        this.actionListener = listener;
     }
 
     @NonNull
     @Override
     public OrderViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(context)
-                .inflate(R.layout.item_order, parent, false);
+        View v = LayoutInflater.from(context).inflate(R.layout.item_order, parent, false);
         return new OrderViewHolder(v);
     }
 
@@ -44,66 +50,108 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         Order order = orders.get(position);
         if (order == null) return;
 
-        // ================= HEADER TEXT =================
-        holder.tvOrderCode.setText(order.getOrderCode());
+        // 1. HEADER INFO
+        // Kiểm tra null cho orderId để tránh crash
+        holder.tvOrderCode.setText(order.getId());
+        holder.tvReceiverName.setText(order.getFullname());
         holder.tvPaymentMethod.setText(order.getPaymentMethod());
-        holder.tvTotal.setText(order.getTotal());
-        holder.tvDate.setText(order.getDate());
+
+        DecimalFormat formatter = new DecimalFormat("###,###,###");
+        holder.tvTotal.setText(formatter.format(order.getTotal()) + " đ");
+
+        if (order.getDate() != null && order.getDate().contains("T")) {
+            holder.tvDate.setText(order.getDate().split("T")[0]);
+        } else {
+            holder.tvDate.setText(order.getDate());
+        }
+
         holder.tvAddress.setText(order.getAddress());
         holder.tvPhone.setText(order.getPhone());
 
-        // =============== TRẠNG THÁI ===============
+        // 2. TRẠNG THÁI & NÚT BẤM (CẬP NHẬT STYLE)
         String status = order.getStatus();
-        if ("processing".equals(status)) {
+
+        // Mặc định ẩn nút
+        holder.btnAction.setVisibility(View.GONE);
+        holder.btnAction.setOnClickListener(null);
+
+        if ("Đang xử lý".equals(status)) {
+            // --- Trạng thái: ĐANG XỬ LÝ ---
             holder.tvStatus.setText("Đang xử lý");
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
             holder.tvStatus.setTextColor(Color.parseColor("#0486E9"));
-        } else if ("done".equals(status)) {
-            holder.tvStatus.setText("Đã hoàn thành");
-            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_done);
-            holder.tvStatus.setTextColor(Color.parseColor("#188038"));
-        } else if ("canceled".equals(status)) {
+
+            // Hiển thị nút HỦY ĐƠN (Style Đỏ)
+            holder.btnAction.setVisibility(View.VISIBLE);
+            holder.btnAction.setText("Hủy đơn hàng");
+
+            // [SỬA] Dùng setBackgroundResource để giữ bo góc
+            holder.btnAction.setBackgroundResource(R.drawable.bg_btn_cancel);
+            holder.btnAction.setTextColor(Color.WHITE); // Chữ trắng trên nền đỏ
+
+            holder.btnAction.setOnClickListener(v -> {
+                if (actionListener != null) actionListener.onCancelOrder(order.getId());
+            });
+
+        } else if ("Đã hủy".equals(status)) {
+            // --- Trạng thái: ĐÃ HỦY ---
             holder.tvStatus.setText("Đã hủy");
             holder.tvStatus.setBackgroundResource(R.drawable.bg_status_canceled);
             holder.tvStatus.setTextColor(Color.parseColor("#FF3B30"));
+
+            // (Tùy chọn) Nếu muốn hiện nút "Mua lại"
+
+            holder.btnAction.setVisibility(View.VISIBLE);
+            holder.btnAction.setText("Mua lại");
+            holder.btnAction.setBackgroundResource(R.drawable.bg_btn_buy_again);
+            holder.btnAction.setTextColor(Color.parseColor("#0486E9"));
+
+        } else {
+            // --- Trạng thái: HOÀN THÀNH / KHÁC ---
+            holder.tvStatus.setText("Đã hoàn thành"); // Hoặc hiển thị status gốc
+            holder.tvStatus.setBackgroundResource(R.drawable.bg_status_done);
+            holder.tvStatus.setTextColor(Color.parseColor("#188038"));
+
+            // (Tùy chọn) Hiện nút Mua lại cho đơn hoàn thành
         }
 
-        // ================= RECYCLER VIEW ITEMS =================
-        // chỉ gán adapter 1 lần DUY NHẤT
-        if (holder.rvOrderItems.getAdapter() == null) {
-            holder.rvOrderItems.setAdapter(new OrderItemAdapter(order.getProductList()));
+        // 3. ITEMS RECYCLERVIEW
+        // Luôn tạo mới adapter để tránh lỗi hiển thị sai item khi tái sử dụng ViewHolder
+        if (order.getOrderDetails() != null) {
+            OrderItemAdapter itemAdapter = new OrderItemAdapter(order.getOrderDetails());
+            holder.rvOrderItems.setAdapter(itemAdapter);
         }
 
-        // ================= ĐỒNG BỘ EXPANDED ================
+        // 4. EXPANDABLE LOGIC
         holder.layoutDetail.setExpanded(order.isExpanded(), false);
+        updateToggleIcon(holder, order.isExpanded());
 
-        // cập nhật mũi tên
-        if (order.isExpanded()) {
+        View.OnClickListener expandListener = v -> {
+            boolean willExpand = !order.isExpanded();
+            order.setExpanded(willExpand);
+
+            if (willExpand) {
+                holder.layoutDetail.expand();
+            } else {
+                holder.layoutDetail.collapse();
+            }
+            updateToggleIcon(holder, willExpand);
+        };
+
+        holder.layoutHeader.setOnClickListener(expandListener);
+        holder.imgToggleHeader.setOnClickListener(expandListener);
+        holder.imgToggleDetail.setOnClickListener(expandListener);
+    }
+
+    // Hàm phụ để cập nhật icon mũi tên cho gọn code
+    private void updateToggleIcon(OrderViewHolder holder, boolean isExpanded) {
+        if (isExpanded) {
             holder.imgToggleHeader.setVisibility(View.GONE);
             holder.imgToggleDetail.setVisibility(View.VISIBLE);
         } else {
             holder.imgToggleHeader.setVisibility(View.VISIBLE);
             holder.imgToggleDetail.setVisibility(View.GONE);
         }
-
-        // ================= CLICK MỞ =================
-        View.OnClickListener expandListener = v -> {
-            if (!order.isExpanded()) {
-                order.setExpanded(true);
-                holder.layoutDetail.expand();       // animate mượt
-            }
-        };
-
-        holder.layoutHeader.setOnClickListener(expandListener);
-        holder.imgToggleHeader.setOnClickListener(expandListener);
-
-        // ================= CLICK ĐÓNG =================
-        holder.imgToggleDetail.setOnClickListener(v -> {
-            if (order.isExpanded()) {
-                order.setExpanded(false);
-                holder.layoutDetail.collapse();
-            }
-        });
     }
 
     @Override
@@ -112,13 +160,13 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
     }
 
     static class OrderViewHolder extends RecyclerView.ViewHolder {
-
+        // ... (Giữ nguyên như cũ)
         LinearLayout layoutHeader;
         ExpandableLayout layoutDetail;
-        TextView tvOrderCode, tvPaymentMethod, tvTotal, tvStatus, tvDate, tvAddress, tvPhone;
+        TextView tvOrderCode, tvPaymentMethod, tvTotal, tvStatus, tvDate, tvAddress, tvPhone, tvReceiverName;
         ImageView imgToggleHeader, imgToggleDetail;
         RecyclerView rvOrderItems;
-        Button btnBuyAgain;
+        Button btnAction;
 
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -126,34 +174,22 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             layoutDetail = itemView.findViewById(R.id.layoutDetail);
 
             tvOrderCode = itemView.findViewById(R.id.tvOrderCode);
+            tvReceiverName = itemView.findViewById(R.id.tvReceiverName);
             tvPaymentMethod = itemView.findViewById(R.id.tvPaymentMethod);
             tvTotal = itemView.findViewById(R.id.tvTotal);
             tvStatus = itemView.findViewById(R.id.tvStatus);
             tvDate = itemView.findViewById(R.id.tvDate);
             tvAddress = itemView.findViewById(R.id.tvAddress);
             tvPhone = itemView.findViewById(R.id.tvPhone);
+            // tvReceiverName = itemView.findViewById(R.id.tvReceiverName); // Nếu bạn đã thêm vào XML
 
             imgToggleHeader = itemView.findViewById(R.id.imgToggleHeader);
             imgToggleDetail = itemView.findViewById(R.id.imgToggleDetail);
 
             rvOrderItems = itemView.findViewById(R.id.rvOrderItems);
-            btnBuyAgain = itemView.findViewById(R.id.btnBuyAgain);
+            btnAction = itemView.findViewById(R.id.btnBuyAgain); // ID trong XML là btnBuyAgain
 
-            // Quan trọng: LayoutManager chỉ gán 1 lần
-            rvOrderItems.setLayoutManager(
-                    new LinearLayoutManager(itemView.getContext(), LinearLayoutManager.VERTICAL, false)
-            );
-
-            // Listener cập nhật UI khi animation xong
-            layoutDetail.setOnExpansionUpdateListener((fraction, state) -> {
-                if (state == ExpandableLayout.State.EXPANDED) {
-                    imgToggleHeader.setVisibility(View.GONE);
-                    imgToggleDetail.setVisibility(View.VISIBLE);
-                } else if (state == ExpandableLayout.State.COLLAPSED) {
-                    imgToggleHeader.setVisibility(View.VISIBLE);
-                    imgToggleDetail.setVisibility(View.GONE);
-                }
-            });
+            rvOrderItems.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
         }
     }
 }

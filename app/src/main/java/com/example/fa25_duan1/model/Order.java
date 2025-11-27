@@ -1,47 +1,60 @@
 package com.example.fa25_duan1.model;
 
+import com.google.gson.annotations.SerializedName;
+import java.io.Serializable;
 import java.util.List;
-public class Order {
 
-    private String orderCode;
-    private String paymentMethod;
-    private String total;
-    private String status;      // "processing", "done", "canceled"
-    private String date;        // "9:42 11/10/2025"
+public class Order implements Serializable {
+
+    @SerializedName("_id")
+    private String id;
+
+    @SerializedName("fullname")
+    private String fullname;
+
+    @SerializedName("address")
     private String address;
+
+    @SerializedName("phone")
     private String phone;
 
-    private List<OrderItem> productList;
+    @SerializedName("note")
+    private String note;
 
-    private boolean expanded = false; // dùng cho xổ/thu chi tiết
+    @SerializedName("paymentmethod")
+    private String paymentMethod;
 
-    public Order(String orderCode,
-                 String paymentMethod,
-                 String total,
-                 String status,
-                 String date,
-                 String address,
-                 String phone,
-                 List<OrderItem> productList) {
+    @SerializedName("total")
+    private double total; // Backend trả về số (Number), nên dùng double hoặc long
 
-        this.orderCode = orderCode;
-        this.paymentMethod = paymentMethod;
-        this.total = total;
-        this.status = status;
-        this.date = date;
-        this.address = address;
-        this.phone = phone;
-        this.productList = productList;
+    @SerializedName("status")
+    private String status;
+
+    @SerializedName("createAt")
+    private String date; // Backend trả về chuỗi ISO date "2025-11-26T..."
+
+    // Đây là phần quan trọng nhất: Danh sách chi tiết được lồng bên trong
+    @SerializedName("orderDetails")
+    private List<OrderDetail> orderDetails;
+
+    // Biến này dùng cho UI (xổ ra/thu vào), không gửi lên server
+    private boolean expanded = false;
+
+    public Order() {
     }
 
-    public String getOrderCode() { return orderCode; }
-    public String getPaymentMethod() { return paymentMethod; }
-    public String getTotal() { return total; }
-    public String getStatus() { return status; }
-    public String getDate() { return date; }
+    // --- Getters ---
+
+    public String getId() { return id; }
+    public String getFullname() { return fullname; }
     public String getAddress() { return address; }
     public String getPhone() { return phone; }
-    public List<OrderItem> getProductList() { return productList; }
+    public String getNote() { return note; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public double getTotal() { return total; }
+    public String getStatus() { return status; }
+    public String getDate() { return date; }
+    public List<OrderDetail> getOrderDetails() { return orderDetails; }
 
     public boolean isExpanded() { return expanded; }
     public void setExpanded(boolean expanded) { this.expanded = expanded; }

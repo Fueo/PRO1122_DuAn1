@@ -7,14 +7,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.view.detail.HeaderDetailFragment;
-import com.example.fa25_duan1.view.home.AdminFragment;
 import com.example.fa25_duan1.view.management.account.AccountHeaderFragment;
 import com.example.fa25_duan1.view.management.account.AccountManageFragment;
 import com.example.fa25_duan1.view.management.author.AuthorHeaderFragment;
 import com.example.fa25_duan1.view.management.author.AuthorManageFragment;
 import com.example.fa25_duan1.view.management.category.CategoryHeaderFragment;
 import com.example.fa25_duan1.view.management.category.CategoryManageFragment;
+import com.example.fa25_duan1.view.management.discount.DiscountHeaderFragment;
+import com.example.fa25_duan1.view.management.discount.DiscountManageFragment;
 import com.example.fa25_duan1.view.management.product.ProductHeaderFragment;
 import com.example.fa25_duan1.view.management.product.ProductManageFragment;
 
@@ -59,6 +59,8 @@ public class ManageActivity extends AppCompatActivity {
             return new CategoryManageFragment();
         }else if ("product".equals(fragmentName)) {
             return new ProductManageFragment();
+        }else if ("discount".equals(fragmentName)) {
+            return new DiscountManageFragment();
         }
         return null;
     }
@@ -73,6 +75,8 @@ public class ManageActivity extends AppCompatActivity {
             return new CategoryHeaderFragment();
         } else if ("product".equals(fragmentName)) {
             return new ProductHeaderFragment();
+        } else if ("discount".equals(fragmentName)) {
+            return new DiscountHeaderFragment();
         }
         return null;
     }

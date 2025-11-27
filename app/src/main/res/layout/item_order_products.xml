@@ -1,50 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="horizontal"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingVertical="6dp">
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingVertical="8dp">
 
-    <ImageView
-        android:id="@+id/imgProduct"
-        android:layout_width="0dp"
-        android:layout_height="50dp"
-        android:layout_weight="1"
-        android:scaleType="centerCrop"/>
+    <androidx.cardview.widget.CardView
+        android:layout_width="60dp"
+        android:layout_height="60dp"
+        android:layout_weight="0"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="0dp"
+        app:cardBackgroundColor="#F5F5F5">
+        <ImageView
+            android:id="@+id/imgProduct"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/book_cover_placeholder" />
+    </androidx.cardview.widget.CardView>
 
-    <TextView
-        android:id="@+id/tvProductName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="2"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:text="Tên sản phẩm"
-        android:textColor="@color/black"
-        android:textSize="12sp"
-        android:layout_gravity="center"
-        android:fontFamily="@font/robotoserif_regular"/>
-
-    <TextView
-        android:id="@+id/tvProductQuantity"
+    <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
         android:layout_weight="1"
-        android:gravity="center"
-        android:text="1"
-        android:textColor="@color/black"
-        android:layout_gravity="center"
-        android:textSize="16sp"
-        android:fontFamily="@font/robotoserif_regular"/>
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvProductName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:fontFamily="@font/robotoserif_regular"
+            android:maxLines="2"
+            android:text="Tên sản phẩm rất dài để test xuống dòng"
+            android:textColor="#000000"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="@font/robotoserif_regular"
+                android:text="Số lượng:"
+                android:textColor="#757575"
+                android:textSize="12sp" />
+
+            <TextView
+                android:id="@+id/tvProductQuantity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:fontFamily="@font/robotoserif_bold"
+                android:text="x2"
+                android:textColor="#000000"
+                android:textSize="12sp" />
+        </LinearLayout>
+    </LinearLayout>
 
     <TextView
         android:id="@+id/tvProductAmount"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="2"
-        android:gravity="center"
-        android:text="75.000 VND"
-        android:textSize="13sp"
-        android:layout_gravity="center"
+        android:layout_marginStart="8dp"
+        android:layout_weight="0"
+        android:fontFamily="@font/robotoserif_bold"
+        android:text="150.000 đ"
         android:textColor="#1A5BD4"
-        android:fontFamily="@font/robotoserif_regular"/>
+        android:textSize="14sp" />
+
 </LinearLayout>

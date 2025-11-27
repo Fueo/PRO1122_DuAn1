@@ -1,4 +1,4 @@
-package com.example.fa25_duan1.view.detail;
+package com.example.fa25_duan1.view.home;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;

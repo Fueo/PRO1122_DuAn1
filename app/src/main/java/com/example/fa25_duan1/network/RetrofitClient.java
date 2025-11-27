@@ -21,6 +21,8 @@ public class RetrofitClient {
     private final ProductApi productApi;
     private final CartApi cartApi;       // Khai báo biến
     private final FavoriteApi favoriteApi;
+    private final DiscountApi discountApi;
+    private final OrderApi orderApi;
 
     private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
 
@@ -48,6 +50,8 @@ public class RetrofitClient {
         categoryApi = retrofit.create(CategoryApi.class);
         productApi = retrofit.create(ProductApi.class);
         favoriteApi = retrofit.create(FavoriteApi.class);
+        discountApi = retrofit.create(DiscountApi.class);
+        orderApi = retrofit.create(OrderApi.class);
 
         // --- KHỞI TẠO CART API TẠI ĐÂY ---
         cartApi = retrofit.create(CartApi.class);
@@ -88,4 +92,8 @@ public class RetrofitClient {
     public CartApi getCartApi() {
         return cartApi;
     }
+
+    public DiscountApi getDiscountApi() {return discountApi;}
+
+    public OrderApi getOrderApi() {return orderApi;}
 }

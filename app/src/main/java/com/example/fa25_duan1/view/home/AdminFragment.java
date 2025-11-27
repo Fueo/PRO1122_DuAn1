@@ -124,22 +124,22 @@ public class AdminFragment extends Fragment {
             Intent intent = new Intent(getActivity(), ManageActivity.class);
             switch (item.getId()) {
                 case 0:
-                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "category");
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "category");
                     break;
                 case 1:
-                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "product");
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "product");
                     break;
                 case 2:
                     Toast.makeText(getActivity(), "Vào trang Invoice", Toast.LENGTH_SHORT).show();
                     return; // Thêm return để không start activity rỗng nếu chưa implement
                 case 3:
-                    Toast.makeText(getActivity(), "Vào trang Sales", Toast.LENGTH_SHORT).show();
-                    return;
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "discount");
+                    break;
                 case 4:
-                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "author");
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "author");
                     break;
                 case 5:
-                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "account");
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "account");
                     break;
                 case 6:
                     Toast.makeText(getActivity(), "Vào trang Statistic", Toast.LENGTH_SHORT).show();

@@ -238,6 +238,14 @@ public class HomeFragment extends Fragment {
             if (bookGridAdapter != null) bookGridAdapter.setFavoriteIds(ids);
             if (bookHorizontalAdapter != null) bookHorizontalAdapter.setFavoriteIds(ids);
         });
+
+        cartViewModel.getMessage().observe(getViewLifecycleOwner(), message -> {
+            if (message != null && !message.isEmpty()) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+                // (Tùy chọn) Reset message trong ViewModel nếu cần, để tránh hiện lại khi xoay màn hình
+                // cartViewModel.clearMessage(); // Cần viết thêm hàm này trong ViewModel nếu muốn kỹ
+            }
+        });
     }
 
     private void setupCategoryTabs(List<Category> categories) {

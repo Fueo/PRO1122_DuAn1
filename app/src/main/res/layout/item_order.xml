@@ -12,16 +12,14 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_order_card"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="12dp">
 
-        <!-- HEADER: luôn hiển thị -->
         <LinearLayout
             android:id="@+id/layoutHeader"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- HÀNG 1: NGÀY MUA (full width, text nằm bên phải) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -33,7 +31,8 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="@font/robotoserif_regular"
                     android:text="Ngày mua:"
-                    android:textSize="10sp" />
+                    android:textColor="#757575"
+                    android:textSize="11sp" />
 
                 <TextView
                     android:id="@+id/tvDate"
@@ -42,79 +41,79 @@
                     android:layout_marginStart="4dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:text="9:42 11/10/2025"
-                    android:textSize="10sp" />
+                    android:textColor="#757575"
+                    android:textSize="11sp" />
             </LinearLayout>
 
-            <!-- HÀNG 2: THÔNG TIN HÓA ĐƠN + MŨI TÊN -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:orientation="horizontal">
 
-                <!-- Bên trái: thông tin hóa đơn -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
-                    <!-- Mã hóa đơn -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
                         android:orientation="horizontal">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/robotoserif_regular"
-                            android:text="Mã hóa đơn:"
-                            android:textColor="#1A5BD4"
+                            android:text="Mã đơn:"
+                            android:textColor="#555555"
                             android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/tvOrderCode"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:text="6915dbd3ad9de604d9ece8a1
-"
+                            android:layout_marginStart="6dp"
+                            android:fontFamily="@font/robotoserif_bold"
+                            android:text="#6915dbd3"
                             android:textColor="#1A5BD4"
                             android:textSize="14sp" />
                     </LinearLayout>
 
-                    <!-- Thanh toán -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
                         android:orientation="horizontal">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/robotoserif_regular"
-                            android:text="Thanh toán:"
-                            android:textColor="#1A5BD4"
+                            android:text="Người nhận:"
+                            android:textColor="#555555"
                             android:textSize="14sp" />
 
                         <TextView
-                            android:id="@+id/tvPaymentMethod"
+                            android:id="@+id/tvReceiverName"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
+                            android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:text="Thanh toán khi nhận hàng"
-                            android:textColor="#1A5BD4"
+                            android:ellipsize="end"
+                            android:fontFamily="@font/robotoserif_bold"
+                            android:maxLines="1"
+                            android:text="Nguyễn Văn A"
+                            android:textColor="#000000"
                             android:textSize="14sp" />
                     </LinearLayout>
 
-                    <!-- Tổng tiền -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginBottom="4dp"
                         android:orientation="horizontal">
 
                         <TextView
@@ -122,21 +121,20 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/robotoserif_regular"
                             android:text="Tổng tiền:"
-                            android:textColor="#1A5BD4"
+                            android:textColor="#555555"
                             android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/tvTotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:text="36"
-                            android:textColor="#1A5BD4"
+                            android:layout_marginStart="6dp"
+                            android:fontFamily="@font/robotoserif_bold"
+                            android:text="150.000 đ"
+                            android:textColor="#FF3B30"
                             android:textSize="14sp" />
                     </LinearLayout>
 
-                    <!-- Trạng thái -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -148,33 +146,32 @@
                             android:layout_height="wrap_content"
                             android:fontFamily="@font/robotoserif_regular"
                             android:text="Trạng thái:"
-                            android:textColor="#1A5BD4"
+                            android:textColor="#555555"
                             android:textSize="14sp" />
 
                         <TextView
                             android:id="@+id/tvStatus"
                             android:layout_width="wrap_content"
-                            android:layout_height="22dp"
-                            android:layout_marginStart="4dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
                             android:background="@drawable/bg_status_processing"
                             android:fontFamily="@font/robotoserif_regular"
-                            android:gravity="center"
-                            android:paddingHorizontal="10dp"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
                             android:text="Đang xử lý"
                             android:textColor="#0486E9"
-                            android:textSize="14sp" />
+                            android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
-                <!-- Bên phải: mũi tên -->
                 <ImageView
                     android:id="@+id/imgToggleHeader"
                     android:layout_width="24dp"
                     android:layout_height="24dp"
-                    android:layout_gravity="bottom"
-                    android:layout_marginStart="4dp"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginStart="8dp"
                     android:src="@drawable/ic_arrow_down"
-                    app:tint="#0486E9" />
+                    app:tint="#757575" />
             </LinearLayout>
         </LinearLayout>
 
@@ -183,191 +180,159 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:el_duration="300"
-            app:el_parallax="0"
-            app:el_expanded="false">
+            app:el_expanded="false"
+            app:el_parallax="0.5">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+
                 <View
-                    android:id="@+id/dividerBetweenHeaderAndInfo"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="8dp"
+                    android:layout_marginVertical="12dp"
                     android:background="#E0E0E0" />
-                <!-- Thông tin nhận hàng -->
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Thông tin nhận hàng"
-                    android:textSize="14sp"
-                    android:textColor="@color/black"
-                    android:fontFamily="@font/robotoserif_regular"
-                    android:layout_marginTop="10dp"/>
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/robotoserif_bold"
+                    android:text="Thông tin giao hàng"
+                    android:textColor="#000000"
+                    android:textSize="14sp" />
 
-                <!-- Địa chỉ -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Địa chỉ:"
-                        android:textSize="14sp"
-                        android:textColor="#1A5BD4"
-                        android:fontFamily="@font/robotoserif_regular"/>
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="2dp"
+                        android:src="@drawable/ic_location_gray"
+                        app:tint="#757575" />
 
                     <TextView
                         android:id="@+id/tvAddress"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="40dp"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:lineSpacingExtra="2dp"
                         android:text="120 Yên Lãng, Phường Đống Đa, Hà Nội"
-                        android:textSize="14sp"
-                        android:textColor="#1A5BD4"
-                        android:fontFamily="@font/robotoserif_regular"/>
+                        android:textColor="#333333"
+                        android:textSize="13sp" />
                 </LinearLayout>
 
-                <!-- SDT -->
                 <LinearLayout
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
                     android:orientation="horizontal">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="SDT:"
-                        android:textSize="14sp"
-                        android:textColor="#1A5BD4"
-                        android:fontFamily="@font/robotoserif_regular"/>
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="2dp"
+                        android:src="@drawable/ic_phone_gray"
+                        app:tint="#757575" />
 
                     <TextView
                         android:id="@+id/tvPhone"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="60dp"
-                        android:text="0123123123123321"
-                        android:textSize="13sp"
-                        android:textColor="#1A5BD4"
-                        android:fontFamily="@font/robotoserif_regular"/>
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:text="0912 345 678"
+                        android:textColor="#333333"
+                        android:textSize="13sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:orientation="horizontal">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_marginTop="2dp"
+                        android:src="@drawable/ic_credit_card"
+                        app:tint="#757575" />
+
+                    <TextView
+                        android:id="@+id/tvPaymentMethod"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:text="Thanh toán khi nhận hàng"
+                        android:textColor="#333333"
+                        android:textSize="13sp" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginVertical="8dp"
+                    android:layout_marginVertical="12dp"
                     android:background="#E0E0E0" />
 
-                <!-- BẢNG SẢN PHẨM -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="8dp"
+                    android:fontFamily="@font/robotoserif_bold"
+                    android:text="Danh sách sản phẩm"
+                    android:textColor="#000000"
+                    android:textSize="14sp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvOrderItems"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="4dp">
-
-                    <!-- HEADER -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Hình"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:textColor="@color/black"/>
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="2"
-                            android:text="Tên"
-                            android:gravity="center"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:textColor="@color/black"/>
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:text="Số lượng"
-                            android:textSize="14sp"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:textColor="@color/black"/>
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="2"
-                            android:text="Thành tiền"
-                            android:textSize="14sp"
-                            android:gravity="center"
-                            android:fontFamily="@font/robotoserif_regular"
-                            android:textColor="@color/black"/>
-                    </LinearLayout>
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvOrderItems"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:nestedScrollingEnabled="false"
-                        android:overScrollMode="never"/>
-                </LinearLayout>
-
-                <!-- NÚT MUA LẠI -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="16dp"
+                    android:gravity="center">
 
                     <Button
                         android:id="@+id/btnBuyAgain"
-                        android:layout_width="125dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="40dp"
-                        android:text="Mua lại"
-                        android:gravity="center"
-                        android:textAllCaps="false"
-                        android:textColor="#0486E9"
                         android:background="@drawable/bg_buy_again"
-                        android:fontFamily="@font/robotoserif_regular"
-                        app:backgroundTint="@null"/>
+                        android:fontFamily="@font/robotoserif_bold"
+                        android:paddingHorizontal="24dp"
+                        android:text="Hủy đơn hàng"
+                        android:textAllCaps="false"
+                        android:textColor="#FFFFFF"
+                        android:textSize="14sp"
+                        app:backgroundTint="@null" />
                 </LinearLayout>
 
-                <!-- MŨI TÊN CUỐI -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="end"
-                    android:layout_marginTop="8dp">
+                    android:layout_marginTop="8dp"
+                    android:gravity="center">
 
                     <ImageView
                         android:id="@+id/imgToggleDetail"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:src="@drawable/ic_arrow_up"
-                        android:layout_marginEnd="4dp"
-                        app:tint="#0486E9"/>
+                        app:tint="#757575" />
                 </LinearLayout>
 
             </LinearLayout>
-
         </net.cachapa.expandablelayout.ExpandableLayout>
 
-
     </LinearLayout>
-
-    <!-- Nút Mua lại + mũi tên gập lên xuống -->
-    
-
 </LinearLayout>
-
-

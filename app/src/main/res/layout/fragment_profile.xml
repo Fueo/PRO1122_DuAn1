@@ -2,29 +2,29 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/fragment_profile"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
-
+    android:background="@color/white"
+    android:clipChildren="false"
+    android:clipToPadding="false">
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         android:orientation="vertical"
         android:padding="16dp">
-
-        <!-- ==== CARDVIEW THÔNG TIN CÁ NHÂN ==== -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             app:cardBackgroundColor="@color/blue"
             app:cardCornerRadius="20dp"
             app:cardElevation="0dp">
-
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="120dp"
                 android:paddingHorizontal="10dp">
-
 
                 <de.hdodenhof.circleimageview.CircleImageView
                     android:id="@+id/ivProfile"
@@ -33,16 +33,15 @@
                     android:src="@drawable/ic_avatar_placeholder"
                     app:civ_border_color="@color/white"
                     app:civ_border_width="2dp"
-                    app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"/>
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
 
                 <TextView
                     android:id="@+id/tvTitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="16dp"
-
                     android:fontFamily="@font/robotoserif_regular"
                     android:text="Thông tin cá nhân"
                     android:textColor="@color/white"
@@ -85,7 +84,6 @@
         </androidx.cardview.widget.CardView>
 
 
-        <!-- ==== TIÊU ĐỀ: THÔNG TIN LIÊN HỆ ==== -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -104,15 +102,19 @@
                 android:textStyle="bold" />
 
             <ImageView
+                android:id="@+id/btnEdit"
                 android:layout_width="35dp"
                 android:layout_height="35dp"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:clickable="true"
                 android:contentDescription="Chỉnh sửa"
+                android:focusable="true"
+                android:padding="4dp"
                 android:src="@drawable/ic_edit_gray" />
         </RelativeLayout>
 
-        <!-- ==== CARDVIEW THÔNG TIN LIÊN HỆ ==== -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -126,7 +128,7 @@
                 android:clipChildren="false"
                 android:clipToPadding="false"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="8dp">
 
                 <TextView
                     android:id="@+id/tvPhone"
@@ -136,14 +138,14 @@
                     android:drawablePadding="12dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
+                    android:padding="12dp"
                     android:text="0911 363 363"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
+                    android:layout_marginHorizontal="12dp"
                     android:background="#F0F0F0" />
 
                 <TextView
@@ -154,14 +156,14 @@
                     android:drawablePadding="12dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
+                    android:padding="12dp"
                     android:text="anhphungcanhmo123@gmail.com"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
+                    android:layout_marginHorizontal="12dp"
                     android:background="#F0F0F0" />
 
                 <TextView
@@ -172,15 +174,13 @@
                     android:drawablePadding="12dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
+                    android:padding="12dp"
                     android:text="Số 10 Đan Phượng"
                     android:textColor="@color/cardview_dark_background" />
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
 
-        <!-- ==== TIÊU ĐỀ: TÀI KHOẢN ==== -->
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -198,45 +198,41 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <ImageView
-                android:layout_width="35dp"
-                android:layout_height="35dp"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:contentDescription="Chỉnh sửa"
-                android:src="@drawable/ic_edit_gray" />
         </RelativeLayout>
 
-        <!-- ==== CARDVIEW TÀI KHOẢN ==== -->
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
             app:cardBackgroundColor="@android:color/white"
             app:cardCornerRadius="16dp"
             app:cardElevation="6dp">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:padding="8dp">
 
                 <TextView
+                    android:id="@+id/tvChangePassword"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
                     android:drawableStart="@drawable/ic_lock_gray"
                     android:drawableEnd="@drawable/ic_arrow_right_gray"
                     android:drawablePadding="12dp"
+                    android:focusable="true"
                     android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
+                    android:padding="12dp"
                     android:text="Mật khẩu"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
+                    android:layout_marginHorizontal="12dp"
                     android:background="#F0F0F0" />
 
                 <TextView
@@ -247,14 +243,14 @@
                     android:drawablePadding="12dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
+                    android:padding="12dp"
                     android:text="Ngày tạo tài khoản: 11/9/2025"
                     android:textColor="@color/cardview_dark_background" />
 
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
+                    android:layout_marginHorizontal="12dp"
                     android:background="#F0F0F0" />
 
                 <TextView
@@ -265,8 +261,7 @@
                     android:drawablePadding="12dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:gravity="center_vertical"
-                    android:paddingTop="12dp"
-                    android:paddingBottom="12dp"
+                    android:padding="12dp"
                     android:text="Tổng đơn đã đặt: 36"
                     android:textColor="@color/cardview_dark_background" />
             </LinearLayout>

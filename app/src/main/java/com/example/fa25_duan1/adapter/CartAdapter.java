@@ -42,7 +42,7 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.CartViewHolder
 
         // Sử dụng các Getter thông minh đã viết trong Model
         holder.tvTitle.setText(item.getTitle());
-        holder.tvPrice.setText(String.format("%,.0f VNĐ", item.getPrice()));
+        holder.tvPrice.setText(String.format("%,.0f VNĐ", item.getPrice() * item.getQuantity()));
         holder.tvQuantity.setText(String.valueOf(item.getQuantity()));
 
         Glide.with(context)

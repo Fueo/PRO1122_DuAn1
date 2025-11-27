@@ -19,7 +19,7 @@ android {
         getByName("debug") {
             isMinifyEnabled = false
             buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.9:3002/\"")
-            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.100.85:3002/\"")
+            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.116.28:3002/\"")
         }
 
         getByName("release") {

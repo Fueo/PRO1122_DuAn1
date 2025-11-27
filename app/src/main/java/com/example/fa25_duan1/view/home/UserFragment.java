@@ -10,7 +10,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,7 +24,6 @@ import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
-import com.example.fa25_duan1.view.welcome.WelcomeActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 
 public class UserFragment extends Fragment {
@@ -35,12 +33,92 @@ public class UserFragment extends Fragment {
     ImageView ivProfile;
     AuthViewModel authViewModel;
 
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_user, container, false);
     }
 
+    @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
+        // 1. Ánh xạ View
+        initViews(view);
+
+        // 2. Khởi tạo ViewModel
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+
+        // LƯU Ý: Đã xóa phần observe dữ liệu ở đây, chuyển sang onResume
+
+        // 3. Xử lý sự kiện Click
+        rlProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(view.getContext(), DetailActivity.class);
+            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang cá nhân");
+            intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "profile");
+            startActivity(intent);
+        });
+
+        rlHistory.setOnClickListener(v -> {
+            Intent intent = new Intent(view.getContext(), DetailActivity.class);
+            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Lịch sử mua hàng");
+            intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "orderhistory");
+            startActivity(intent);
+        });
+
+        btnLogout.setOnClickListener(v -> {
+            showLogoutDialogConfirm();
+        });
+    }
+
+    // --- THÊM HÀM onResume ---
+    @Override
+    public void onResume() {
+        super.onResume();
+        loadUserData();
+    }
+
+    // --- HÀM LOAD DỮ LIỆU ---
+    private void loadUserData() {
+        // Xóa observer cũ để tránh trùng lặp
+        if (authViewModel.getMyInfo() != null) {
+            authViewModel.getMyInfo().removeObservers(getViewLifecycleOwner());
+        }
+
+        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.getData() != null) {
+                User user = response.getData();
+                updateUI(user);
+            } else {
+                // Toast.makeText(requireContext(), "Không lấy được thông tin", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+
+    // --- HÀM CẬP NHẬT GIAO DIỆN ---
+    private void updateUI(User user) {
+        String role = user.getRole() == 0 ? "Khách hàng" : user.getRole() == 1 ? "Nhân viên" : "Admin";
+
+        tvName.setText(user.getName());
+        tvRole.setText(role);
+        tvEmail.setText(user.getEmail());
+        tvPhone.setText(
+                (user.getPhone() == null || user.getPhone().isEmpty())
+                        ? "Chưa cập nhật"
+                        : user.getPhone()
+        );
+
+        if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+            Glide.with(requireActivity())
+                    .load(user.getAvatar())
+                    .placeholder(R.drawable.ic_avatar_placeholder)
+                    .error(R.drawable.ic_avatar_placeholder)
+                    .into(ivProfile);
+        } else {
+            ivProfile.setImageResource(R.drawable.ic_avatar_placeholder);
+        }
+    }
+
+    private void initViews(View view) {
         rlProfile = view.findViewById(R.id.rlProfile);
         rlHistory = view.findViewById(R.id.rlHistory);
         btnLogout = view.findViewById(R.id.btnLogout);
@@ -49,83 +127,20 @@ public class UserFragment extends Fragment {
         tvPhone = view.findViewById(R.id.tvPhone);
         tvEmail = view.findViewById(R.id.tvEmail);
         ivProfile = view.findViewById(R.id.ivProfile);
-
-        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
-
-        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
-            if (response != null && response.getData() != null) {
-                User user = response.getData();
-                String role = user.getRole() == 0 ? "Khách hàng" : user.getRole() == 1 ? "Nhân viên" : "Admin";
-
-                tvName.setText(user.getName());
-                tvRole.setText(role);
-                tvEmail.setText(user.getEmail());
-                tvPhone.setText(
-                        (user.getPhone() == null || user.getPhone().isEmpty())
-                                ? "Chưa cập nhật"
-                                : user.getPhone()
-                );
-
-                if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
-                    Glide.with(requireActivity())
-                            .load(user.getAvatar())
-                            .placeholder(R.drawable.ic_avatar_placeholder)
-                            .error(R.drawable.ic_avatar_placeholder)
-                            .into(ivProfile);
-                } else {
-                    ivProfile.setImageResource(R.drawable.ic_avatar_placeholder);
-                }
-
-            } else {
-                Toast.makeText(requireContext(), "Không lấy được thông tin", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-
-        rlProfile.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(view.getContext(), DetailActivity.class);
-                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang cá nhân");
-                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "profile");
-                startActivity(intent);
-            }
-        });
-
-        rlHistory.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent intent = new Intent(view.getContext(), DetailActivity.class);
-                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Lịch sử mua hàng");
-                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "orderhistory");
-                startActivity(intent);
-            }
-        });
-
-        btnLogout.setOnClickListener(v -> {
-            showLogoutDialogConfirm();
-        });
     }
 
-    // --- PHẦN QUAN TRỌNG ĐÃ SỬA ---
+    // --- CÁC HÀM XỬ LÝ LOGOUT (GIỮ NGUYÊN) ---
     private void handleLogoutSuccess(SharedPreferences sharedPref) {
         SharedPreferences.Editor editor = sharedPref.edit();
-
-        // 1. Xóa Token
         editor.remove("accessToken");
         editor.remove("refreshToken");
-
-        // 2. QUAN TRỌNG: Xóa trạng thái "Ghi nhớ mật khẩu"
-        // Để lần sau mở app, nó sẽ không tự động đăng nhập nữa
         editor.remove("rememberMe");
-
         editor.apply();
 
         Toast.makeText(requireContext(), "Đăng xuất thành công!", Toast.LENGTH_SHORT).show();
         startAuthActivity(0);
         requireActivity().finish();
     }
-    // ------------------------------
 
     private void startAuthActivity(int tab) {
         Intent intent = new Intent(requireActivity(), AuthActivity.class);
@@ -140,30 +155,24 @@ public class UserFragment extends Fragment {
                 new ConfirmDialogFragment.OnConfirmListener() {
                     @Override
                     public void onConfirmed() {
-                        // 1. Lấy Refresh Token từ SharedPreferences
                         SharedPreferences sharedPref = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
                         String refreshToken = sharedPref.getString("refreshToken", null);
 
                         if (refreshToken != null) {
-                            // 2. Gọi hàm logout qua ViewModel
                             authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), response -> {
                                 if (response != null) {
-                                    // Đăng xuất thành công hoặc API trả về 200/204
                                     handleLogoutSuccess(sharedPref);
                                 } else {
-                                    // Xử lý lỗi nhưng vẫn logout cục bộ để tránh kẹt
-                                    Toast.makeText(requireContext(), "Đã xảy ra lỗi khi đăng xuất. Đang thực hiện đăng xuất cục bộ.", Toast.LENGTH_LONG).show();
+                                    Toast.makeText(requireContext(), "Lỗi mạng, đăng xuất cục bộ.", Toast.LENGTH_SHORT).show();
                                     handleLogoutSuccess(sharedPref);
                                 }
                             });
                         } else {
-                            // Không có Refresh Token, thực hiện đăng xuất cục bộ ngay lập tức
                             handleLogoutSuccess(sharedPref);
                         }
                     }
                 }
         );
-
         dialog.show(getParentFragmentManager(), "ConfirmDialog");
     }
 }

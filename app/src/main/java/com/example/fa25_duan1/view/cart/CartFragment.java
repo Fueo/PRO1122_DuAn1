@@ -126,14 +126,28 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
         });
 
         btnContinue.setOnClickListener(v -> {
-            if (!cartItemsList.isEmpty()) {
-                Intent intent = new Intent(requireContext(), DetailActivity.class);
-                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang thanh toán");
-                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "checkout");
-                startActivity(intent);
-            } else {
+            if (cartItemsList.isEmpty()) {
                 Toast.makeText(requireContext(), "Giỏ hàng đang trống!", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            cartViewModel.checkCartAvailability().observe(getViewLifecycleOwner(), isValid -> {
+                if (Boolean.TRUE.equals(isValid)) {
+                    // 1. Nếu hợp lệ (Đủ hàng) -> Chuyển trang
+                    Intent intent = new Intent(requireContext(), DetailActivity.class);
+                    intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang thanh toán");
+                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "checkout");
+                    startActivity(intent);
+                } else {
+                    // 2. Nếu không hợp lệ (Hết hàng/Lỗi) -> Báo lỗi & Load lại giỏ
+                    Toast.makeText(requireContext(),
+                            "Một số sản phẩm đã hết hàng hoặc không đủ số lượng. Vui lòng kiểm tra lại!",
+                            Toast.LENGTH_LONG).show();
+
+                    // Gọi fetchCart để cập nhật lại giao diện (User sẽ thấy số lượng tồn kho thực tế)
+                    cartViewModel.fetchCart();
+                }
+            });
         });
     }
 

@@ -26,4 +26,7 @@ public interface CartApi {
 
     @DELETE("cart/delete/{id}")
     Call<ApiResponse<Void>> deleteCartItem(@Path("id") String id);
+
+    @GET("cart/check")
+    Call<ApiResponse<Boolean>> checkCartAvailability();
 }

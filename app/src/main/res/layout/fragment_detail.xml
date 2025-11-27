@@ -2,6 +2,7 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/white">
@@ -9,19 +10,21 @@
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginBottom="?attr/actionBarSize">
+        android:clipToPadding="false">
+
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="16dp">
+            android:paddingBottom="100dp">
+
             <ImageView
                 android:id="@+id/ivImage"
                 android:layout_width="250dp"
                 android:layout_height="280dp"
                 android:layout_marginTop="24dp"
                 android:contentDescription="Bìa sách"
-                android:src="@drawable/book_cover_placeholder"
                 android:scaleType="centerCrop"
+                android:src="@drawable/book_cover_placeholder"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -41,11 +44,11 @@
 
             <TextView
                 android:id="@+id/tv_likes_count"
-                android:fontFamily="@font/robotoserif_regular"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
+                android:fontFamily="@font/robotoserif_regular"
                 android:text="6767"
                 android:textColor="@color/gray_text"
                 android:textSize="14sp"
@@ -54,12 +57,12 @@
 
             <TextView
                 android:id="@+id/tvName"
-                android:fontFamily="@font/robotoserif_bold"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="24dp"
                 android:layout_marginEnd="16dp"
+                android:fontFamily="@font/robotoserif_bold"
                 android:text="Và Rồi Chẳng Còn Ai - And Then There Were None"
                 android:textColor="@color/black"
                 android:textSize="22sp"
@@ -71,11 +74,11 @@
             <TextView
                 android:id="@+id/tv_book_author"
                 android:layout_width="0dp"
-                android:fontFamily="@font/robotoserif_regular"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="4dp"
                 android:layout_marginEnd="16dp"
+                android:fontFamily="@font/robotoserif_regular"
                 android:text="Agatha Christie"
                 android:textColor="@color/gray_text"
                 android:textSize="16sp"
@@ -87,8 +90,8 @@
                 android:id="@+id/tv_book_price"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:fontFamily="@font/robotoserif_bold"
                 android:layout_marginEnd="16dp"
+                android:fontFamily="@font/robotoserif_bold"
                 android:text="75.000 VNĐ"
                 android:textColor="@color/black"
                 android:textSize="24sp"
@@ -105,26 +108,26 @@
                 android:layout_marginTop="24dp"
                 android:layout_marginEnd="16dp"
                 android:orientation="horizontal"
-                app:layout_constraintTop_toBottomOf="@+id/tv_book_author"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintTop_toBottomOf="@+id/tv_book_author">
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
                     android:background="@drawable/rounded_border_light_orange"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp">
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="8dp">
 
                     <TextView
                         android:id="@+id/tv_pages_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Số Trang"
                         android:fontFamily="@font/robotoserif_regular"
+                        android:text="Số Trang"
                         android:textColor="@color/gray_text"
                         android:textSize="14sp" />
 
@@ -132,30 +135,30 @@
                         android:id="@+id/tv_pages_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="34"
+                        android:layout_marginTop="4dp"
                         android:fontFamily="@font/robotoserif_bold"
+                        android:text="34"
                         android:textColor="@color/black"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
                     android:background="@drawable/rounded_border_light_orange"
-                    android:paddingVertical="8dp"
-                    android:layout_marginEnd="8dp">
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:paddingVertical="8dp">
 
                     <TextView
                         android:id="@+id/tv_published_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Xuất bản"
                         android:fontFamily="@font/robotoserif_regular"
+                        android:text="Xuất bản"
                         android:textColor="@color/gray_text"
                         android:textSize="14sp" />
 
@@ -163,29 +166,29 @@
                         android:id="@+id/tv_published_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="16/12/2025"
+                        android:layout_marginTop="4dp"
                         android:fontFamily="@font/robotoserif_bold"
+                        android:text="16/12/2025"
                         android:textColor="@color/black"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
                     android:background="@drawable/rounded_border_light_orange"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
                     android:paddingVertical="8dp">
 
                     <TextView
                         android:id="@+id/tv_views_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Lượt xem"
                         android:fontFamily="@font/robotoserif_regular"
+                        android:text="Lượt xem"
                         android:textColor="@color/gray_text"
                         android:textSize="14sp" />
 
@@ -193,12 +196,12 @@
                         android:id="@+id/tv_views_value"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="340"
+                        android:layout_marginTop="4dp"
                         android:fontFamily="@font/robotoserif_bold"
+                        android:text="340"
                         android:textColor="@color/black"
                         android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:layout_marginTop="4dp" />
+                        android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -206,26 +209,25 @@
                 android:id="@+id/tab_layout_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:layout_marginTop="2dp"
-                app:layout_constraintTop_toBottomOf="@+id/ll_book_stats_container"
-                app:layout_constraintStart_toStartOf="parent"
+                android:orientation="vertical"
                 app:layout_constraintEnd_toEndOf="parent"
-                >
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/ll_book_stats_container">
 
                 <com.google.android.material.tabs.TabLayout
                     android:id="@+id/tab_layout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    app:tabGravity="fill"
                     app:tabIndicatorColor="@color/blue"
-                    app:tabIndicatorHeight="2dp"
-                    app:tabSelectedTextColor="@color/dark_blue"
-                    app:tabTextColor="@color/gray_text"
-                    app:tabRippleColor="@null"
-                    app:tabMode="fixed"
-                    app:tabTextAppearance="@style/CustomTabTextAppearance"
                     app:tabIndicatorFullWidth="false"
-                    app:tabGravity="fill">
+                    app:tabIndicatorHeight="2dp"
+                    app:tabMode="fixed"
+                    app:tabRippleColor="@null"
+                    app:tabSelectedTextColor="@color/dark_blue"
+                    app:tabTextAppearance="@style/CustomTabTextAppearance"
+                    app:tabTextColor="@color/gray_text">
 
                     <com.google.android.material.tabs.TabItem
                         android:layout_width="wrap_content"
@@ -240,31 +242,116 @@
                 </com.google.android.material.tabs.TabLayout>
 
                 <View
-                    android:layout_marginLeft="17dp"
                     android:layout_width="match_parent"
-                    android:layout_marginRight="17dp"
-                    android:layout_marginTop="2dp"
                     android:layout_height="1dp"
+                    android:layout_marginLeft="17dp"
+                    android:layout_marginTop="2dp"
+                    android:layout_marginRight="17dp"
                     android:background="@color/gray" />
             </LinearLayout>
-            <TextView
-                android:id="@+id/tv_description_content"
+
+            <FrameLayout
+                android:id="@+id/frame_tab_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="16dp"
-                android:fontFamily="@font/robotoserif_regular"
-                android:lineSpacingExtra="4dp"
-                android:text="@string/long_description_text"
-                android:textColor="#333333"
-                android:textSize="16sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tab_layout_container" />
+                app:layout_constraintTop_toBottomOf="@+id/tab_layout_container">
+
+                <LinearLayout
+                    android:id="@+id/layout_description"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <TextView
+                        android:id="@+id/tv_description_content"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="16dp"
+                        android:layout_marginTop="16dp"
+                        android:layout_marginEnd="16dp"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:lineSpacingExtra="4dp"
+                        android:paddingBottom="20dp"
+                        android:text="Mô tả đang tải..."
+                        android:textColor="#333333"
+                        android:textSize="16sp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_author_info"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="16dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/iv_author_avatar"
+                        android:layout_width="100dp"
+                        android:layout_height="100dp"
+                        android:layout_marginBottom="12dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/book_cover_placeholder"
+                        app:shapeAppearanceOverlay="@style/CircleImage" />
+
+                    <TextView
+                        android:id="@+id/tv_author_name_detail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="8dp"
+                        android:fontFamily="@font/robotoserif_bold"
+                        android:text="Tên Tác Giả"
+                        android:textColor="@color/black"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_author_bio"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:lineSpacingExtra="4dp"
+                        android:text="Tiểu sử tác giả..."
+                        android:textColor="@color/gray_text"
+                        android:textSize="15sp" />
+                </LinearLayout>
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tv_related_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="24dp"
+                android:fontFamily="@font/robotoserif_bold"
+                android:text="Sản phẩm liên quan"
+                android:textColor="@color/black"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/frame_tab_content" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_related_products"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:clipToPadding="false"
+                android:nestedScrollingEnabled="false"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_related_label"
+                app:spanCount="2"
+                tools:listitem="@layout/item_book" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
-
     </androidx.core.widget.NestedScrollView>
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -285,6 +372,7 @@
             android:layout_height="wrap_content"
             android:layout_marginEnd="12dp"
             android:fontFamily="@font/robotoserif_bold"
+            android:maxLines="1"
             android:paddingVertical="14dp"
             android:text="Thêm vào giỏ"
             android:textAllCaps="false"
