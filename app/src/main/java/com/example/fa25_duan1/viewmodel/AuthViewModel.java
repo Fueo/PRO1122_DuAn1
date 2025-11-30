@@ -5,8 +5,6 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
 import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.Auth.AuthResponse;
@@ -14,10 +12,12 @@ import com.example.fa25_duan1.model.Auth.RefreshTokenResponse;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.repository.AuthRepository;
 
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
+
 public class AuthViewModel extends AndroidViewModel {
 
-    private AuthRepository repository;
-    private MutableLiveData<ApiResponse<User>> userInfoLiveData = new MutableLiveData<>();
+    private final AuthRepository repository;
 
     public AuthViewModel(@NonNull Application application) {
         super(application);
@@ -44,11 +44,9 @@ public class AuthViewModel extends AndroidViewModel {
         return repository.logout(refreshToken);
     }
 
-    public LiveData<ApiResponse<User>> updateProfile(String name, String email, String phone, String address, String avatar) {
-        // Truyền avatar sang repository
-        return repository.updateProfile(name, email, phone, address, avatar);
+    public LiveData<ApiResponse<User>> updateProfile(RequestBody name, RequestBody email, MultipartBody.Part avatarPart) {
+        return repository.updateProfile(name, email, avatarPart);
     }
-
 
     public LiveData<ApiResponse<Void>> changePassword(String currentPassword, String newPassword) {
         return repository.changePassword(currentPassword, newPassword);

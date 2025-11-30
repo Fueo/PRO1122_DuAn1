@@ -1,6 +1,7 @@
 package com.example.fa25_duan1.adapter;
 
 import android.content.Context;
+import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -65,7 +66,7 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
         Product product = mListProducts.get(position);
         if (product == null) return;
 
-        // Load ảnh
+        // --- 1. Load Ảnh (Giữ nguyên) ---
         if (product.getImage() != null && !product.getImage().isEmpty()) {
             Glide.with(context)
                     .load(product.getImage())
@@ -82,25 +83,52 @@ public class BookHorizontalAdapter extends RecyclerView.Adapter<BookHorizontalAd
         } else {
             holder.tvAuthor.setText("Đang cập nhật");
         }
-        holder.tvSalePrice.setText(formatter.format(product.getPrice()));
 
         holder.tvViewCount.setText("Lượt xem: " + product.getView());
         holder.tvLikeCount.setText("Lượt thích: " + product.getFavorite());
 
-        // Xử lý Tim
+        // ============================================================
+        // --- LOGIC GIẢM GIÁ (CẬP NHẬT MỚI) ---
+        // ============================================================
+
+        double originalPrice = product.getPrice();
+        int discount = product.getDiscount();
+
+        if (discount > 0) {
+            // CÓ GIẢM GIÁ
+            double newPrice = originalPrice * (100 - discount) / 100;
+
+            // Giá bán hiện tại
+            holder.tvSalePrice.setText(formatter.format(newPrice));
+
+            // Giá gốc (gạch ngang)
+            holder.tvOriginalPrice.setText(formatter.format(originalPrice));
+            holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            holder.tvOriginalPrice.setVisibility(View.VISIBLE);
+
+            // Badge giảm giá
+            holder.tvDiscount.setText("-" + discount + "%");
+            holder.tvDiscount.setVisibility(View.VISIBLE);
+        } else {
+            // KHÔNG GIẢM
+            holder.tvSalePrice.setText(formatter.format(originalPrice));
+
+            // Ẩn các thành phần khuyến mãi
+            holder.tvOriginalPrice.setVisibility(View.GONE);
+            holder.tvDiscount.setVisibility(View.GONE);
+        }
+        // ============================================================
+
+        // --- Tim (Giữ nguyên) ---
         if (favoriteIds.contains(product.getId())) {
             holder.ivFavorite.setImageResource(R.drawable.ic_heart_filled_red);
         } else {
             holder.ivFavorite.setImageResource(R.drawable.ic_heart_outline_gray);
         }
 
-        // --- CÁC SỰ KIỆN CLICK ---
-
-        // 1. Thêm vào giỏ (Nút mới)
+        // --- Click (Giữ nguyên) ---
         holder.btnAddToCart.setOnClickListener(v -> {
-            if (mListener != null) {
-                mListener.onAddToCartClick(product);
-            }
+            if (mListener != null) mListener.onAddToCartClick(product);
         });
 
         holder.ivFavorite.setOnClickListener(v -> {

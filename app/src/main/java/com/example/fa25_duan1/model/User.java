@@ -5,23 +5,20 @@ import com.google.gson.annotations.SerializedName;
 public class User {
 
     @SerializedName("_id")
-    private String userID;  // đổi int -> String
+    private String userID;
 
     private int role;
     private String username;
     private String password;
     private String name;
     private String avatar;
-    private String address;
-    private String phone;
+    // Đã xóa address
+    // Đã xóa phone
     private String email;
 
     @SerializedName("createAt")
     private String createAt;
 
-    // __v bỏ qua, không cần khai báo
-
-    // Constructor trống
     public User() { }
 
     // Getter & Setter
@@ -42,12 +39,6 @@ public class User {
 
     public String getAvatar() { return avatar; }
     public void setAvatar(String avatar) { this.avatar = avatar; }
-
-    public String getAddress() { return address; }
-    public void setAddress(String address) { this.address = address; }
-
-    public String getPhone() { return phone; }
-    public void setPhone(String phone) { this.phone = phone; }
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }

@@ -15,23 +15,22 @@ import retrofit2.http.Path;
 
 public interface DiscountApi {
 
-    // Lấy danh sách mã giảm giá
-    @GET("discount") // Hoặc "discount/" tùy config base url
+    // Lấy danh sách (Thường API list không trả appliedProducts để nhẹ)
+    @GET("discount")
     Call<ApiResponse<List<Discount>>> getAllDiscounts();
 
-    // Lấy chi tiết 1 mã
+    // Lấy chi tiết (Backend sẽ trả kèm appliedProducts ở đây)
     @GET("discount/{id}")
     Call<ApiResponse<Discount>> getDiscountById(@Path("id") String id);
 
-    // Thêm mới
+    // Thêm mới (Body chứa productIds)
     @POST("discount/add")
     Call<ApiResponse<Discount>> addDiscount(@Body Discount discount);
 
-    // Cập nhật
+    // Cập nhật (Body chứa productIds)
     @PUT("discount/update/{id}")
     Call<ApiResponse<Discount>> updateDiscount(@Path("id") String id, @Body Discount discount);
 
-    // Xóa
     @DELETE("discount/delete/{id}")
     Call<ApiResponse<Void>> deleteDiscount(@Path("id") String id);
 }

@@ -7,7 +7,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -15,8 +14,11 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
+
+// --- IMPORT THƯ VIỆN MỚI ---
+import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class CategoryUpdateFragment extends Fragment {
 
@@ -39,7 +41,7 @@ public class CategoryUpdateFragment extends Fragment {
         btnSave = view.findViewById(R.id.btnSave);
         viewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
 
-        // Lấy ID từ Intent (truyền từ Activity mẹ)
+        // Lấy ID từ Intent
         if (getActivity().getIntent() != null) {
             categoryId = getActivity().getIntent().getStringExtra("Id");
         }
@@ -47,12 +49,18 @@ public class CategoryUpdateFragment extends Fragment {
         // Nếu có ID -> Chế độ Edit -> Load dữ liệu cũ
         if (categoryId != null) {
             loadCategoryData(categoryId);
+            btnSave.setText("Cập nhật");
+        } else {
+            btnSave.setText("Thêm mới");
         }
 
         btnSave.setOnClickListener(v -> {
             String name = edtCategoryName.getText().toString().trim();
+
+            // Validate input
             if (name.isEmpty()) {
-                Toast.makeText(getContext(), "Vui lòng nhập tên danh mục", Toast.LENGTH_SHORT).show();
+                edtCategoryName.setError("Tên không được để trống");
+                FancyToast.makeText(getContext(), "Vui lòng nhập tên danh mục", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
                 return;
             }
 
@@ -60,20 +68,18 @@ public class CategoryUpdateFragment extends Fragment {
                 // Thêm mới
                 viewModel.addCategory(name).observe(getViewLifecycleOwner(), category -> {
                     if (category != null) {
-                        Toast.makeText(getContext(), "Thêm thành công", Toast.LENGTH_SHORT).show();
-                        finishActivity();
+                        showSuccessDialog("Thêm danh mục thành công!");
                     } else {
-                        Toast.makeText(getContext(), "Thêm thất bại", Toast.LENGTH_SHORT).show();
+                        FancyToast.makeText(getContext(), "Thêm thất bại", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                     }
                 });
             } else {
                 // Cập nhật
                 viewModel.updateCategory(categoryId, name).observe(getViewLifecycleOwner(), category -> {
                     if (category != null) {
-                        Toast.makeText(getContext(), "Cập nhật thành công", Toast.LENGTH_SHORT).show();
-                        finishActivity();
+                        showSuccessDialog("Cập nhật danh mục thành công!");
                     } else {
-                        Toast.makeText(getContext(), "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
+                        FancyToast.makeText(getContext(), "Cập nhật thất bại", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                     }
                 });
             }
@@ -84,8 +90,30 @@ public class CategoryUpdateFragment extends Fragment {
         viewModel.getCategoryByID(id).observe(getViewLifecycleOwner(), category -> {
             if (category != null) {
                 edtCategoryName.setText(category.getName());
+            } else {
+                FancyToast.makeText(getContext(), "Không tìm thấy danh mục", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
+    }
+
+    // --- HÀM HIỂN THỊ DIALOG THÀNH CÔNG ---
+    private void showSuccessDialog(String message) {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_success)
+                .setTitle("Thành công")
+                .setDescription(message)
+
+                // Cấu hình màu sắc đồng bộ Blue
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Đóng", v -> {
+                    finishActivity(); // Đóng Activity sau khi bấm nút trên Dialog
+                })
+                .hideNegativeButton(true)
+                .show();
     }
 
     private void finishActivity() {

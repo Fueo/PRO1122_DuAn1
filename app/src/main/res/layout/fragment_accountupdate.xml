@@ -323,51 +323,6 @@
                 android:textColor="@color/black"
                 android:textSize="14sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:fontFamily="@font/robotoserif_regular"
-                android:text="Số điện thoại"
-                android:textColor="@color/black"
-                android:textSize="13sp" />
-
-            <EditText
-                android:id="@+id/edtPhone"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_edit_input"
-                android:fontFamily="@font/robotoserif_regular"
-                android:hint="0944 555 777"
-                android:paddingHorizontal="12dp"
-                android:singleLine="true"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:fontFamily="@font/robotoserif_regular"
-                android:text="Địa chỉ"
-                android:textColor="@color/black"
-                android:textSize="13sp" />
-
-            <EditText
-                android:id="@+id/edtAddress"
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_edit_input"
-                android:fontFamily="@font/robotoserif_regular"
-                android:hint="120 Yên Lãng, Đống Đa, Hà Nội"
-                android:inputType="textEmailAddress"
-                android:paddingHorizontal="12dp"
-                android:singleLine="true"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
-
         </LinearLayout>
     </ScrollView>
 

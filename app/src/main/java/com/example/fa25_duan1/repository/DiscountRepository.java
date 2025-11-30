@@ -3,6 +3,7 @@ package com.example.fa25_duan1.repository;
 import android.content.Context;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.MutableLiveData;
 
 import com.example.fa25_duan1.model.ApiResponse;
@@ -20,42 +21,36 @@ public class DiscountRepository {
     private final DiscountApi discountApi;
 
     public DiscountRepository(Context context) {
-        // Lấy instance từ RetrofitClient
         this.discountApi = RetrofitClient.getInstance(context).getDiscountApi();
     }
 
-    // 1. Lấy danh sách
     public MutableLiveData<List<Discount>> getAllDiscounts() {
         MutableLiveData<List<Discount>> liveData = new MutableLiveData<>();
-
         discountApi.getAllDiscounts().enqueue(new Callback<ApiResponse<List<Discount>>>() {
             @Override
-            public void onResponse(Call<ApiResponse<List<Discount>>> call, Response<ApiResponse<List<Discount>>> response) {
-                // Kiểm tra: response thành công + body không null + status == true
+            public void onResponse(@NonNull Call<ApiResponse<List<Discount>>> call, @NonNull Response<ApiResponse<List<Discount>>> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isStatus()) {
                     liveData.setValue(response.body().getData());
                 } else {
                     liveData.setValue(null);
-                    Log.e("DiscountRepo", "Lỗi lấy dữ liệu: " + response.message());
+                    Log.e("Repo", "Error: " + response.message());
                 }
             }
-
             @Override
-            public void onFailure(Call<ApiResponse<List<Discount>>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<List<Discount>>> call, @NonNull Throwable t) {
                 liveData.setValue(null);
-                Log.e("DiscountRepo", "Lỗi kết nối: " + t.getMessage());
+                Log.e("Repo", "Fail: " + t.getMessage());
             }
         });
         return liveData;
     }
 
-    // 2. Thêm mới
     public MutableLiveData<Boolean> addDiscount(Discount discount) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();
-
         discountApi.addDiscount(discount).enqueue(new Callback<ApiResponse<Discount>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Discount>> call, Response<ApiResponse<Discount>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<Discount>> call, @NonNull Response<ApiResponse<Discount>> response) {
+                // Backend trả 201 Created khi thành công
                 if (response.isSuccessful() && response.body() != null && response.body().isStatus()) {
                     result.setValue(true);
                 } else {
@@ -63,20 +58,18 @@ public class DiscountRepository {
                 }
             }
             @Override
-            public void onFailure(Call<ApiResponse<Discount>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<Discount>> call, @NonNull Throwable t) {
                 result.setValue(false);
             }
         });
         return result;
     }
 
-    // 3. Cập nhật
     public MutableLiveData<Boolean> updateDiscount(String id, Discount discount) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();
-
         discountApi.updateDiscount(id, discount).enqueue(new Callback<ApiResponse<Discount>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Discount>> call, Response<ApiResponse<Discount>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<Discount>> call, @NonNull Response<ApiResponse<Discount>> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isStatus()) {
                     result.setValue(true);
                 } else {
@@ -84,20 +77,18 @@ public class DiscountRepository {
                 }
             }
             @Override
-            public void onFailure(Call<ApiResponse<Discount>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<Discount>> call, @NonNull Throwable t) {
                 result.setValue(false);
             }
         });
         return result;
     }
 
-    // 4. Xóa
     public MutableLiveData<Boolean> deleteDiscount(String id) {
         MutableLiveData<Boolean> result = new MutableLiveData<>();
-
         discountApi.deleteDiscount(id).enqueue(new Callback<ApiResponse<Void>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<Void>> call, @NonNull Response<ApiResponse<Void>> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isStatus()) {
                     result.setValue(true);
                 } else {
@@ -105,28 +96,27 @@ public class DiscountRepository {
                 }
             }
             @Override
-            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<Void>> call, @NonNull Throwable t) {
                 result.setValue(false);
             }
         });
         return result;
     }
 
-    // 5. Lấy chi tiết (Dùng cho màn hình Edit)
     public MutableLiveData<Discount> getDiscountById(String id) {
         MutableLiveData<Discount> result = new MutableLiveData<>();
-
         discountApi.getDiscountById(id).enqueue(new Callback<ApiResponse<Discount>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Discount>> call, Response<ApiResponse<Discount>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<Discount>> call, @NonNull Response<ApiResponse<Discount>> response) {
                 if (response.isSuccessful() && response.body() != null && response.body().isStatus()) {
+                    // Object Discount này sẽ chứa appliedProducts (List<Product>)
                     result.setValue(response.body().getData());
                 } else {
                     result.setValue(null);
                 }
             }
             @Override
-            public void onFailure(Call<ApiResponse<Discount>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<Discount>> call, @NonNull Throwable t) {
                 result.setValue(null);
             }
         });

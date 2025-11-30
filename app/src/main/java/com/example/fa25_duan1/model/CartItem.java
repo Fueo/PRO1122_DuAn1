@@ -16,6 +16,8 @@ public class CartItem {
     @SerializedName("price")
     private double price;
 
+    @SerializedName("discountRate")
+    private double discount;
     public CartItem() {
     }
 
@@ -66,5 +68,13 @@ public class CartItem {
 
     public String getImageUrl() {
         return (product != null) ? product.getImage() : "";
+    }
+
+    public double getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(double discount) {
+        this.discount = discount;
     }
 }

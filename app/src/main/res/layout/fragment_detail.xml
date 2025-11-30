@@ -20,40 +20,49 @@
             <ImageView
                 android:id="@+id/ivImage"
                 android:layout_width="250dp"
-                android:layout_height="280dp"
+                android:layout_height="320dp"
                 android:layout_marginTop="24dp"
                 android:contentDescription="Bìa sách"
+                android:elevation="8dp"
                 android:scaleType="centerCrop"
                 android:src="@drawable/book_cover_placeholder"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageView
-                android:id="@+id/iv_heart_icon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginTop="3dp"
-                android:layout_marginEnd="4dp"
-                android:contentDescription="Yêu thích"
-                android:src="@drawable/ic_heart"
-                app:tint="@color/red"
-                app:layout_constraintBottom_toBottomOf="@+id/tv_likes_count"
-                app:layout_constraintEnd_toStartOf="@+id/tv_likes_count"
-                app:layout_constraintTop_toTopOf="@+id/tv_likes_count" />
-
-            <TextView
-                android:id="@+id/tv_likes_count"
+            <LinearLayout
+                android:id="@+id/ll_favorite_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginEnd="16dp"
-                android:fontFamily="@font/robotoserif_regular"
-                android:text="6767"
-                android:textColor="@color/gray_text"
-                android:textSize="14sp"
+                android:background="@drawable/bg_favorite_pill"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="6dp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent">
+
+                <ImageView
+                    android:id="@+id/iv_heart_icon"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="Yêu thích"
+                    android:src="@drawable/ic_heart"
+                    app:tint="@color/red" />
+
+                <TextView
+                    android:id="@+id/tv_likes_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:fontFamily="@font/robotoserif_bold"
+                    android:text="6767"
+                    android:textColor="#333333"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvName"
@@ -67,7 +76,7 @@
                 android:textColor="@color/black"
                 android:textSize="22sp"
                 android:textStyle="bold"
-                app:layout_constraintEnd_toStartOf="@+id/tv_book_price"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/ivImage" />
 
@@ -86,19 +95,52 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tvName" />
 
-            <TextView
-                android:id="@+id/tv_book_price"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:id="@+id/ll_price_container"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="12dp"
                 android:layout_marginEnd="16dp"
-                android:fontFamily="@font/robotoserif_bold"
-                android:text="75.000 VNĐ"
-                android:textColor="@color/black"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                app:layout_constraintBottom_toBottomOf="@+id/tvName"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/tvName" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                app:layout_constraintTop_toBottomOf="@+id/tv_book_author">
+
+                <TextView
+                    android:id="@+id/tv_sale_price"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/robotoserif_bold"
+                    android:text="75.000 đ"
+                    android:textColor="@color/blue"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tv_original_price"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:text="100.000 đ"
+                    android:textColor="@color/gray_text"
+                    android:textSize="16sp"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/tv_discount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_discount_badge"
+                    android:paddingHorizontal="6dp"
+                    android:paddingVertical="2dp"
+                    android:text="-25%"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:visibility="visible" />
+            </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/ll_book_stats_container"
@@ -110,7 +152,7 @@
                 android:orientation="horizontal"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/tv_book_author">
+                app:layout_constraintTop_toBottomOf="@+id/ll_price_container">
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -209,7 +251,7 @@
                 android:id="@+id/tab_layout_container"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="24dp"
                 android:orientation="vertical"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"

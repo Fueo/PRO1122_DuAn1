@@ -8,13 +8,15 @@ import com.example.fa25_duan1.model.Auth.RefreshTokenRequest;
 import com.example.fa25_duan1.model.Auth.RefreshTokenResponse;
 import com.example.fa25_duan1.model.Auth.RegisterRequest;
 import com.example.fa25_duan1.model.User;
-import java.util.Map;
 
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.http.Body;
-import retrofit2.http.GET;
+import retrofit2.http.Multipart;
 import retrofit2.http.POST;
 import retrofit2.http.PUT;
+import retrofit2.http.Part;
 
 public interface AuthApi {
 
@@ -35,9 +37,14 @@ public interface AuthApi {
     @POST("auth/me")
     Call<ApiResponse<User>> getMyInfo();
 
+    // --- ĐÃ SỬA: Chuyển sang Multipart để support upload ảnh ---
+    @Multipart
     @PUT("auth/update")
-    Call<ApiResponse<User>> updateProfile(@Body Map<String, String> body);
-
+    Call<ApiResponse<User>> updateProfile(
+            @Part("name") RequestBody name,
+            @Part("email") RequestBody email,
+            @Part MultipartBody.Part avatar // Có thể null nếu không chọn ảnh
+    );
 
     @PUT("auth/change-password")
     Call<ApiResponse<Void>> changePassword(@Body ChangePasswordRequest request);

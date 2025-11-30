@@ -15,6 +15,8 @@ import com.example.fa25_duan1.view.management.category.CategoryHeaderFragment;
 import com.example.fa25_duan1.view.management.category.CategoryManageFragment;
 import com.example.fa25_duan1.view.management.discount.DiscountHeaderFragment;
 import com.example.fa25_duan1.view.management.discount.DiscountManageFragment;
+import com.example.fa25_duan1.view.management.discount.SelectProductFragment;
+import com.example.fa25_duan1.view.management.discount.SelectProductHeaderFragment;
 import com.example.fa25_duan1.view.management.product.ProductHeaderFragment;
 import com.example.fa25_duan1.view.management.product.ProductManageFragment;
 
@@ -61,6 +63,8 @@ public class ManageActivity extends AppCompatActivity {
             return new ProductManageFragment();
         }else if ("discount".equals(fragmentName)) {
             return new DiscountManageFragment();
+        }else if ("productdiscount".equals(fragmentName)) {
+            return new SelectProductFragment();
         }
         return null;
     }
@@ -77,6 +81,8 @@ public class ManageActivity extends AppCompatActivity {
             return new ProductHeaderFragment();
         } else if ("discount".equals(fragmentName)) {
             return new DiscountHeaderFragment();
+        }else if ("productdiscount".equals(fragmentName)) {
+            return new SelectProductHeaderFragment();
         }
         return null;
     }

@@ -37,19 +37,20 @@ public class ProductViewModel extends AndroidViewModel {
     public ProductViewModel(@NonNull Application application) {
         super(application);
         repository = new ProductRepository(application.getApplicationContext());
-//        refreshData(); // Mặc định load tất cả
     }
 
     public LiveData<List<Product>> getDisplayedProducts() {
         return displayedProductsLiveData;
     }
 
-    // Hàm load lại tất cả sản phẩm (Reset)
+    public LiveData<List<Product>> getMListLiveData() {
+        return displayedProductsLiveData;
+    }
+
     public void refreshData() {
         switchSource(repository.getAllProducts());
     }
 
-    // Hàm alias cho rõ nghĩa khi gọi từ Fragment (Reset về tất cả)
     public void resetToAllProducts() {
         refreshData();
     }
@@ -58,40 +59,28 @@ public class ProductViewModel extends AndroidViewModel {
         return repository.viewProduct(id);
     }
 
-    // --- MỚI: Hàm load sản phẩm theo Category từ API ---
+    public LiveData<List<Product>> getOnSaleProductsApi(int limit) {
+        return repository.getOnSaleProducts(limit);
+    }
+
     public void filterProductsByCategoryApi(String categoryId) {
-        // Gọi repository lấy danh sách theo ID danh mục
         switchSource(repository.getProductsByCategory(categoryId));
     }
 
-    // --- Hàm helper để chuyển đổi nguồn dữ liệu (Tránh lặp code) ---
     private void switchSource(LiveData<List<Product>> newSource) {
-        // 1. Gỡ bỏ nguồn cũ
         if (currentRepoSource != null) {
             displayedProductsLiveData.removeSource(currentRepoSource);
         }
-
-        // 2. Cập nhật nguồn mới
         currentRepoSource = newSource;
-
-        // 3. Lắng nghe dữ liệu từ nguồn mới
         displayedProductsLiveData.addSource(currentRepoSource, products -> {
             if (products == null) products = new ArrayList<>();
-
-            // Cập nhật vào allProductsLiveData để chức năng tìm kiếm (searchProducts)
-            // hoạt động đúng TRONG PHẠM VI danh sách mới này.
             allProductsLiveData.setValue(products);
-
-            // Sắp xếp lại theo chế độ hiện tại
             List<Product> sorted = new ArrayList<>(products);
             sortListInternal(sorted, currentSortMode);
-
-            // Hiển thị
             displayedProductsLiveData.setValue(sorted);
         });
     }
 
-    // ... (Các hàm API CRUD giữ nguyên) ...
     public void searchProductsByNameApi(String keyword) {
         switchSource(repository.searchProductsByName(keyword));
     }
@@ -101,10 +90,9 @@ public class ProductViewModel extends AndroidViewModel {
     public LiveData<Boolean> deleteProduct(String id) { return repository.deleteProduct(id); }
     public LiveData<Product> getProductByID(String id) { return repository.getProductByID(id); }
     public LiveData<List<Product>> getProductsByAuthor(String authorId) { return repository.getProductsByAuthor(authorId); }
-    // Hàm này vẫn giữ để dùng nội bộ hoặc các chỗ khác cần LiveData trực tiếp
     public LiveData<List<Product>> getProductsByCategory(String categoryId) { return repository.getProductsByCategory(categoryId); }
 
-    // --- LOGIC SEARCH / SORT CLIENT-SIDE ---
+    // --- CLIENT-SIDE LOGIC ---
 
     public void searchProducts(String query, String type) {
         List<Product> masterList = allProductsLiveData.getValue();
@@ -135,6 +123,10 @@ public class ProductViewModel extends AndroidViewModel {
         displayedProductsLiveData.setValue(result);
     }
 
+    public void filterOnSaleProductsApi() {
+        switchSource(repository.getOnSaleProducts(0));
+    }
+
     public void sortProducts(int sortMode) {
         this.currentSortMode = sortMode;
         List<Product> current = displayedProductsLiveData.getValue();
@@ -145,34 +137,41 @@ public class ProductViewModel extends AndroidViewModel {
         displayedProductsLiveData.setValue(listToSort);
     }
 
-    // Hàm filter Client-side (Giữ nguyên nếu bạn vẫn muốn dùng bộ lọc nâng cao)
     public void filterProducts(boolean showSelling, boolean showStopped, List<Integer> priceRanges, List<String> categoryIds) {
         List<Product> masterList = allProductsLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
         List<Product> result = new ArrayList<>();
 
         for (Product p : masterList) {
-            // Logic lọc... (Giữ nguyên như cũ)
+            // 1. Lọc theo trạng thái
             boolean statusMatch = false;
             if (p.isStatus() && showSelling) statusMatch = true;
             if (!p.isStatus() && showStopped) statusMatch = true;
             if (!statusMatch) continue;
 
+            // 2. Lọc theo giá (ĐÃ SỬA LỖI Ở ĐÂY)
             boolean priceMatch = false;
             if (priceRanges == null || priceRanges.isEmpty()) {
                 priceMatch = true;
             } else {
-                double price = p.getPrice();
+                double originalPrice = p.getPrice();
+
+                // SỬA: Bỏ check null vì getDiscount() trả về int
+                double discountPercent = p.getDiscount();
+
+                // Tính giá thực tế
+                double finalPrice = originalPrice * (1 - (discountPercent / 100.0));
+
                 for (int range : priceRanges) {
-                    if (range == 0 && price >= 0 && price <= 150000) priceMatch = true;
-                    if (range == 1 && price > 150000 && price <= 300000) priceMatch = true;
-                    if (range == 2 && price > 300000 && price <= 500000) priceMatch = true;
-                    if (range == 3 && price > 500000) priceMatch = true;
+                    if (range == 0 && finalPrice >= 0 && finalPrice <= 150000) priceMatch = true;
+                    if (range == 1 && finalPrice > 150000 && finalPrice <= 300000) priceMatch = true;
+                    if (range == 2 && finalPrice > 300000 && finalPrice <= 500000) priceMatch = true;
+                    if (range == 3 && finalPrice > 500000) priceMatch = true;
                 }
             }
             if (!priceMatch) continue;
 
-            // Logic categoryIds ở đây là lọc phía client, có thể giữ hoặc bỏ tùy bạn
+            // 3. Lọc theo Category ID
             boolean categoryMatch = false;
             if (categoryIds == null || categoryIds.isEmpty()) {
                 categoryMatch = true;
@@ -191,8 +190,14 @@ public class ProductViewModel extends AndroidViewModel {
     private void sortListInternal(List<Product> list, int sortMode) {
         SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         Collections.sort(list, (p1, p2) -> {
-            if (sortMode == SORT_PRICE_ASC) return Double.compare(p1.getPrice(), p2.getPrice());
-            else if (sortMode == SORT_PRICE_DESC) return Double.compare(p2.getPrice(), p1.getPrice());
+
+            // SỬA: Bỏ check null cho discount ở đây luôn
+            double p1Price = p1.getPrice() * (1 - (p1.getDiscount() / 100.0));
+            double p2Price = p2.getPrice() * (1 - (p2.getDiscount() / 100.0));
+
+            if (sortMode == SORT_PRICE_ASC) return Double.compare(p1Price, p2Price);
+            else if (sortMode == SORT_PRICE_DESC) return Double.compare(p2Price, p1Price);
+
             try {
                 String d1Str = p1.getCreatedAt();
                 String d2Str = p2.getCreatedAt();

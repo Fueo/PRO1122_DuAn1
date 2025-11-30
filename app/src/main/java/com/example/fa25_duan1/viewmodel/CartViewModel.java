@@ -118,7 +118,7 @@ public class CartViewModel extends AndroidViewModel {
             for (CartItem item : items) {
                 if (item.getProduct() != null) {
                     // Sử dụng item.getPrice() đã cập nhật (giá trong giỏ)
-                    total += (long) (item.getPrice() * item.getQuantity());
+                    total += (long) (item.getPrice() * (1 -(item.getDiscount() / 100)) * item.getQuantity());
                     count += item.getQuantity();
                 }
             }

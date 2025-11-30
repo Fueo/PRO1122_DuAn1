@@ -35,7 +35,7 @@ public class ProductFragment extends Fragment {
     private ProductViewModel productViewModel;
     private FavoriteViewModel favoriteViewModel;
     private CartViewModel cartViewModel;
-
+    public static final String ID_CATEGORY_SALE = "CATEGORY_SALE_ID";
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {

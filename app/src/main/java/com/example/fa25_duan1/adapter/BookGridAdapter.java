@@ -1,6 +1,7 @@
 package com.example.fa25_duan1.adapter;
 
 import android.content.Context;
+import android.graphics.Paint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -63,6 +64,7 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
         Product product = mListProducts.get(position);
         if (product == null) return;
 
+        // --- 1. Load Ảnh (Giữ nguyên) ---
         if (product.getImage() != null && !product.getImage().isEmpty()) {
             Glide.with(context)
                     .load(product.getImage())
@@ -73,43 +75,75 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
             holder.ivCover.setImageResource(R.drawable.book_cover_placeholder);
         }
 
+        // --- 2. Set Text cơ bản (Giữ nguyên) ---
         holder.tvTitle.setText(product.getName());
         if (product.getAuthor() != null) {
             holder.tvAuthor.setText(product.getAuthor().getName());
         } else {
             holder.tvAuthor.setText("Đang cập nhật");
         }
-        holder.tvSalePrice.setText(formatter.format(product.getPrice()));
 
         holder.tvViewCount.setText("Lượt xem: " + product.getView());
         holder.tvLikeCount.setText("Lượt thích: " + product.getFavorite());
 
+        // ============================================================
+        // --- 3. LOGIC GIẢM GIÁ (CẬP NHẬT MỚI) ---
+        // ============================================================
+
+        double originalPrice = product.getPrice();
+        int discount = product.getDiscount();
+
+        if (discount > 0) {
+            // A. CÓ GIẢM GIÁ
+            // Tính giá sau giảm: Giá gốc * (100 - discount) / 100
+            double newPrice = originalPrice * (100 - discount) / 100;
+
+            // 1. Hiển thị giá mới (giá bán)
+            holder.tvSalePrice.setText(formatter.format(newPrice));
+
+            // 2. Hiển thị giá gốc (giá cũ) và gạch ngang
+            holder.tvOriginalPrice.setText(formatter.format(originalPrice));
+            holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            holder.tvOriginalPrice.setVisibility(View.VISIBLE);
+
+            // 3. Hiển thị Badge % giảm giá
+            holder.tvDiscount.setText("-" + discount + "%");
+            holder.tvDiscount.setVisibility(View.VISIBLE);
+
+        } else {
+            // B. KHÔNG GIẢM GIÁ
+            // 1. Giá bán chính là giá gốc
+            holder.tvSalePrice.setText(formatter.format(originalPrice));
+
+            // 2. Ẩn giá gốc (giá cũ)
+            holder.tvOriginalPrice.setVisibility(View.GONE);
+
+            // 3. Ẩn Badge giảm giá
+            holder.tvDiscount.setVisibility(View.GONE);
+        }
+        // ============================================================
+
+
+        // --- 4. Xử lý Tim (Giữ nguyên) ---
         if (favoriteIds.contains(product.getId())) {
             holder.ivFavorite.setImageResource(R.drawable.ic_heart_filled_red);
         } else {
             holder.ivFavorite.setImageResource(R.drawable.ic_heart_outline_gray);
         }
 
-        // Click Thêm vào giỏ
+        // --- 5. Sự kiện Click (Giữ nguyên) ---
         holder.btnAddToCart.setOnClickListener(v -> {
-            if (mListener != null) {
-                mListener.onAddToCartClick(product);
-            }
+            if (mListener != null) mListener.onAddToCartClick(product);
         });
 
-        // Click Mua ngay
         holder.btnBuyNow.setOnClickListener(v -> {
-            if (mListener != null) {
-                mListener.onItemClick(product);
-            }
+            if (mListener != null) mListener.onItemClick(product);
         });
 
-        // Click Tim
         holder.ivFavorite.setOnClickListener(v -> {
             if (mListener != null) mListener.onFavoriteClick(product.getId());
         });
 
-        // Click Item
         holder.itemView.setOnClickListener(v -> {
             if (mListener != null) mListener.onItemClick(product);
         });

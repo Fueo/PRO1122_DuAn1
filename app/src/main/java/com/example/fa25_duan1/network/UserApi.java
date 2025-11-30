@@ -27,11 +27,12 @@ public interface UserApi {
     @GET("users/{id}")
     Call<ApiResponse<User>> getUserByID(@Path("id") String id);
 
-//    // POST: Thêm user
-//    @POST("users/add")
-//    Call<Void> addUser(@Body User user);
+    // --- MỚI THÊM: Lấy tổng số lượng account ---
+    @GET("users/get-total-account")
+    Call<ApiResponse<Integer>> getTotalAccount();
 
-    // POST: Thêm user có avatar** (Multipart)
+    // POST: Thêm user có avatar (Multipart)
+    // ĐÃ XÓA: phone, address
     @Multipart
     @POST("users/add")
     Call<User> addUserWithAvatar(
@@ -39,17 +40,16 @@ public interface UserApi {
             @Part("password") RequestBody password,
             @Part("name") RequestBody name,
             @Part("email") RequestBody email,
-            @Part("phone") RequestBody phone,
-            @Part("address") RequestBody address,
             @Part("role") RequestBody role,
             @Part MultipartBody.Part avatar
     );
 
-    // PUT: Cập nhật user theo ID
+    // PUT: Cập nhật user theo ID (Gửi JSON body - User object đã bỏ phone/address)
     @PUT("users/update/{id}")
     Call<ApiResponse<User>> updateUser(@Path("id") String id, @Body User user);
 
-    //PUT: Cập nhật user có kèm avatar
+    // PUT: Cập nhật user có kèm avatar
+    // ĐÃ XÓA: phone, address
     @Multipart
     @PUT("users/update/{id}")
     Call<ApiResponse<User>> updateUserWithAvatar(
@@ -58,8 +58,6 @@ public interface UserApi {
             @Part("password") RequestBody password,
             @Part("name") RequestBody name,
             @Part("email") RequestBody email,
-            @Part("phone") RequestBody phone,
-            @Part("address") RequestBody address,
             @Part("role") RequestBody role,
             @Part MultipartBody.Part avatar
     );
@@ -68,4 +66,3 @@ public interface UserApi {
     @DELETE("users/delete/{id}")
     Call<Void> deleteUser(@Path("id") String id);
 }
-

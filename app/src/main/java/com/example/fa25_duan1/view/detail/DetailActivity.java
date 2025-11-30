@@ -10,6 +10,7 @@ import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.view.cart.CartFragment;
 import com.example.fa25_duan1.view.cart.CheckoutFragment;
 import com.example.fa25_duan1.view.home.ProductFragment;
+import com.example.fa25_duan1.view.profile.AddressFragment;
 import com.example.fa25_duan1.view.profile.ChangeContactInforFragment;
 import com.example.fa25_duan1.view.profile.ChangePasswordFragment;
 import com.example.fa25_duan1.view.profile.OrderHistoryFragment;
@@ -64,11 +65,8 @@ public class DetailActivity extends AppCompatActivity {
             return new ChangeContactInforFragment();
         } else if ("changepassword".equals(fragmentName)) {
             return new ChangePasswordFragment();
-        } else if ("successchangeinfo".equals(fragmentName)) {
-            return new ProfileFragment();
-        }
-        else if ("successchangepass".equals(fragmentName)) {
-            return new ProfileFragment();
+        } else if ("address".equals(fragmentName)) {
+            return new AddressFragment();
         }
 
         return null;

@@ -5,14 +5,12 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -32,6 +30,10 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
+// --- IMPORT THƯ VIỆN MỚI ---
+import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog;
+
 public class AuthorUpdateFragment extends Fragment {
 
     // Khai báo Views
@@ -44,14 +46,13 @@ public class AuthorUpdateFragment extends Fragment {
     private AuthorViewModel viewModel;
     private Uri selectedAvatarUri = null;
     private String authorId;
-    private Author currentAuthor; // Lưu thông tin tác giả hiện tại khi Edit
+    private Author currentAuthor;
 
-    private static final int PICK_IMAGE_REQUEST = 1005; // Mã request code khác User chút để tránh nhầm lẫn
+    private static final int PICK_IMAGE_REQUEST = 1005;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Đảm bảo tên layout trùng với file xml bạn tạo (ví dụ: fragment_author_update.xml)
         return inflater.inflate(R.layout.fragment_authorupdate, container, false);
     }
 
@@ -69,18 +70,15 @@ public class AuthorUpdateFragment extends Fragment {
         etDescription = view.findViewById(R.id.etDescription);
         btnSave = view.findViewById(R.id.btnSave);
 
-        // 3. Kiểm tra xem đang ở chế độ "Thêm mới" hay "Cập nhật"
-        // Key "id" phải trùng với key bạn putExtra bên Activity hoặc Fragment quản lý
+        // 3. Kiểm tra mode (Add/Edit)
         if (getActivity().getIntent() != null) {
             authorId = getActivity().getIntent().getStringExtra("Id");
         }
 
         if (authorId != null) {
-            // Chế độ EDIT: Load dữ liệu cũ
             btnSave.setText("Cập nhật");
             loadAuthorDetail(authorId);
         } else {
-            // Chế độ ADD
             btnSave.setText("Thêm mới");
         }
 
@@ -103,7 +101,6 @@ public class AuthorUpdateFragment extends Fragment {
                 etName.setText(author.getName());
                 etDescription.setText(author.getDescription());
 
-                // Load ảnh Avatar
                 if (author.getAvatar() != null && !author.getAvatar().isEmpty()) {
                     Glide.with(requireContext())
                             .load(author.getAvatar())
@@ -112,14 +109,16 @@ public class AuthorUpdateFragment extends Fragment {
                             .into(ivProfile);
                 }
             } else {
-                Toast.makeText(getContext(), "Không tìm thấy thông tin tác giả", Toast.LENGTH_SHORT).show();
+                // --- FANCY TOAST ERROR ---
+                FancyToast.makeText(getContext(),
+                        "Không tìm thấy thông tin tác giả",
+                        FancyToast.LENGTH_SHORT,
+                        FancyToast.ERROR,
+                        true).show();
             }
         });
     }
 
-    /**
-     * Kiểm tra dữ liệu nhập vào (Validate)
-     */
     private boolean validateInput() {
         String name = etName.getText().toString().trim();
         String description = etDescription.getText().toString().trim();
@@ -127,21 +126,30 @@ public class AuthorUpdateFragment extends Fragment {
         if (name.isEmpty()) {
             etName.setError("Tên tác giả không được để trống");
             etName.requestFocus();
+            // --- FANCY TOAST WARNING ---
+            FancyToast.makeText(getContext(),
+                    "Vui lòng nhập tên tác giả",
+                    FancyToast.LENGTH_SHORT,
+                    FancyToast.WARNING,
+                    true).show();
             return false;
         }
 
         if (description.isEmpty()) {
             etDescription.setError("Mô tả không được để trống");
             etDescription.requestFocus();
+            // --- FANCY TOAST WARNING ---
+            FancyToast.makeText(getContext(),
+                    "Vui lòng nhập mô tả",
+                    FancyToast.LENGTH_SHORT,
+                    FancyToast.WARNING,
+                    true).show();
             return false;
         }
 
         return true;
     }
 
-    /**
-     * Xử lý thêm tác giả mới
-     */
     private void addAuthor() {
         if (!validateInput()) return;
 
@@ -152,21 +160,21 @@ public class AuthorUpdateFragment extends Fragment {
         RequestBody descBody = toRequestBody(description);
         MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
 
-        // Gọi API Thêm
         viewModel.addAuthorWithAvatar(nameBody, descBody, avatarPart).observe(getViewLifecycleOwner(), author -> {
             if (author != null) {
-                Toast.makeText(getContext(), "Thêm tác giả thành công", Toast.LENGTH_SHORT).show();
-                requireActivity().setResult(Activity.RESULT_OK);
-                requireActivity().finish();
+                // --- SHOW SUCCESS DIALOG ---
+                showSuccessDialog("Thêm tác giả thành công!");
             } else {
-                Toast.makeText(getContext(), "Thêm thất bại. Vui lòng thử lại.", Toast.LENGTH_SHORT).show();
+                // --- FANCY TOAST ERROR ---
+                FancyToast.makeText(getContext(),
+                        "Thêm thất bại. Vui lòng thử lại.",
+                        FancyToast.LENGTH_SHORT,
+                        FancyToast.ERROR,
+                        true).show();
             }
         });
     }
 
-    /**
-     * Xử lý cập nhật tác giả
-     */
     private void updateAuthor() {
         if (currentAuthor == null) return;
         if (!validateInput()) return;
@@ -178,16 +186,41 @@ public class AuthorUpdateFragment extends Fragment {
         RequestBody descBody = toRequestBody(description);
         MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
 
-        // Gọi API Cập nhật
         viewModel.updateAuthorWithAvatar(authorId, nameBody, descBody, avatarPart).observe(getViewLifecycleOwner(), author -> {
             if (author != null) {
-                Toast.makeText(getContext(), "Cập nhật thành công", Toast.LENGTH_SHORT).show();
-                requireActivity().setResult(Activity.RESULT_OK);
-                requireActivity().finish();
+                // --- SHOW SUCCESS DIALOG ---
+                showSuccessDialog("Cập nhật tác giả thành công!");
             } else {
-                Toast.makeText(getContext(), "Cập nhật thất bại.", Toast.LENGTH_SHORT).show();
+                // --- FANCY TOAST ERROR ---
+                FancyToast.makeText(getContext(),
+                        "Cập nhật thất bại. Vui lòng thử lại.",
+                        FancyToast.LENGTH_SHORT,
+                        FancyToast.ERROR,
+                        true).show();
             }
         });
+    }
+
+    // --- HÀM HIỂN THỊ DIALOG THÀNH CÔNG (DÙNG CHUNG)  ---
+    private void showSuccessDialog(String message) {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_success)
+                .setTitle("Thành công")
+                .setDescription(message)
+
+                // Cấu hình màu sắc đồng bộ Blue
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Đóng", v -> {
+                    // Khi bấm Đóng mới finish Activity
+                    requireActivity().setResult(Activity.RESULT_OK);
+                    requireActivity().finish();
+                })
+                .hideNegativeButton(true)
+                .show();
     }
 
     private void pickImageFromGallery() {

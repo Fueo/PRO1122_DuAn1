@@ -16,7 +16,7 @@ public class Product {
     private int view;
     private int pages;
     private int favorite;
-
+    private int discount;
     private String publishDate;
     private boolean status;
     @SerializedName("categoryID")
@@ -150,5 +150,13 @@ public class Product {
 
     public void setUpdatedAt(String updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public int getDiscount() {
+        return discount;
+    }
+
+    public void setDiscount(int discount) {
+        this.discount = discount;
     }
 }

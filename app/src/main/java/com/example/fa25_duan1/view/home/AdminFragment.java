@@ -20,30 +20,33 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.ActionButtonAdapter;
 import com.example.fa25_duan1.model.MenuItem;
-import com.example.fa25_duan1.view.detail.DetailActivity;
+import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.management.ManageActivity;
+import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 import com.example.fa25_duan1.viewmodel.UserViewModel;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class AdminFragment extends Fragment {
 
     // Khai báo biến dữ liệu menu
     ArrayList<MenuItem> listButtonData;
     RecyclerView rvButton;
+    ActionButtonAdapter adapter;
 
     // Khai báo các TextView thống kê
     private TextView tvTotalProduct;
     private TextView tvTotalCategory;
     private TextView tvTotalAccount;
-    // private TextView tvTotalInvoice; // Bỏ qua theo yêu cầu
 
     // Khai báo các ViewModel
     private ProductViewModel productViewModel;
     private CategoryViewModel categoryViewModel;
     private UserViewModel userViewModel;
+    private AuthViewModel authViewModel;
 
     @Nullable
     @Override
@@ -55,30 +58,38 @@ public class AdminFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Ánh xạ View
         initViews(view);
-
-        // 2. Thiết lập RecyclerView Menu (Code cũ giữ nguyên)
         setupMenuRecyclerView();
-
-        // 3. Khởi tạo ViewModels và quan sát dữ liệu (Observe)
         setupViewModels();
     }
 
     private void initViews(View view) {
         rvButton = view.findViewById(R.id.rvButton);
-
-        // Ánh xạ các TextView hiển thị số liệu từ XML
         tvTotalProduct = view.findViewById(R.id.tvTotalProduct);
         tvTotalCategory = view.findViewById(R.id.tvTotalCategory);
         tvTotalAccount = view.findViewById(R.id.tvTotalAccount);
-        // tvTotalInvoice = view.findViewById(R.id.tvTotalInvoice);
     }
 
     private void setupViewModels() {
+        // --- AUTH VIEW MODEL ---
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.getData() != null) {
+                User currentUser = response.getData();
+
+                // Nếu là Nhân viên (Role = 1)
+                if (currentUser.getRole() == 1) {
+                    // LƯU Ý: Không ẩn tvTotalAccount nữa vì Role 1 được phép xem số lượng
+                    // tvTotalAccount.setVisibility(View.GONE); <--- Đã bỏ dòng này
+
+                    // Chỉ ẩn Menu chức năng (để không vào được trang quản lý chi tiết)
+                    filterMenuForEmployee();
+                }
+            }
+        });
+
         // --- PRODUCT VIEW MODEL ---
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-        // Lắng nghe danh sách sản phẩm để lấy tổng số lượng
         productViewModel.getDisplayedProducts().observe(getViewLifecycleOwner(), products -> {
             if (products != null) {
                 tvTotalProduct.setText(String.valueOf(products.size()));
@@ -89,7 +100,6 @@ public class AdminFragment extends Fragment {
 
         // --- CATEGORY VIEW MODEL ---
         categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
-        // Lắng nghe danh sách danh mục
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 tvTotalCategory.setText(String.valueOf(categories.size()));
@@ -100,14 +110,40 @@ public class AdminFragment extends Fragment {
 
         // --- USER (ACCOUNT) VIEW MODEL ---
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
-        // Lắng nghe danh sách tài khoản
-        userViewModel.getDisplayedUsers().observe(getViewLifecycleOwner(), users -> {
-            if (users != null) {
-                tvTotalAccount.setText(String.valueOf(users.size()));
-            } else {
-                tvTotalAccount.setText("0");
+
+        // CŨ: Lấy danh sách (Role 1 gọi cái này sẽ bị lỗi 403 Forbidden)
+        // userViewModel.getDisplayedUsers().observe(...)
+
+        // MỚI: Gọi API lấy tổng số lượng (Role 1 và 2 đều dùng được)
+        loadTotalAccount();
+    }
+
+    // Hàm riêng để gọi API lấy số lượng Account
+    private void loadTotalAccount() {
+        if (userViewModel != null) {
+            userViewModel.getTotalAccount().observe(getViewLifecycleOwner(), count -> {
+                if (count != null) {
+                    tvTotalAccount.setText(String.valueOf(count));
+                } else {
+                    tvTotalAccount.setText("0");
+                }
+            });
+        }
+    }
+
+    private void filterMenuForEmployee() {
+        if (listButtonData != null) {
+            Iterator<MenuItem> iterator = listButtonData.iterator();
+            while (iterator.hasNext()) {
+                MenuItem item = iterator.next();
+                if (item.getId() == 5 || item.getId() == 6) {
+                    iterator.remove();
+                }
             }
-        });
+            if (adapter != null) {
+                adapter.notifyDataSetChanged();
+            }
+        }
     }
 
     private void setupMenuRecyclerView() {
@@ -120,7 +156,7 @@ public class AdminFragment extends Fragment {
         };
 
         rvButton.setLayoutManager(gridLayoutManager1);
-        ActionButtonAdapter adapter = new ActionButtonAdapter(getActivity(), listButtonData, item -> {
+        adapter = new ActionButtonAdapter(getActivity(), listButtonData, item -> {
             Intent intent = new Intent(getActivity(), ManageActivity.class);
             switch (item.getId()) {
                 case 0:
@@ -131,7 +167,7 @@ public class AdminFragment extends Fragment {
                     break;
                 case 2:
                     Toast.makeText(getActivity(), "Vào trang Invoice", Toast.LENGTH_SHORT).show();
-                    return; // Thêm return để không start activity rỗng nếu chưa implement
+                    return;
                 case 3:
                     intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "discount");
                     break;
@@ -154,9 +190,15 @@ public class AdminFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Gọi refresh để đảm bảo số liệu cập nhật khi quay lại từ màn hình thêm/sửa/xóa
         if(productViewModel != null) productViewModel.refreshData();
         if(categoryViewModel != null) categoryViewModel.refreshData();
-        if(userViewModel != null) userViewModel.refreshData();
+
+        // KHÔNG gọi userViewModel.refreshData() vì hàm đó gọi getAllUsers() => Role 1 sẽ bị crash/lỗi mạng
+        // if(userViewModel != null) userViewModel.refreshData();
+
+        // Thay vào đó, gọi lại hàm lấy số lượng
+        loadTotalAccount();
+
+        if(authViewModel != null) authViewModel.getMyInfo();
     }
 }

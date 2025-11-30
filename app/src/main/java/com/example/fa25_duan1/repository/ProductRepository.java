@@ -48,6 +48,28 @@ public class ProductRepository {
         return data;
     }
 
+    public LiveData<List<Product>> getOnSaleProducts(int limit) {
+        MutableLiveData<List<Product>> data = new MutableLiveData<>();
+        productApi.getOnSaleProducts(limit).enqueue(new Callback<ApiResponse<List<Product>>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<List<Product>>> call, @NonNull Response<ApiResponse<List<Product>>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    // Trả về danh sách hoặc list rỗng nếu null
+                    data.setValue(response.body().getData() != null ? response.body().getData() : new ArrayList<>());
+                } else {
+                    data.setValue(new ArrayList<>());
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<List<Product>>> call, @NonNull Throwable t) {
+                Log.e("ProductRepo", "getOnSaleProducts Error: " + t.getMessage());
+                data.setValue(new ArrayList<>());
+            }
+        });
+        return data;
+    }
+
     public LiveData<List<Product>> getProductsByCategory(String categoryId) {
         MutableLiveData<List<Product>> data = new MutableLiveData<>();
 

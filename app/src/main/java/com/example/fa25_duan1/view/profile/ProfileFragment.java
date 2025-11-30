@@ -21,13 +21,15 @@ import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 
 public class ProfileFragment extends Fragment {
-    TextView tvName, tvRole, tvPhone, tvEmail, tvAddress, tvChangePassword;
+    TextView tvName, tvRole, tvEmail, tvAddress, tvChangePassword;
     ImageView ivProfile, btnEdit;
     AuthViewModel authViewModel;
+    View view;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_profile, container, false);
+        view = inflater.inflate(R.layout.fragment_profile, container, false);
+        return view;
     }
 
     @Override
@@ -42,17 +44,15 @@ public class ProfileFragment extends Fragment {
 
         // 3. Xử lý sự kiện Click
         btnEdit.setOnClickListener(v -> {
-            Intent intent = new Intent(view.getContext(), DetailActivity.class);
-            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thông tin cá nhân");
-            intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "updateinfo");
-            startActivity(intent);
+            openActivity("Thông tin cá nhân", "updateinfo");
         });
 
         tvChangePassword.setOnClickListener(v -> {
-            Intent intent = new Intent(view.getContext(), DetailActivity.class);
-            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thay đổi mật khẩu");
-            intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "changepassword");
-            startActivity(intent);
+            openActivity("Thay đổi mật khẩu", "changepassword");
+        });
+
+        tvAddress.setOnClickListener(v -> {
+            openActivity("Sổ địa chỉ", "address");
         });
 
         // Lưu ý: Không gọi observe dữ liệu ở đây nữa, vì onResume sẽ lo việc đó.
@@ -90,16 +90,6 @@ public class ProfileFragment extends Fragment {
         tvName.setText(user.getName());
         tvRole.setText(role);
         tvEmail.setText(user.getEmail());
-        tvPhone.setText(
-                (user.getPhone() == null || user.getPhone().isEmpty())
-                        ? "Chưa cập nhật"
-                        : user.getPhone()
-        );
-        tvAddress.setText(
-                (user.getAddress() == null || user.getAddress().isEmpty())
-                        ? "Chưa cập nhật"
-                        : user.getAddress()
-        );
 
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             Glide.with(requireActivity())
@@ -115,11 +105,17 @@ public class ProfileFragment extends Fragment {
     private void initViews(View view) {
         tvName = view.findViewById(R.id.tvName);
         tvRole = view.findViewById(R.id.tvRole);
-        tvPhone = view.findViewById(R.id.tvPhone);
         tvEmail = view.findViewById(R.id.tvEmail);
         tvAddress = view.findViewById(R.id.tvAddress);
         ivProfile = view.findViewById(R.id.ivProfile);
         tvChangePassword = view.findViewById(R.id.tvChangePassword);
         btnEdit = view.findViewById(R.id.btnEdit);
+    }
+
+    private void openActivity(String header, String content) {
+        Intent intent = new Intent(view.getContext(), DetailActivity.class);
+        intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, header);
+        intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, content);
+        startActivity(intent);
     }
 }

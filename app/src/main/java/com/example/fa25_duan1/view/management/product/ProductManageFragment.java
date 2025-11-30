@@ -3,12 +3,10 @@ package com.example.fa25_duan1.view.management.product;
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -21,14 +19,16 @@ import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.ProductManageAdapter;
 import com.example.fa25_duan1.model.Author;
 import com.example.fa25_duan1.model.Product;
-import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
-import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
 import com.example.fa25_duan1.view.management.UpdateActivity;
 import com.example.fa25_duan1.viewmodel.AuthorViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
+
+// --- IMPORT THƯ VIỆN MỚI ---
+import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class ProductManageFragment extends Fragment {
     private View layout_empty;
@@ -48,7 +48,7 @@ public class ProductManageFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Nạp Fragment Filter vào Container (Container này KHÔNG được bị ẩn bởi layout_empty)
+        // 1. Nạp Fragment Filter
         if (savedInstanceState == null) {
             getActivity().getSupportFragmentManager().beginTransaction()
                     .replace(R.id.fragment_filter, new ProductFilterFragment())
@@ -81,7 +81,6 @@ public class ProductManageFragment extends Fragment {
         // 2. Quan sát danh sách sản phẩm
         viewModel.getDisplayedProducts().observe(getViewLifecycleOwner(), products -> {
             productManageAdapter.setData(products);
-            // Gọi hàm kiểm tra rỗng
             checkEmptyState(products);
         });
 
@@ -100,34 +99,34 @@ public class ProductManageFragment extends Fragment {
         viewModel.refreshData();
     }
 
-    // --- HÀM QUAN TRỌNG: XỬ LÝ ẨN/HIỆN ---
     private void checkEmptyState(List<Product> list) {
         if (list == null || list.isEmpty()) {
-            // Nếu danh sách rỗng:
-            // 1. Hiện layout thông báo rỗng
             layout_empty.setVisibility(View.VISIBLE);
-            // 2. Ẩn RecyclerView
             rvData.setVisibility(View.GONE);
-
-            // LƯU Ý: Chúng ta KHÔNG ẩn R.id.fragment_filter ở đây
-            // Fragment Filter vẫn nằm trong Activity/Fragment cha và không bị ảnh hưởng
-            // trừ khi layout_empty đè lên nó (Xem phần Lưu ý Layout bên dưới)
         } else {
-            // Nếu có dữ liệu:
             layout_empty.setVisibility(View.GONE);
             rvData.setVisibility(View.VISIBLE);
         }
     }
 
+    // --- SỬ DỤNG CUTEDIALOG (CẢNH BÁO THIẾU TÁC GIẢ) ---
     private void showRequireAuthorDialog() {
-        NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
-                "Thiếu dữ liệu",
-                "Hệ thống chưa có tác giả nào. Vui lòng tạo ít nhất 1 tác giả trước khi thêm sản phẩm.",
-                "Đã hiểu",
-                NotificationDialogFragment.TYPE_ERROR,
-                () -> {}
-        );
-        dialogFragment.show(getParentFragmentManager(), "RequireAuthorDialog");
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_info) // Hoặc icon warning
+                .setTitle("Thiếu dữ liệu")
+                .setDescription("Hệ thống chưa có tác giả nào. Vui lòng tạo ít nhất 1 tác giả trước khi thêm sản phẩm.")
+
+                // Cấu hình màu sắc đồng bộ Blue
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Đã hiểu", v -> {
+                    // Đóng dialog
+                })
+                .hideNegativeButton(true)
+                .show();
     }
 
     private void openUpdateActivity(Product product) {
@@ -143,31 +142,56 @@ public class ProductManageFragment extends Fragment {
 
     private void deleteProduct(Product product) {
         if (product == null) return;
-        ConfirmDialogFragment dialog = new ConfirmDialogFragment(
-                "Xóa sản phẩm",
-                "Xác nhận xoá sản phẩm " + product.getName(),
-                new ConfirmDialogFragment.OnConfirmListener() {
-                    @Override
-                    public void onConfirmed() {
-                        viewModel.deleteProduct(product.getId()).observe(getViewLifecycleOwner(), success -> {
-                            if (success != null && success) {
-                                viewModel.refreshData();
-                                NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
-                                        "Thành công",
-                                        "Bạn đã xóa sản phẩm thành công",
-                                        "Đóng",
-                                        NotificationDialogFragment.TYPE_SUCCESS,
-                                        () -> {}
-                                );
-                                dialogFragment.show(getParentFragmentManager(), "SuccessDialog");
-                            } else {
-                                Toast.makeText(getContext(), "Xóa thất bại", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-        );
-        dialog.show(getParentFragmentManager(), "ConfirmDialog");
+
+        // --- SỬ DỤNG CUTEDIALOG (XÁC NHẬN XÓA) ---
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_confirm)
+                .setTitle("Xóa sản phẩm")
+                .setDescription("Xác nhận xoá sản phẩm: " + product.getName() + "?")
+
+                // Cấu hình màu sắc
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Xóa", v -> {
+                    performDelete(product);
+                })
+                .setNegativeButtonText("Hủy", v -> {
+                    // Tự động đóng
+                })
+                .show();
+    }
+
+    private void performDelete(Product product) {
+        viewModel.deleteProduct(product.getId()).observe(getViewLifecycleOwner(), success -> {
+            if (success != null && success) {
+                viewModel.refreshData();
+
+                // --- SỬ DỤNG CUTEDIALOG (THÀNH CÔNG) ---
+                new CuteDialog.withIcon(requireActivity())
+                        .setIcon(R.drawable.ic_dialog_success)
+                        .setTitle("Thành công")
+                        .setDescription("Bạn đã xóa sản phẩm thành công")
+
+                        .setPrimaryColor(R.color.blue)
+                        .setPositiveButtonColor(R.color.blue)
+                        .setTitleTextColor(R.color.black)
+                        .setDescriptionTextColor(R.color.gray_text)
+
+                        .setPositiveButtonText("Đóng", v -> {})
+                        .hideNegativeButton(true)
+                        .show();
+            } else {
+                // --- SỬ DỤNG FANCY TOAST (LỖI) ---
+                FancyToast.makeText(getContext(),
+                        "Xóa thất bại! Vui lòng thử lại.",
+                        FancyToast.LENGTH_SHORT,
+                        FancyToast.ERROR,
+                        true).show();
+            }
+        });
     }
 
     @Override
@@ -177,4 +201,6 @@ public class ProductManageFragment extends Fragment {
             viewModel.refreshData();
         }
     }
+
+
 }

@@ -22,6 +22,8 @@ import com.example.fa25_duan1.viewmodel.OrderViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.cutelibs.cutedialog.CuteDialog;
+
 public class OrderHistoryFragment extends Fragment {
 
     private RecyclerView rvOrders;
@@ -96,13 +98,23 @@ public class OrderHistoryFragment extends Fragment {
     }
 
     private void showConfirmCancelDialog(String orderId) {
-        new AlertDialog.Builder(getContext())
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_confirm)
                 .setTitle("Xác nhận hủy đơn")
-                .setMessage("Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.")
-                .setPositiveButton("Đồng ý hủy", (dialog, which) -> {
+                .setDescription("Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.")
+
+                // Cấu hình màu sắc đồng bộ Blue
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Xác nhận", v -> {
                     orderViewModel.cancelOrder(orderId);
                 })
-                .setNegativeButton("Đóng", null)
+                .setNegativeButtonText("Hủy", v -> {
+                    // Tự động đóng dialog
+                })
                 .show();
     }
 

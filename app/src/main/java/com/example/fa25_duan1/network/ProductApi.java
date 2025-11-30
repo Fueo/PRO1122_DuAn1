@@ -26,6 +26,8 @@ public interface ProductApi {
     @GET("products/")
     Call<ApiResponse<List<Product>>> getProductsByCategory(@Query("categoryID") String categoryId);
 
+    @GET("products/on-sale/{limit}")
+    Call<ApiResponse<List<Product>>> getOnSaleProducts(@Path("limit") int limit);
     // 🆕 GET: Tìm kiếm sản phẩm theo tên (PUBLIC)
     // API: /api/products/search?name=keyword
     @GET("products/search")

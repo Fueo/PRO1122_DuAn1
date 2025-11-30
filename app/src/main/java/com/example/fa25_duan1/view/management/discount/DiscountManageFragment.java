@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,12 +18,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.DiscountManageAdapter;
 import com.example.fa25_duan1.model.Discount;
-import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
 import com.example.fa25_duan1.view.management.UpdateActivity;
 import com.example.fa25_duan1.viewmodel.DiscountViewModel;
 
 import java.util.ArrayList;
 import java.util.List;
+
+// --- IMPORT THƯ VIỆN MỚI ---
+import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class DiscountManageFragment extends Fragment {
     private View layout_empty;
@@ -35,7 +37,6 @@ public class DiscountManageFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Dùng layout fragment_discount_management.xml bạn đã cung cấp
         return inflater.inflate(R.layout.fragment_discount_management, container, false);
     }
 
@@ -71,7 +72,7 @@ public class DiscountManageFragment extends Fragment {
         // ViewModel setup
         viewModel = new ViewModelProvider(requireActivity()).get(DiscountViewModel.class);
 
-        // Load data lần đầu (nếu cần)
+        // Load data lần đầu
         viewModel.refreshData();
 
         viewModel.getDisplayedDiscounts().observe(getViewLifecycleOwner(), discounts -> {
@@ -89,34 +90,66 @@ public class DiscountManageFragment extends Fragment {
         intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Thêm mã giảm giá");
 
         if (discount != null) {
-            intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Chỉnh sửa mã giảm giá");
+            intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Chỉnh sửa giảm giá");
             intent.putExtra("Id", discount.get_id());
         }
-        // Key quan trọng để UpdateActivity biết load DiscountUpdateFragment
         intent.putExtra(UpdateActivity.EXTRA_CONTENT_FRAGMENT, "discount");
 
         startActivityForResult(intent, 2002);
     }
 
     private void deleteDiscount(Discount discount) {
-        ConfirmDialogFragment dialog = new ConfirmDialogFragment(
-                "Xóa mã giảm giá",
-                "Bạn có chắc muốn xóa: " + discount.getDiscountName() + "?",
-                new ConfirmDialogFragment.OnConfirmListener() {
-                    @Override
-                    public void onConfirmed() {
-                        viewModel.deleteDiscount(discount.get_id()).observe(getViewLifecycleOwner(), success -> {
-                            if (success) {
-                                viewModel.refreshData();
-                                Toast.makeText(getContext(), "Đã xóa thành công", Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(getContext(), "Xóa thất bại", Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                    }
-                }
-        );
-        dialog.show(getParentFragmentManager(), "ConfirmDialog");
+        if (discount == null) return;
+
+        // --- SỬ DỤNG CUTEDIALOG (XÁC NHẬN) ---
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_confirm)
+                .setTitle("Xóa mã giảm giá")
+                .setDescription("Bạn có chắc muốn xóa mã: " + discount.getDiscountName() + "?")
+
+                // Cấu hình màu sắc đồng bộ Blue
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Xóa", v -> {
+                    performDelete(discount);
+                })
+                .setNegativeButtonText("Hủy", v -> {
+                    // Tự động đóng dialog
+                })
+                .show();
+    }
+
+    private void performDelete(Discount discount) {
+        viewModel.deleteDiscount(discount.get_id()).observe(getViewLifecycleOwner(), success -> {
+            if (success != null && success) {
+                viewModel.refreshData();
+
+                // --- SỬ DỤNG CUTEDIALOG (THÀNH CÔNG) ---
+                new CuteDialog.withIcon(requireActivity())
+                        .setIcon(R.drawable.ic_dialog_success)
+                        .setTitle("Thành công")
+                        .setDescription("Đã xóa mã giảm giá thành công!")
+
+                        .setPrimaryColor(R.color.blue)
+                        .setPositiveButtonColor(R.color.blue)
+                        .setTitleTextColor(R.color.black)
+                        .setDescriptionTextColor(R.color.gray_text)
+
+                        .setPositiveButtonText("Đóng", v -> {})
+                        .hideNegativeButton(true)
+                        .show();
+            } else {
+                // --- SỬ DỤNG FANCY TOAST (LỖI) ---
+                FancyToast.makeText(getContext(),
+                        "Xóa thất bại! Vui lòng thử lại.",
+                        FancyToast.LENGTH_SHORT,
+                        FancyToast.ERROR,
+                        true).show();
+            }
+        });
     }
 
     @Override

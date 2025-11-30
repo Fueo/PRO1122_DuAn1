@@ -19,13 +19,13 @@ public class OrderViewModel extends AndroidViewModel {
 
     private final OrderRepository repository;
 
-    // LiveData danh sách đơn hàng (đã kèm chi tiết)
+    // LiveData danh sách đơn hàng
     private final MutableLiveData<List<Order>> orderHistory = new MutableLiveData<>();
 
-    // LiveData thông báo (Toast)
+    // LiveData thông báo lỗi (Chỉ dùng để bắn lỗi ra UI)
     private final MutableLiveData<String> message = new MutableLiveData<>();
 
-    // LiveData báo hiệu Checkout thành công (chứa OrderId để chuyển màn hình)
+    // LiveData báo hiệu Checkout thành công (chứa OrderId)
     private final MutableLiveData<String> checkoutSuccessOrderId = new MutableLiveData<>();
 
     public OrderViewModel(@NonNull Application application) {
@@ -38,23 +38,32 @@ public class OrderViewModel extends AndroidViewModel {
     public LiveData<String> getMessage() { return message; }
     public LiveData<String> getCheckoutSuccessOrderId() { return checkoutSuccessOrderId; }
 
-    // --- 1. CHECKOUT ---
+    // --- 1. CHECKOUT (ĐÃ SỬA) ---
     public void checkout(String fullname, String address, String phone, String note, String paymentMethod) {
         CheckoutRequest request = new CheckoutRequest(fullname, address, phone, note, paymentMethod);
+
+        // Reset lại trạng thái trước khi gọi API để tránh bị trigger sự kiện cũ
+        message.setValue(null);
+        checkoutSuccessOrderId.setValue(null);
 
         LiveData<ApiResponse<CheckoutResponse>> liveData = repository.checkout(request);
         liveData.observeForever(new Observer<ApiResponse<CheckoutResponse>>() {
             @Override
             public void onChanged(ApiResponse<CheckoutResponse> response) {
                 if (response != null && response.isStatus()) {
-                    message.setValue("Đặt hàng thành công!");
-                    // Bắn OrderId ra để Activity biết mà chuyển sang màn hình "Thành công" hoặc "Lịch sử"
+                    // --- THAY ĐỔI QUAN TRỌNG Ở ĐÂY ---
+
+                    // 1. KHÔNG set message khi thành công nữa.
+                    // message.setValue("Đặt hàng thành công!"); // <--- Đã xóa dòng này để tránh hiện Toast đỏ
+
+                    // 2. Chỉ bắn OrderId để hiện Dialog Success
                     if (response.getData() != null) {
                         checkoutSuccessOrderId.setValue(response.getData().getOrderId());
                     }
                 } else {
+                    // Khi thất bại thì mới bắn message để hiện Toast lỗi
                     if (response != null && response.getMessage() != null) {
-                        message.setValue(response.getMessage()); // VD: Sản phẩm A không đủ số lượng
+                        message.setValue(response.getMessage());
                     } else {
                         message.setValue("Đặt hàng thất bại. Vui lòng thử lại.");
                     }
@@ -73,7 +82,8 @@ public class OrderViewModel extends AndroidViewModel {
                 if (orders != null) {
                     orderHistory.setValue(orders);
                 } else {
-                    message.setValue("Lỗi tải lịch sử đơn hàng hoặc danh sách trống");
+                    // Chỉ báo lỗi nếu thực sự cần thiết, hoặc có thể để null
+                    // message.setValue("Lỗi tải lịch sử");
                     orderHistory.setValue(null);
                 }
                 liveData.removeObserver(this);
@@ -83,14 +93,22 @@ public class OrderViewModel extends AndroidViewModel {
 
     // --- 3. CANCEL ORDER ---
     public void cancelOrder(String orderId) {
+        // Reset message
+        message.setValue(null);
+
         LiveData<ApiResponse<Void>> liveData = repository.cancelOrder(orderId);
         liveData.observeForever(new Observer<ApiResponse<Void>>() {
             @Override
             public void onChanged(ApiResponse<Void> response) {
                 if (response != null && response.isStatus()) {
-                    message.setValue("Đã hủy đơn hàng");
-                    // Reload lại danh sách ngay lập tức để cập nhật UI
-                    fetchOrderHistory();
+                    // Với hủy đơn hàng, ta vẫn cần thông báo Toast cho người dùng biết
+                    // Nhưng ở Fragment quản lý đơn hàng, bạn nên dùng Toast Success (Màu xanh)
+                    // Hoặc tạm thời cứ để message, nhưng bên Fragment phải xử lý hiển thị đúng màu.
+                    // Tuy nhiên, ở đây tôi set null message và load lại list để UI tự cập nhật
+
+                    message.setValue("Đã hủy đơn hàng thành công"); // Cái này sẽ hiện Toast đỏ nếu Fragment checkout dùng chung logic, nhưng Cancel thường ở màn hình khác.
+
+                    fetchOrderHistory(); // Reload lại list
                 } else {
                     message.setValue(response != null ? response.getMessage() : "Lỗi khi hủy đơn");
                 }

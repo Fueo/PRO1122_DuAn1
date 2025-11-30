@@ -11,7 +11,6 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -23,12 +22,15 @@ import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
+
+// --- IMPORT THƯ VIỆN UI MỚI ---
+import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class UserFragment extends Fragment {
     LinearLayout rlProfile, rlHistory;
-    TextView tvName, tvRole, tvPhone, tvEmail;
+    TextView tvName, tvRole, tvEmail;
     Button btnLogout;
     ImageView ivProfile;
     AuthViewModel authViewModel;
@@ -47,8 +49,6 @@ public class UserFragment extends Fragment {
 
         // 2. Khởi tạo ViewModel
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
-
-        // LƯU Ý: Đã xóa phần observe dữ liệu ở đây, chuyển sang onResume
 
         // 3. Xử lý sự kiện Click
         rlProfile.setOnClickListener(v -> {
@@ -70,7 +70,6 @@ public class UserFragment extends Fragment {
         });
     }
 
-    // --- THÊM HÀM onResume ---
     @Override
     public void onResume() {
         super.onResume();
@@ -79,7 +78,6 @@ public class UserFragment extends Fragment {
 
     // --- HÀM LOAD DỮ LIỆU ---
     private void loadUserData() {
-        // Xóa observer cũ để tránh trùng lặp
         if (authViewModel.getMyInfo() != null) {
             authViewModel.getMyInfo().removeObservers(getViewLifecycleOwner());
         }
@@ -89,7 +87,7 @@ public class UserFragment extends Fragment {
                 User user = response.getData();
                 updateUI(user);
             } else {
-                // Toast.makeText(requireContext(), "Không lấy được thông tin", Toast.LENGTH_SHORT).show();
+                // Có thể thêm Toast lỗi nhẹ nếu cần, hoặc để trống
             }
         });
     }
@@ -101,11 +99,6 @@ public class UserFragment extends Fragment {
         tvName.setText(user.getName());
         tvRole.setText(role);
         tvEmail.setText(user.getEmail());
-        tvPhone.setText(
-                (user.getPhone() == null || user.getPhone().isEmpty())
-                        ? "Chưa cập nhật"
-                        : user.getPhone()
-        );
 
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
             Glide.with(requireActivity())
@@ -124,12 +117,11 @@ public class UserFragment extends Fragment {
         btnLogout = view.findViewById(R.id.btnLogout);
         tvName = view.findViewById(R.id.tvName);
         tvRole = view.findViewById(R.id.tvRole);
-        tvPhone = view.findViewById(R.id.tvPhone);
         tvEmail = view.findViewById(R.id.tvEmail);
         ivProfile = view.findViewById(R.id.ivProfile);
     }
 
-    // --- CÁC HÀM XỬ LÝ LOGOUT (GIỮ NGUYÊN) ---
+    // --- CÁC HÀM XỬ LÝ LOGOUT ---
     private void handleLogoutSuccess(SharedPreferences sharedPref) {
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.remove("accessToken");
@@ -137,7 +129,13 @@ public class UserFragment extends Fragment {
         editor.remove("rememberMe");
         editor.apply();
 
-        Toast.makeText(requireContext(), "Đăng xuất thành công!", Toast.LENGTH_SHORT).show();
+        // Thay Toast thường bằng FancyToast SUCCESS
+        FancyToast.makeText(requireContext(),
+                "Đăng xuất thành công!",
+                FancyToast.LENGTH_SHORT,
+                FancyToast.SUCCESS,
+                true).show();
+
         startAuthActivity(0);
         requireActivity().finish();
     }
@@ -149,30 +147,48 @@ public class UserFragment extends Fragment {
     }
 
     private void showLogoutDialogConfirm() {
-        ConfirmDialogFragment dialog = new ConfirmDialogFragment(
-                "Xác nhận đăng xuất?",
-                "",
-                new ConfirmDialogFragment.OnConfirmListener() {
-                    @Override
-                    public void onConfirmed() {
-                        SharedPreferences sharedPref = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-                        String refreshToken = sharedPref.getString("refreshToken", null);
+        // --- SỬ DỤNG CUTEDIALOG (ĐĂNG XUẤT) ---
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_info) // Nên dùng icon logout nếu có (R.drawable.ic_logout)
+                .setTitle("Đăng xuất")
+                .setDescription("Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?")
 
-                        if (refreshToken != null) {
-                            authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), response -> {
-                                if (response != null) {
-                                    handleLogoutSuccess(sharedPref);
-                                } else {
-                                    Toast.makeText(requireContext(), "Lỗi mạng, đăng xuất cục bộ.", Toast.LENGTH_SHORT).show();
-                                    handleLogoutSuccess(sharedPref);
-                                }
-                            });
-                        } else {
-                            handleLogoutSuccess(sharedPref);
-                        }
-                    }
+                // --- CẤU HÌNH MÀU SẮC (BLUE) ---
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Đăng xuất", v -> {
+                    performLogout();
+                })
+                .setNegativeButtonText("Hủy", v -> {
+                    // Đóng dialog
+                })
+                .show();
+    }
+
+    private void performLogout() {
+        SharedPreferences sharedPref = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        String refreshToken = sharedPref.getString("refreshToken", null);
+
+        if (refreshToken != null) {
+            authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), response -> {
+                if (response != null) {
+                    handleLogoutSuccess(sharedPref);
+                } else {
+                    // Thay Toast lỗi bằng FancyToast WARNING
+                    FancyToast.makeText(requireContext(),
+                            "Lỗi mạng, đăng xuất cục bộ.",
+                            FancyToast.LENGTH_SHORT,
+                            FancyToast.WARNING,
+                            true).show();
+
+                    handleLogoutSuccess(sharedPref);
                 }
-        );
-        dialog.show(getParentFragmentManager(), "ConfirmDialog");
+            });
+        } else {
+            handleLogoutSuccess(sharedPref);
+        }
     }
 }

@@ -23,6 +23,7 @@ public class RetrofitClient {
     private final FavoriteApi favoriteApi;
     private final DiscountApi discountApi;
     private final OrderApi orderApi;
+    private final AddressApi addressApi;
 
     private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
 
@@ -52,9 +53,8 @@ public class RetrofitClient {
         favoriteApi = retrofit.create(FavoriteApi.class);
         discountApi = retrofit.create(DiscountApi.class);
         orderApi = retrofit.create(OrderApi.class);
-
-        // --- KHỞI TẠO CART API TẠI ĐÂY ---
         cartApi = retrofit.create(CartApi.class);
+        addressApi = retrofit.create(AddressApi.class);
     }
 
     public static synchronized RetrofitClient getInstance(Context context) {
@@ -96,4 +96,6 @@ public class RetrofitClient {
     public DiscountApi getDiscountApi() {return discountApi;}
 
     public OrderApi getOrderApi() {return orderApi;}
+
+    public AddressApi getAddressApi() {return addressApi;}
 }

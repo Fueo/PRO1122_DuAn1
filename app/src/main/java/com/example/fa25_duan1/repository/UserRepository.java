@@ -1,7 +1,6 @@
 package com.example.fa25_duan1.repository;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
@@ -49,6 +48,27 @@ public class UserRepository {
         return data;
     }
 
+    // --- Get Total Account Count ---
+    public LiveData<Integer> getTotalAccount() {
+        MutableLiveData<Integer> countData = new MutableLiveData<>();
+        userApi.getTotalAccount().enqueue(new Callback<ApiResponse<Integer>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Integer>> call, @NonNull Response<ApiResponse<Integer>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    countData.setValue(response.body().getData());
+                } else {
+                    countData.setValue(0);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Integer>> call, @NonNull Throwable t) {
+                countData.setValue(0);
+            }
+        });
+        return countData;
+    }
+
     // --- Get User by ID ---
     public LiveData<User> getUserByID(String id) {
         MutableLiveData<User> data = new MutableLiveData<>();
@@ -70,17 +90,16 @@ public class UserRepository {
         return data;
     }
 
-    // --- Add User ---
+    // --- Add User (Đã xóa phone, address) ---
     public LiveData<User> addUserWithAvatar(RequestBody username,
                                             RequestBody password,
                                             RequestBody name,
                                             RequestBody email,
-                                            RequestBody phone,
-                                            RequestBody address,
                                             RequestBody role,
                                             MultipartBody.Part avatar) {
         MutableLiveData<User> result = new MutableLiveData<>();
-        userApi.addUserWithAvatar(username, password, name, email, phone, address, role, avatar)
+        // Lưu ý: Cần sửa cả bên UserApi interface để bỏ tham số phone, address
+        userApi.addUserWithAvatar(username, password, name, email, role, avatar)
                 .enqueue(new Callback<User>() {
                     @Override
                     public void onResponse(Call<User> call, Response<User> response) {
@@ -99,18 +118,17 @@ public class UserRepository {
         return result;
     }
 
-    // --- Update User ---
+    // --- Update User (Đã xóa phone, address) ---
     public LiveData<User> updateUserWithAvatar(String id,
                                                RequestBody username,
                                                RequestBody password,
                                                RequestBody name,
                                                RequestBody email,
-                                               RequestBody phone,
-                                               RequestBody address,
                                                RequestBody role,
                                                MultipartBody.Part avatar) {
         MutableLiveData<User> result = new MutableLiveData<>();
-        userApi.updateUserWithAvatar(id, username, password, name, email, phone, address, role, avatar)
+        // Lưu ý: Cần sửa cả bên UserApi interface để bỏ tham số phone, address
+        userApi.updateUserWithAvatar(id, username, password, name, email, role, avatar)
                 .enqueue(new Callback<ApiResponse<User>>() {
                     @Override
                     public void onResponse(Call<ApiResponse<User>> call, Response<ApiResponse<User>> response) {
@@ -136,8 +154,6 @@ public class UserRepository {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 result.setValue(response.isSuccessful());
-                if (!response.isSuccessful()) {
-                }
             }
 
             @Override

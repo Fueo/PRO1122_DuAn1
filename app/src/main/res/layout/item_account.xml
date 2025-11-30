@@ -74,16 +74,38 @@
                 />
 
             <ImageView
+                android:id="@+id/iv_delete"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="15dp"
+                android:src="@drawable/ic_managedelete"
+                android:background="@drawable/bg_button_action_red"
+                android:padding="8dp"
+                app:tint="#D32F2F"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                />
+
+            <ImageView
                 android:id="@+id/iv_edit"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:layout_marginEnd="20dp"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_marginEnd="24dp"
                 android:src="@drawable/ic_manageedit"
+                android:background="@drawable/bg_button_action_blue"
+                android:padding="8dp"
+                app:tint="#1976D2"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackgroundBorderless"
                 app:layout_constraintTop_toTopOf="@+id/ivDelete"
                 app:layout_constraintBottom_toBottomOf="@+id/ivDelete"
                 app:layout_constraintEnd_toStartOf="@+id/ivDelete"
                 />
-
         </androidx.constraintlayout.widget.ConstraintLayout>
 
 

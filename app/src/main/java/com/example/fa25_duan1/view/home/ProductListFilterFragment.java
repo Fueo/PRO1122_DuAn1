@@ -51,6 +51,9 @@ public class ProductListFilterFragment extends Fragment {
     private String currentSelectedCategoryId = "ALL";
     private List<Category> mCategoryList = new ArrayList<>();
 
+    // Biến cờ để đánh dấu đang chuyển danh mục -> đợi data về mới lọc giá
+    private boolean isCategorySwitching = false;
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -65,7 +68,7 @@ public class ProductListFilterFragment extends Fragment {
         initViews(view);
         initViewModels();
 
-        // 1. Nhận ID
+        // Nhận ID từ màn hình trước
         if (getArguments() != null && getArguments().containsKey("category_id")) {
             String passedId = getArguments().getString("category_id");
             if (passedId != null && !passedId.isEmpty()) {
@@ -73,9 +76,12 @@ public class ProductListFilterFragment extends Fragment {
             }
         }
 
-        // 2. Gọi API
+        // Gọi API lần đầu tiên
+        // Kiểm tra xem ID ban đầu là gì để gọi hàm tương ứng
         if ("ALL".equals(currentSelectedCategoryId)) {
             viewModel.refreshData();
+        } else if ("SALE".equals(currentSelectedCategoryId)) {
+            viewModel.filterOnSaleProductsApi();
         } else {
             viewModel.filterProductsByCategoryApi(currentSelectedCategoryId);
         }
@@ -108,6 +114,15 @@ public class ProductListFilterFragment extends Fragment {
     private void initViewModels() {
         viewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
         categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
+
+        // LẮNG NGHE DỮ LIỆU THAY ĐỔI
+        viewModel.getDisplayedProducts().observe(getViewLifecycleOwner(), products -> {
+            // Nếu biến cờ đang bật (vừa bấm Category xong), thì lọc lại giá
+            if (isCategorySwitching) {
+                isCategorySwitching = false;
+                applyFilters();
+            }
+        });
     }
 
     private void setupCategoryRecyclerView() {
@@ -125,44 +140,50 @@ public class ProductListFilterFragment extends Fragment {
 
                 // 1. Tạo mục "Tất cả"
                 Category allCategory = new Category("Tất cả", true);
-                allCategory.setCreateAt("ALL");
-
-                // --- SỬA: Dùng setCateID ---
-                allCategory.setCateID("ALL");
-                // --------------------------
-
+                allCategory.setCateID("ALL"); // ID đặc biệt cho tất cả
                 mCategoryList.add(allCategory);
 
-                // 2. Thêm danh sách API
+                // --- 2. THÊM MỤC "GIẢM GIÁ" (MỚI) ---
+                Category saleCategory = new Category("Giảm giá", false);
+                saleCategory.setCateID("SALE"); // ID đặc biệt cho Giảm giá
+                mCategoryList.add(saleCategory);
+                // -------------------------------------
+
+                // 3. Thêm danh sách từ API
                 for (Category c : categories) {
                     c.setSelected(false);
                     mCategoryList.add(c);
                 }
-
                 updateCategorySelectionUI();
             }
         });
     }
 
     private void handleCategoryClick(Category clickedCategory) {
-        // --- SỬA: Dùng getCateID ---
+        // Lấy ID category
         String cateId = clickedCategory.get_id();
-        // --------------------------
-
         if (cateId == null) cateId = "ALL";
 
+        // Nếu click lại cái đang chọn thì bỏ qua
         if (currentSelectedCategoryId.equals(cateId)) return;
 
         currentSelectedCategoryId = cateId;
         updateCategorySelectionUI();
 
+        // Bật cờ đánh dấu và gọi API
+        isCategorySwitching = true;
+
         if (currentSelectedCategoryId.equals("ALL")) {
+            // Case 1: Lấy tất cả
             viewModel.refreshData();
+        } else if (currentSelectedCategoryId.equals("SALE")) {
+            // --- Case 2: Lấy sản phẩm giảm giá (MỚI) ---
+            // Gọi hàm API lấy hàng sale (trong ViewModel đã có sẵn: repository.getOnSaleProducts(0))
+            viewModel.filterOnSaleProductsApi();
         } else {
+            // Case 3: Lấy theo danh mục cụ thể
             viewModel.filterProductsByCategoryApi(currentSelectedCategoryId);
         }
-
-        applyFilters();
     }
 
     private void updateCategorySelectionUI() {
@@ -170,10 +191,7 @@ public class ProductListFilterFragment extends Fragment {
         for (int i = 0; i < mCategoryList.size(); i++) {
             Category c = mCategoryList.get(i);
 
-            // --- SỬA: Dùng getCateID ---
             String id = c.get_id();
-            // --------------------------
-
             if (id == null) id = "ALL";
 
             if (id.equals(currentSelectedCategoryId)) {
@@ -183,7 +201,6 @@ public class ProductListFilterFragment extends Fragment {
                 c.setSelected(false);
             }
         }
-
         categoryAdapter.setCategoryList(mCategoryList);
         rvCategories.smoothScrollToPosition(selectedPosition);
     }
@@ -229,6 +246,8 @@ public class ProductListFilterFragment extends Fragment {
         if (cbPrice4.isChecked()) priceRanges.add(3);
 
         List<String> emptyCategories = new ArrayList<>();
+
+        // Gọi hàm lọc client-side
         viewModel.filterProducts(true, false, priceRanges, emptyCategories);
     }
 }

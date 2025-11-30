@@ -2,6 +2,7 @@ package com.example.fa25_duan1.repository;
 
 import android.content.Context;
 
+import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
@@ -19,13 +20,15 @@ import com.example.fa25_duan1.network.RetrofitClient;
 import java.util.HashMap;
 import java.util.Map;
 
+import okhttp3.MultipartBody;
+import okhttp3.RequestBody;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 
 public class AuthRepository {
 
-    private AuthApi authApi;
+    private final AuthApi authApi;
 
     public AuthRepository(Context context) {
         authApi = RetrofitClient.getInstance(context).getAuthApi();
@@ -35,7 +38,7 @@ public class AuthRepository {
         MutableLiveData<AuthResponse> liveData = new MutableLiveData<>();
         authApi.login(new LoginRequest(username, password)).enqueue(new Callback<AuthResponse>() {
             @Override
-            public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
+            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
                 if (response.isSuccessful()) {
                     liveData.setValue(response.body());
                 } else {
@@ -44,7 +47,7 @@ public class AuthRepository {
             }
 
             @Override
-            public void onFailure(Call<AuthResponse> call, Throwable t) {
+            public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
                 liveData.setValue(null);
             }
         });
@@ -55,7 +58,7 @@ public class AuthRepository {
         MutableLiveData<AuthResponse> liveData = new MutableLiveData<>();
         authApi.register(new RegisterRequest(username, password, name, email)).enqueue(new Callback<AuthResponse>() {
             @Override
-            public void onResponse(Call<AuthResponse> call, Response<AuthResponse> response) {
+            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
                 if (response.isSuccessful()) {
                     liveData.setValue(response.body());
                 } else {
@@ -64,7 +67,7 @@ public class AuthRepository {
             }
 
             @Override
-            public void onFailure(Call<AuthResponse> call, Throwable t) {
+            public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
                 liveData.setValue(null);
             }
         });
@@ -75,7 +78,7 @@ public class AuthRepository {
         MutableLiveData<RefreshTokenResponse> liveData = new MutableLiveData<>();
         authApi.refreshToken(new RefreshTokenRequest(refreshToken)).enqueue(new Callback<RefreshTokenResponse>() {
             @Override
-            public void onResponse(Call<RefreshTokenResponse> call, Response<RefreshTokenResponse> response) {
+            public void onResponse(@NonNull Call<RefreshTokenResponse> call, @NonNull Response<RefreshTokenResponse> response) {
                 if (response.isSuccessful()) {
                     liveData.setValue(response.body());
                 } else {
@@ -84,33 +87,31 @@ public class AuthRepository {
             }
 
             @Override
-            public void onFailure(Call<RefreshTokenResponse> call, Throwable t) {
+            public void onFailure(@NonNull Call<RefreshTokenResponse> call, @NonNull Throwable t) {
                 liveData.setValue(null);
             }
         });
         return liveData;
     }
 
-
     public LiveData<ApiResponse<User>> getMyInfo() {
         MutableLiveData<ApiResponse<User>> liveData = new MutableLiveData<>();
 
-        authApi.getMyInfo()
-                .enqueue(new Callback<ApiResponse<User>>() {
-                    @Override
-                    public void onResponse(Call<ApiResponse<User>> call, Response<ApiResponse<User>> response) {
-                        if (response.isSuccessful()) {
-                            liveData.setValue(response.body());
-                        } else {
-                            liveData.setValue(null);
-                        }
-                    }
+        authApi.getMyInfo().enqueue(new Callback<ApiResponse<User>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<User>> call, @NonNull Response<ApiResponse<User>> response) {
+                if (response.isSuccessful()) {
+                    liveData.setValue(response.body());
+                } else {
+                    liveData.setValue(null);
+                }
+            }
 
-                    @Override
-                    public void onFailure(Call<ApiResponse<User>> call, Throwable t) {
-                        liveData.setValue(null);
-                    }
-                });
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<User>> call, @NonNull Throwable t) {
+                liveData.setValue(null);
+            }
+        });
 
         return liveData;
     }
@@ -119,71 +120,60 @@ public class AuthRepository {
         MutableLiveData<RefreshTokenResponse> liveData = new MutableLiveData<>();
         authApi.logout(new RefreshTokenRequest(refreshToken)).enqueue(new Callback<RefreshTokenResponse>() {
             @Override
-            public void onResponse(Call<RefreshTokenResponse> call, Response<RefreshTokenResponse> response) {
+            public void onResponse(@NonNull Call<RefreshTokenResponse> call, @NonNull Response<RefreshTokenResponse> response) {
                 if (response.isSuccessful()) {
                     liveData.setValue(response.body());
                 } else {
-                    // Xử lý khi đăng xuất không thành công (ví dụ: token không hợp lệ)
                     liveData.setValue(null);
                 }
             }
 
             @Override
-            public void onFailure(Call<RefreshTokenResponse> call, Throwable t) {
-                // Xử lý lỗi mạng, kết nối...
+            public void onFailure(@NonNull Call<RefreshTokenResponse> call, @NonNull Throwable t) {
                 liveData.setValue(null);
             }
         });
         return liveData;
     }
 
-    public LiveData<ApiResponse<User>> updateProfile(String name, String email, String phone, String address, String avatar) {
+    // --- ĐÃ CẬP NHẬT: Chỉ còn name, email, avatar ---
+    public LiveData<ApiResponse<User>> updateProfile(RequestBody name, RequestBody email, MultipartBody.Part avatarPart) {
         MutableLiveData<ApiResponse<User>> liveData = new MutableLiveData<>();
 
-        Map<String, String> body = new HashMap<>();
-        body.put("name", name);
-        body.put("email", email);
-        body.put("phone", phone);
-        body.put("address", address);
-
-        // Nếu có avatar thì mới gửi
-        if (avatar != null) {
-            body.put("avatar", avatar);
-        }
-
-        authApi.updateProfile(body).enqueue(new Callback<ApiResponse<User>>() {
+        authApi.updateProfile(name, email, avatarPart).enqueue(new Callback<ApiResponse<User>>() {
             @Override
-            public void onResponse(Call<ApiResponse<User>> call, Response<ApiResponse<User>> response) {
-                if (response.isSuccessful()) liveData.setValue(response.body());
-                else liveData.setValue(null);
+            public void onResponse(@NonNull Call<ApiResponse<User>> call, @NonNull Response<ApiResponse<User>> response) {
+                if (response.isSuccessful()) {
+                    liveData.setValue(response.body());
+                } else {
+                    liveData.setValue(null);
+                }
             }
+
             @Override
-            public void onFailure(Call<ApiResponse<User>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<User>> call, @NonNull Throwable t) {
                 liveData.setValue(null);
             }
         });
         return liveData;
     }
+
     public LiveData<ApiResponse<Void>> changePassword(String currentPassword, String newPassword) {
         MutableLiveData<ApiResponse<Void>> liveData = new MutableLiveData<>();
-
-        // Tạo request object
         ChangePasswordRequest request = new ChangePasswordRequest(currentPassword, newPassword);
 
         authApi.changePassword(request).enqueue(new Callback<ApiResponse<Void>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Void>> call, Response<ApiResponse<Void>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<Void>> call, @NonNull Response<ApiResponse<Void>> response) {
                 if (response.isSuccessful()) {
                     liveData.setValue(response.body());
                 } else {
-                    // Nếu thất bại (ví dụ: pass cũ sai), có thể parse lỗi body để lấy message
-                    // Nhưng ở mức đơn giản, ta setValue(null) để báo lỗi
                     liveData.setValue(null);
                 }
             }
 
             @Override
-            public void onFailure(Call<ApiResponse<Void>> call, Throwable t) {
+            public void onFailure(@NonNull Call<ApiResponse<Void>> call, @NonNull Throwable t) {
                 liveData.setValue(null);
             }
         });

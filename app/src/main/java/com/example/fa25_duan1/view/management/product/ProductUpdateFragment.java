@@ -13,7 +13,6 @@ import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -35,8 +34,6 @@ import com.google.android.material.imageview.ShapeableImageView;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.io.File;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -50,6 +47,10 @@ import java.util.Map;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
+
+// --- IMPORT THƯ VIỆN MỚI ---
+import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class ProductUpdateFragment extends Fragment {
 
@@ -81,7 +82,6 @@ public class ProductUpdateFragment extends Fragment {
     private final SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
     private final SimpleDateFormat backendFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
-    // --- KHAI BÁO LAUNCHER ĐỂ CHỌN ẢNH (FIX LỖI PREVIEW) ---
     private ActivityResultLauncher<Intent> imagePickerLauncher;
 
     @Nullable
@@ -94,13 +94,12 @@ public class ProductUpdateFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Đăng ký Launcher chọn ảnh (Phải gọi trước khi người dùng click)
+        // 1. Đăng ký Launcher chọn ảnh
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
                     if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                         selectedAvatarUri = result.getData().getData();
-                        // Dùng Glide để load ảnh preview cho mượt và tránh lỗi ContentProvider
                         Glide.with(this)
                                 .load(selectedAvatarUri)
                                 .centerCrop()
@@ -161,7 +160,6 @@ public class ProductUpdateFragment extends Fragment {
     // --- XỬ LÝ ẢNH ---
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        // Gọi launcher mới thay vì startActivityForResult
         imagePickerLauncher.launch(intent);
     }
 
@@ -240,7 +238,6 @@ public class ProductUpdateFragment extends Fragment {
                     etPrice.setText(String.valueOf((long) product.getPrice()));
                 }
 
-                // Load ảnh từ server
                 if (product.getImage() != null && !product.getImage().isEmpty()) {
                     Glide.with(requireContext()).load(product.getImage())
                             .placeholder(R.drawable.book_cover_placeholder)
@@ -253,6 +250,8 @@ public class ProductUpdateFragment extends Fragment {
                 acStatus.setText(statusText, false);
 
                 setupDynamicSpinners();
+            } else {
+                FancyToast.makeText(getContext(), "Không tìm thấy sản phẩm", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
@@ -280,11 +279,9 @@ public class ProductUpdateFragment extends Fragment {
                 prepareFilePart("image", selectedAvatarUri)
         ).observe(getViewLifecycleOwner(), product -> {
             if (product != null) {
-                Toast.makeText(getContext(), "Thêm thành công", Toast.LENGTH_SHORT).show();
-                requireActivity().setResult(Activity.RESULT_OK);
-                requireActivity().finish();
+                showSuccessDialog("Thêm sản phẩm thành công!");
             } else {
-                Toast.makeText(getContext(), "Thêm thất bại", Toast.LENGTH_SHORT).show();
+                FancyToast.makeText(getContext(), "Thêm thất bại. Vui lòng thử lại.", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
@@ -311,11 +308,9 @@ public class ProductUpdateFragment extends Fragment {
                 prepareFilePart("image", selectedAvatarUri)
         ).observe(getViewLifecycleOwner(), product -> {
             if (product != null) {
-                Toast.makeText(getContext(), "Cập nhật thành công", Toast.LENGTH_SHORT).show();
-                requireActivity().setResult(Activity.RESULT_OK);
-                requireActivity().finish();
+                showSuccessDialog("Cập nhật sản phẩm thành công!");
             } else {
-                Toast.makeText(getContext(), "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
+                FancyToast.makeText(getContext(), "Cập nhật thất bại. Vui lòng thử lại.", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
@@ -323,18 +318,51 @@ public class ProductUpdateFragment extends Fragment {
     // --- HELPER FUNCTIONS ---
 
     private boolean validateInput() {
-        if (isEmpty(etName)) { etName.setError("Nhập tên sách"); return false; }
-        if (isEmpty(etPrice)) { etPrice.setError("Nhập giá bán"); return false; }
-        if (isEmpty(etQuantity)) { etQuantity.setError("Nhập số lượng"); return false; }
+        if (isEmpty(etName)) {
+            etName.setError("Nhập tên sách");
+            FancyToast.makeText(getContext(), "Vui lòng nhập tên sách", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+            return false;
+        }
+        if (isEmpty(etPrice)) {
+            etPrice.setError("Nhập giá bán");
+            FancyToast.makeText(getContext(), "Vui lòng nhập giá bán", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+            return false;
+        }
+        if (isEmpty(etQuantity)) {
+            etQuantity.setError("Nhập số lượng");
+            FancyToast.makeText(getContext(), "Vui lòng nhập số lượng", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+            return false;
+        }
 
         String authorId = getSelectedId(acAuthor, authorMap);
         if (authorId == null) {
             acAuthor.setError("Vui lòng chọn tác giả");
-            Toast.makeText(getContext(), "Vui lòng chọn tác giả", Toast.LENGTH_SHORT).show();
+            FancyToast.makeText(getContext(), "Vui lòng chọn tác giả", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         }
         acAuthor.setError(null);
         return true;
+    }
+
+    // --- HÀM HIỂN THỊ DIALOG THÀNH CÔNG ---
+    private void showSuccessDialog(String message) {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_success)
+                .setTitle("Thành công")
+                .setDescription(message)
+
+                // Cấu hình màu sắc đồng bộ Blue
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Đóng", v -> {
+                    requireActivity().setResult(Activity.RESULT_OK);
+                    requireActivity().finish();
+                })
+                .hideNegativeButton(true)
+                .show();
     }
 
     private boolean isEmpty(TextInputEditText et) {

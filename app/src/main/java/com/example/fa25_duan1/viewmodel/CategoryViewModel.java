@@ -46,7 +46,7 @@ public class CategoryViewModel extends AndroidViewModel {
      */
     public void refreshData() {
         if (currentRepoSource != null) {
-            displayedCategoriesLiveData.removeSource(currentRepoSource);
+            displayedCategoriesLiveData .removeSource(currentRepoSource);
         }
 
         currentRepoSource = repository.getAllCategories();

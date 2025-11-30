@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -20,9 +19,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.AuthorManageAdapter;
 import com.example.fa25_duan1.model.Author;
-import com.example.fa25_duan1.model.Product; // Import model Product
-import com.example.fa25_duan1.view.dialog.ConfirmDialogFragment;
-import com.example.fa25_duan1.view.dialog.NotificationDialogFragment;
+import com.example.fa25_duan1.model.Product;
 import com.example.fa25_duan1.view.management.UpdateActivity;
 import com.example.fa25_duan1.viewmodel.AuthorViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
@@ -30,8 +27,12 @@ import com.example.fa25_duan1.viewmodel.ProductViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
+// --- IMPORT THƯ VIỆN MỚI ---
+import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog;
+
 public class AuthorManageFragment extends Fragment {
-    // ... (Các biến khai báo giữ nguyên)
+
     private View layout_empty;
     private RecyclerView rvData;
     private Button btnAdd;
@@ -69,13 +70,13 @@ public class AuthorManageFragment extends Fragment {
 
             @Override
             public void onDeleteClick(Author author) {
-                // Gọi hàm check trước khi xóa
                 checkAndDeleteAuthor(author);
             }
 
             @Override
             public void onItemClick(Author author) {
-
+                // Có thể thêm Toast hiển thị tên khi click
+                FancyToast.makeText(requireContext(), author.getName(), FancyToast.LENGTH_SHORT, FancyToast.INFO, false).show();
             }
         }, productViewModel, getViewLifecycleOwner());
 
@@ -90,24 +91,24 @@ public class AuthorManageFragment extends Fragment {
         btnAdd.setOnClickListener(v -> openUpdateActivity(null));
     }
 
-    // ... (Hàm openUpdateActivity giữ nguyên)
+    private void openUpdateActivity(Author author) {
+        Intent intent = new Intent(getContext(), UpdateActivity.class);
+        intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Thêm mới tác giả");
 
-    /**
-     * Hàm xử lý logic xóa: Check sản phẩm -> Xác nhận -> Xóa
-     */
+        if (author != null) {
+            intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Chỉnh sửa tác giả");
+            intent.putExtra("Id", author.getAuthorID());
+        }
+        intent.putExtra(UpdateActivity.EXTRA_CONTENT_FRAGMENT, "author");
+        startActivityForResult(intent, 1001);
+    }
+
     private void checkAndDeleteAuthor(Author author) {
         if (author == null) return;
 
-        // BƯỚC 1: Kiểm tra xem tác giả có sách nào không
-        // Lưu ý: Chúng ta dùng observe một lần cho hành động này.
-        // Vì repository trả về LiveData mới mỗi lần gọi, nên logic này an toàn.
         productViewModel.getProductsByAuthor(author.getAuthorID()).observe(getViewLifecycleOwner(), new Observer<List<Product>>() {
             @Override
             public void onChanged(List<Product> products) {
-                // Quan trọng: Remove observer ngay sau khi nhận kết quả để tránh leak hoặc chạy lại không mong muốn
-                // productViewModel.getProductsByAuthor(author.getAuthorID()).removeObserver(this);
-                // (Tuy nhiên, với cách viết Repo tạo MutableLiveData mới mỗi lần gọi thì không bắt buộc remove, nhưng nên lưu ý)
-
                 if (products != null && !products.isEmpty()) {
                     // TRƯỜNG HỢP 1: Tác giả CÓ sách -> Chặn xóa
                     showCannotDeleteDialog(author.getName(), products.size());
@@ -118,82 +119,76 @@ public class AuthorManageFragment extends Fragment {
             }
         });
     }
-    private void openUpdateActivity(Author author) {
 
-        Intent intent = new Intent(getContext(), UpdateActivity.class);
-
-        intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Thêm mới tác giả");
-
-
-
-        if (author != null) {
-
-            intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Chỉnh sửa tác giả");
-
-            intent.putExtra("Id", author.getAuthorID());
-
-        }
-
-        intent.putExtra(UpdateActivity.EXTRA_CONTENT_FRAGMENT, "author");
-
-
-
-        startActivityForResult(intent, 1001);
-
-    }
-    /**
-     * Hiển thị thông báo không cho phép xóa
-     */
+    // --- SỬ DỤNG CUTEDIALOG (CẢNH BÁO CHẶN XÓA) ---
     private void showCannotDeleteDialog(String authorName, int bookCount) {
-        NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
-                "Không thể xóa",
-                "Tác giả " + authorName + " đang sở hữu " + bookCount + " đầu sách trên hệ thống. Vui lòng xóa hết sách của tác giả này trước.",
-                "Đã hiểu",
-                NotificationDialogFragment.TYPE_ERROR, // Đảm bảo bạn có TYPE_WARNING hoặc dùng TYPE_ERROR
-                () -> {}
-        );
-        dialogFragment.show(getParentFragmentManager(), "WarningDialog");
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_info) // Dùng icon info hoặc warning
+                .setTitle("Không thể xóa")
+                .setDescription("Tác giả " + authorName + " đang có " + bookCount + " đầu sách. Vui lòng xóa hết sách trước.")
+
+                // Cấu hình màu sắc đồng bộ Blue
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Đã hiểu", v -> {
+                    // Đóng dialog
+                })
+                .hideNegativeButton(true)
+                .show();
     }
 
-    /**
-     * Hiển thị popup xác nhận xóa (Logic cũ)
-     */
+    // --- SỬ DỤNG CUTEDIALOG (XÁC NHẬN XÓA) ---
     private void showConfirmDeleteDialog(Author author) {
-        ConfirmDialogFragment dialog = new ConfirmDialogFragment(
-                "Xóa tác giả",
-                "Bạn có chắc chắn muốn xóa tác giả " + author.getName() + "? Hành động này không thể hoàn tác.",
-                new ConfirmDialogFragment.OnConfirmListener() {
-                    @Override
-                    public void onConfirmed() {
-                        performDelete(author);
-                    }
-                }
-        );
-        dialog.show(getParentFragmentManager(), "ConfirmDialog");
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_confirm)
+                .setTitle("Xóa tác giả")
+                .setDescription("Bạn có chắc chắn muốn xóa tác giả " + author.getName() + "?")
+
+                // Cấu hình màu sắc
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Xóa", v -> {
+                    performDelete(author);
+                })
+                .setNegativeButtonText("Hủy", v -> {})
+                .show();
     }
 
-    /**
-     * Thực hiện gọi API xóa sau khi đã qua các bước kiểm tra
-     */
     private void performDelete(Author author) {
         viewModel.deleteAuthor(author.getAuthorID()).observe(getViewLifecycleOwner(), success -> {
             if (success != null && success) {
                 viewModel.refreshData();
-                NotificationDialogFragment dialogFragment = NotificationDialogFragment.newInstance(
-                        "Thành công",
-                        "Đã xóa tác giả thành công.",
-                        "Đóng",
-                        NotificationDialogFragment.TYPE_SUCCESS,
-                        () -> {}
-                );
-                dialogFragment.show(getParentFragmentManager(), "SuccessDialog");
+
+                // --- SỬ DỤNG CUTEDIALOG (THÀNH CÔNG) ---
+                new CuteDialog.withIcon(requireActivity())
+                        .setIcon(R.drawable.ic_dialog_success)
+                        .setTitle("Thành công")
+                        .setDescription("Đã xóa tác giả thành công.")
+                        .setPrimaryColor(R.color.blue)
+                        .setPositiveButtonColor(R.color.blue)
+                        .setTitleTextColor(R.color.black)
+                        .setDescriptionTextColor(R.color.gray_text)
+
+                        .setPositiveButtonText("Đóng", v -> {})
+                        .hideNegativeButton(true)
+                        .show();
             } else {
-                Toast.makeText(getContext(), "Xóa thất bại. Vui lòng thử lại.", Toast.LENGTH_SHORT).show();
+                // --- SỬ DỤNG FANCY TOAST (LỖI) ---
+                FancyToast.makeText(getContext(),
+                        "Xóa thất bại. Vui lòng thử lại.",
+                        FancyToast.LENGTH_SHORT,
+                        FancyToast.ERROR,
+                        true).show();
             }
         });
     }
 
-    // ... (Các hàm onActivityResult, checkEmptyState giữ nguyên)
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);

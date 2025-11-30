@@ -13,7 +13,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-// Lưu ý: Đổi từ ViewModel sang AndroidViewModel để lấy được Context cho Repository
 public class DiscountViewModel extends AndroidViewModel {
 
     private final DiscountRepository repository;
@@ -22,7 +21,6 @@ public class DiscountViewModel extends AndroidViewModel {
 
     public DiscountViewModel(@NonNull Application application) {
         super(application);
-        // Khởi tạo Repository
         repository = new DiscountRepository(application.getApplicationContext());
         refreshData();
     }
@@ -31,15 +29,12 @@ public class DiscountViewModel extends AndroidViewModel {
         return displayedDiscounts;
     }
 
-    // --- Các hàm gọi Repository ---
-
     public void refreshData() {
         repository.getAllDiscounts().observeForever(discounts -> {
             if (discounts != null) {
                 originalList = discounts;
                 displayedDiscounts.setValue(originalList);
             } else {
-                // Xử lý khi lỗi hoặc list rỗng nếu cần
                 displayedDiscounts.setValue(new ArrayList<>());
             }
         });
@@ -61,15 +56,13 @@ public class DiscountViewModel extends AndroidViewModel {
         return repository.getDiscountById(id);
     }
 
-    // --- Logic Search & Sort (Xử lý client-side) ---
-
     public void searchDiscounts(String query) {
         if (query == null || query.isEmpty()) {
             displayedDiscounts.setValue(originalList);
         } else {
             List<Discount> filtered = new ArrayList<>();
             for (Discount d : originalList) {
-                if (d.getDiscountName().toLowerCase().contains(query.toLowerCase())) {
+                if (d.getDiscountName() != null && d.getDiscountName().toLowerCase().contains(query.toLowerCase())) {
                     filtered.add(d);
                 }
             }
@@ -78,37 +71,29 @@ public class DiscountViewModel extends AndroidViewModel {
     }
 
     public void sortDiscounts(int position) {
-        // Tạo bản sao danh sách để tránh lỗi ConcurrentModificationException hoặc thay đổi list gốc không mong muốn
         List<Discount> currentList = new ArrayList<>(displayedDiscounts.getValue() != null ? displayedDiscounts.getValue() : originalList);
 
         switch (position) {
-            case 0: // Mới nhất (Ngày tạo giảm dần - Descending)
+            case 0: // Mới nhất
                 Collections.sort(currentList, (o1, o2) -> {
                     if (o1.getCreateAt() == null || o2.getCreateAt() == null) return 0;
-                    // So sánh o2 với o1 để giảm dần (cái mới hơn lên đầu)
                     return o2.getCreateAt().compareTo(o1.getCreateAt());
                 });
                 break;
-
-            case 1: // Cũ nhất (Ngày tạo tăng dần - Ascending)
+            case 1: // Cũ nhất
                 Collections.sort(currentList, (o1, o2) -> {
                     if (o1.getCreateAt() == null || o2.getCreateAt() == null) return 0;
-                    // So sánh o1 với o2 để tăng dần (cái cũ hơn lên đầu)
                     return o1.getCreateAt().compareTo(o2.getCreateAt());
                 });
                 break;
-
-            case 2: // Theo tên (A-Z)
+            case 2: // A-Z
                 Collections.sort(currentList, (o1, o2) -> {
-                    // Đảm bảo không crash nếu tên bị null
                     String name1 = o1.getDiscountName() != null ? o1.getDiscountName() : "";
                     String name2 = o2.getDiscountName() != null ? o2.getDiscountName() : "";
                     return name1.compareToIgnoreCase(name2);
                 });
                 break;
         }
-
-        // Cập nhật lại LiveData để UI tự render lại
         displayedDiscounts.setValue(currentList);
     }
 }
