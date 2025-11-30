@@ -21,6 +21,7 @@ import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
+import com.shashank.sony.fancytoastlib.FancyToast; // Import thêm FancyToast
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,7 @@ public class ProductFragment extends Fragment {
     private FavoriteViewModel favoriteViewModel;
     private CartViewModel cartViewModel;
     public static final String ID_CATEGORY_SALE = "CATEGORY_SALE_ID";
+
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -76,9 +78,7 @@ public class ProductFragment extends Fragment {
                 if (fragmentFilterContainer != null) {
                     fragmentFilterContainer.setVisibility(View.GONE);
                 }
-
                 // GỌI API SEARCH
-                // Vì API Backend tự tìm trong Name hoặc Author -> Chỉ cần truyền String
                 productViewModel.searchProductsByNameApi(searchQuery);
             }
         }
@@ -136,10 +136,8 @@ public class ProductFragment extends Fragment {
 
             @Override
             public void onAddToCartClick(Product product) {
-                if (product != null) {
-                    // Gọi hàm này -> Nó sẽ gọi API -> Thành công thì update LiveData -> Header tự đổi số
-                    cartViewModel.increaseQuantity(product.getId());
-                }
+                // SỬA: Gọi hàm logic mới
+                addToCartLogic(product);
             }
         });
 
@@ -159,10 +157,25 @@ public class ProductFragment extends Fragment {
             }
         });
 
+        // SỬA: ĐÃ XÓA observer cartViewModel.getMessage() tại đây
+    }
 
-        cartViewModel.getMessage().observe(getViewLifecycleOwner(), message -> {
-            if (message != null && !message.isEmpty()) {
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+    // --- LOGIC THÊM GIỎ HÀNG MỚI ---
+    private void addToCartLogic(Product product) {
+        if (product == null) return;
+
+        // Gọi ViewModel và lắng nghe kết quả trực tiếp
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.isStatus()) {
+                // 1. Thành công: Refresh lại giỏ hàng (để Badge cập nhật)
+                cartViewModel.refreshCart();
+
+                // 2. Hiện thông báo đẹp
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+            } else {
+                // 3. Thất bại
+                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
         });
     }

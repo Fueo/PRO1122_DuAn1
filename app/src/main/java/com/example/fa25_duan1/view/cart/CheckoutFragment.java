@@ -7,10 +7,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,19 +23,18 @@ import com.example.fa25_duan1.adapter.AddressAdapter;
 import com.example.fa25_duan1.model.Address;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.view.home.HomeActivity;
-import com.example.fa25_duan1.view.profile.AddressFragment;
 import com.example.fa25_duan1.viewmodel.AddressViewModel;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.OrderViewModel;
 import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.button.MaterialButton;
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
 import java.text.DecimalFormat;
 import java.util.List;
 
-import com.shashank.sony.fancytoastlib.FancyToast;
 import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class CheckoutFragment extends Fragment {
@@ -68,27 +66,25 @@ public class CheckoutFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        // Khởi tạo ViewModel (Dùng requireActivity để share data nếu cần)
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
         orderViewModel = new ViewModelProvider(requireActivity()).get(OrderViewModel.class);
         addressViewModel = new ViewModelProvider(requireActivity()).get(AddressViewModel.class);
 
         initViews(view);
         setupEvents();
-        setupCartAndOrderObservers();
+        setupDataObservers();
 
-        cartViewModel.fetchCart();
+        // Tải dữ liệu cần thiết
+        cartViewModel.refreshCart(); // Đảm bảo giá tiền là mới nhất
         loadDefaultAddress();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if (addressViewModel != null) {
-            addressViewModel.refreshData();
-        }
-        if (cartViewModel != null) {
-            cartViewModel.fetchCart();
-        }
+        // Refresh lại địa chỉ phòng trường hợp user vừa đi thêm mới rồi quay lại
+        if (addressViewModel != null) addressViewModel.refreshData();
     }
 
     private void initViews(View view) {
@@ -110,18 +106,17 @@ public class CheckoutFragment extends Fragment {
             if (getActivity() != null) getActivity().onBackPressed();
         });
 
-        // Xử lý sự kiện nút Thay đổi / Thêm mới
+        // Chọn địa chỉ
         tvChangeAddress.setOnClickListener(v -> {
             List<Address> currentList = addressViewModel.getDisplayedAddresses().getValue();
             if (currentList == null || currentList.isEmpty()) {
-                // Nếu chưa có địa chỉ -> Chuyển sang màn hình thêm mới luôn
                 navigateToAddressManagement();
             } else {
-                // Nếu đã có -> Hiện dialog chọn
                 showAddressPickerDialog();
             }
         });
 
+        // Chọn phương thức thanh toán
         rgPayment.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rb_momo) {
                 expandableMomo.expand();
@@ -132,43 +127,42 @@ public class CheckoutFragment extends Fragment {
             }
         });
 
-        btnCheckout.setOnClickListener(v -> handleCheckout());
+        // Nút Đặt hàng (Logic chính)
+        btnCheckout.setOnClickListener(v -> handleCheckoutButton());
     }
 
-    // --- HÀM CHUNG ĐỂ CHUYỂN SANG QUẢN LÝ ĐỊA CHỈ ---
-    private void navigateToAddressManagement() {
-        Intent intent = new Intent(requireContext(), DetailActivity.class);
-        intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Sổ địa chỉ");
-        intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "address");
-        startActivity(intent);
+    // --- SETUP OBSERVERS (Chỉ observe dữ liệu thụ động) ---
+    private void setupDataObservers() {
+        // Lắng nghe tổng tiền từ CartViewModel (đã được tính toán tự động)
+        cartViewModel.getTotalPrice().observe(getViewLifecycleOwner(), subtotal -> {
+            DecimalFormat formatter = new DecimalFormat("###,###,###");
+            long shippingFee = (subtotal > 0) ? 25000 : 0;
+            long total = subtotal + shippingFee;
+
+            tvSubtotal.setText(formatter.format(subtotal).replace(",", ".") + " VNĐ");
+            tvShippingFee.setText(formatter.format(shippingFee).replace(",", ".") + " VNĐ");
+            tvTotal.setText(formatter.format(total).replace(",", ".") + " VNĐ");
+        });
     }
 
-    // --- LOGIC 1: TỰ ĐỘNG LẤY ĐỊA CHỈ MẶC ĐỊNH ---
+    // --- LOGIC ĐỊA CHỈ ---
     private void loadDefaultAddress() {
         addressViewModel.getDisplayedAddresses().observe(getViewLifecycleOwner(), addresses -> {
             if (addresses != null && !addresses.isEmpty()) {
-                // CÓ ĐỊA CHỈ
                 Address target = null;
+                // Tìm địa chỉ mặc định
                 for (Address addr : addresses) {
-                    if (addr.isDefault()) {
-                        target = addr;
-                        break;
-                    }
+                    if (addr.isDefault()) { target = addr; break; }
                 }
+                // Nếu không có mặc định thì lấy cái đầu tiên
                 if (target == null) target = addresses.get(0);
 
                 updateAddressUI(target);
-
-                // Cập nhật giao diện nút bấm
-                tvChangeAddress.setText(getString(R.string.thay_doi_checkout)); // "Thay đổi"
-
+                tvChangeAddress.setText(getString(R.string.thay_doi_checkout));
             } else {
-                // KHÔNG CÓ ĐỊA CHỈ
                 tvUserNamePhone.setText("Chưa có thông tin nhận hàng");
                 tvUserAddress.setText("Vui lòng thêm địa chỉ mới để đặt hàng");
                 selectedAddress = null;
-
-                // Đổi nút "Thay đổi" thành "Thêm mới" cho hợp lý
                 tvChangeAddress.setText("+ Thêm mới");
             }
         });
@@ -180,101 +174,84 @@ public class CheckoutFragment extends Fragment {
         tvUserAddress.setText(address.getAddress());
     }
 
-    // --- LOGIC 2: HIỆN DIALOG CHỌN ĐỊA CHỈ ---
     private void showAddressPickerDialog() {
         BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(requireContext());
         View view = getLayoutInflater().inflate(R.layout.layout_bottom_sheet_address, null);
         bottomSheetDialog.setContentView(view);
 
-        if (bottomSheetDialog.getWindow() != null) {
+        if (bottomSheetDialog.getWindow() != null)
             bottomSheetDialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        }
 
         RecyclerView rvPicker = view.findViewById(R.id.rv_address_picker);
         Button btnAddNew = view.findViewById(R.id.btn_add_new_address);
-
         rvPicker.setLayoutManager(new LinearLayoutManager(getContext()));
 
         AddressAdapter adapter = new AddressAdapter(new AddressAdapter.OnAddressActionListener() {
             @Override public void onEdit(Address address) {}
             @Override public void onDelete(Address address) {}
-            @Override
-            public void onItemClick(Address address) {
+            @Override public void onItemClick(Address address) {
                 updateAddressUI(address);
                 bottomSheetDialog.dismiss();
             }
         });
-
         adapter.setShowActionButtons(false);
 
-        addressViewModel.getDisplayedAddresses().observe(getViewLifecycleOwner(), list -> {
-            adapter.setList(list);
-        });
+        // Load danh sách địa chỉ vào dialog
+        addressViewModel.getDisplayedAddresses().observe(getViewLifecycleOwner(), adapter::setList);
         rvPicker.setAdapter(adapter);
 
         btnAddNew.setOnClickListener(v -> {
             bottomSheetDialog.dismiss();
             navigateToAddressManagement();
         });
-
         bottomSheetDialog.show();
     }
 
-    private void setupCartAndOrderObservers() {
-        // ... (Giữ nguyên logic Observer Cart & Order) ...
-        cartViewModel.getTotalPrice().observe(getViewLifecycleOwner(), subtotal -> {
-            DecimalFormat formatter = new DecimalFormat("###,###,###");
-            long shippingFee = (subtotal > 0) ? 25000 : 0;
-            long total = subtotal + shippingFee;
-
-            tvSubtotal.setText(formatter.format(subtotal).replace(",", ".") + " VNĐ");
-            tvShippingFee.setText(formatter.format(shippingFee).replace(",", ".") + " VNĐ");
-            tvTotal.setText(formatter.format(total).replace(",", ".") + " VNĐ");
-        });
-
-        orderViewModel.getMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null && !msg.isEmpty()) {
-                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
-            }
-        });
-
-        orderViewModel.getCheckoutSuccessOrderId().observe(getViewLifecycleOwner(), orderId -> {
-            if (orderId != null) {
-                showSuccessCheckoutDialog(orderId);
-            }
-        });
+    private void navigateToAddressManagement() {
+        Intent intent = new Intent(requireContext(), DetailActivity.class);
+        intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Sổ địa chỉ");
+        intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "address");
+        startActivity(intent);
     }
 
-    // --- XỬ LÝ NÚT CHECKOUT ---
-    private void handleCheckout() {
-        // TRƯỜNG HỢP 1: Chưa chọn địa chỉ (có thể do chưa có hoặc chưa chọn)
-        if (selectedAddress == null) {
-            List<Address> currentList = addressViewModel.getDisplayedAddresses().getValue();
+    // =========================================================================
+    // KHU VỰC XỬ LÝ LOGIC CHECKOUT (QUAN TRỌNG)
+    // =========================================================================
 
-            // Nếu list rỗng hoàn toàn -> Điều hướng đi thêm mới
-            if (currentList == null || currentList.isEmpty()) {
-                FancyToast.makeText(getContext(), "Bạn chưa có địa chỉ nhận hàng!", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
-                navigateToAddressManagement();
-            } else {
-                // Nếu có list nhưng chưa chọn (hiếm khi xảy ra do logic loadDefault) -> Hiện dialog chọn
-                FancyToast.makeText(getContext(), "Vui lòng chọn địa chỉ nhận hàng", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
-                showAddressPickerDialog();
-            }
+    private void handleCheckoutButton() {
+        // 1. Kiểm tra địa chỉ
+        if (selectedAddress == null) {
+            FancyToast.makeText(getContext(), "Vui lòng chọn địa chỉ nhận hàng!", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return;
         }
 
-        showConfirmCheckoutDialog();
+        // 2. Kiểm tra tồn kho (Gọi API checkCartAvailability)
+        // Disable nút để tránh user bấm liên tục
+        btnCheckout.setEnabled(false);
+
+        cartViewModel.checkCartAvailability().observe(getViewLifecycleOwner(), isValid -> {
+            btnCheckout.setEnabled(true); // Enable lại nút
+
+            if (Boolean.TRUE.equals(isValid)) {
+                // Hợp lệ -> Hiện dialog xác nhận
+                showConfirmCheckoutDialog();
+            } else {
+                // Không hợp lệ -> Báo lỗi & Refresh giỏ hàng
+                FancyToast.makeText(getContext(), "Sản phẩm đã thay đổi số lượng hoặc hết hàng. Vui lòng kiểm tra lại!", FancyToast.LENGTH_LONG, FancyToast.ERROR, true).show();
+                cartViewModel.refreshCart();
+
+                // Tùy chọn: Có thể back user về màn hình giỏ hàng
+                // if(getActivity() != null) getActivity().onBackPressed();
+            }
+        });
     }
 
     private void showConfirmCheckoutDialog() {
         new CuteDialog.withIcon(requireActivity())
                 .setIcon(R.drawable.ic_dialog_confirm)
                 .setTitle("Xác nhận đặt hàng")
-                .setDescription("Bạn có chắc chắn muốn đặt đơn hàng này không?")
+                .setDescription("Tổng thanh toán: " + tvTotal.getText().toString())
                 .setPrimaryColor(R.color.blue)
-                .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
                 .setPositiveButtonText("Đặt hàng", v -> {
                     performCheckoutAPI();
                 })
@@ -284,31 +261,57 @@ public class CheckoutFragment extends Fragment {
 
     private void performCheckoutAPI() {
         String note = etNote.getText().toString().trim();
+
+        // 1. Khóa giao diện (UI Blocking)
+        btnCheckout.setEnabled(false);
+        btnCheckout.setText("Đang xử lý...");
+
+        // 2. Gọi API Checkout từ ViewModel và LẮNG NGHE TRỰC TIẾP
         orderViewModel.checkout(
                 selectedAddress.getName(),
                 selectedAddress.getAddress(),
                 selectedAddress.getPhone(),
                 note,
                 finalPaymentMethod
-        );
+        ).observe(getViewLifecycleOwner(), response -> {
+
+            // 3. Mở khóa giao diện
+            btnCheckout.setEnabled(true);
+            btnCheckout.setText("Đặt hàng");
+
+            // 4. Xử lý kết quả
+            if (response != null && response.isStatus()) {
+                // --- THÀNH CÔNG ---
+
+                // Quan trọng: Làm mới giỏ hàng để số lượng về 0 (Badge update)
+                cartViewModel.refreshCart();
+
+                // Lấy OrderId hiển thị
+                String orderId = (response.getData() != null) ? response.getData().getOrderId() : "Mới";
+                showSuccessCheckoutDialog(orderId);
+
+            } else {
+                // --- THẤT BẠI ---
+                String errorMsg = (response != null) ? response.getMessage() : "Lỗi kết nối server";
+                FancyToast.makeText(getContext(), errorMsg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+            }
+        });
     }
 
     private void showSuccessCheckoutDialog(String orderId) {
         new CuteDialog.withIcon(requireActivity())
                 .setIcon(R.drawable.ic_dialog_success)
                 .setTitle("Đặt hàng thành công!")
-                .setDescription("Mã đơn hàng: " + orderId + "\nCảm ơn bạn đã mua sắm cùng chúng tôi.")
+                .setDescription("Mã đơn hàng: " + orderId + "\nCảm ơn bạn đã mua sắm.")
                 .setPrimaryColor(R.color.blue)
-                .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
-                .setPositiveButtonText("Trở về", v -> {
+                .setPositiveButtonText("Về trang chủ", v -> {
+                    // Chuyển về màn hình Home và xóa backstack
                     Intent intent = new Intent(requireContext(), HomeActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                     startActivity(intent);
                     if (getActivity() != null) getActivity().finish();
                 })
-                .hideNegativeButton(true)
+                .hideNegativeButton(true) // Ẩn nút Cancel
                 .show();
     }
 }

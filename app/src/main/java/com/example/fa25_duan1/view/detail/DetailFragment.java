@@ -24,10 +24,11 @@ import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.BookGridAdapter;
 import com.example.fa25_duan1.model.Product;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
-import com.example.fa25_duan1.viewmodel.FavoriteViewModel; // 1. Import thêm
+import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.tabs.TabLayout;
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
@@ -41,7 +42,7 @@ import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class DetailFragment extends Fragment {
 
-    // ... (Các khai báo View giữ nguyên)
+    // --- Views ---
     private ImageView ivImage, ivHeart;
     private TextView tvName, tvAuthorHeader, tvLikes;
     private TextView tvSalePrice, tvOriginalPrice, tvDiscount;
@@ -62,7 +63,7 @@ public class DetailFragment extends Fragment {
     // ViewModels
     private ProductViewModel productViewModel;
     private CartViewModel cartViewModel;
-    private FavoriteViewModel favoriteViewModel; // 2. Khai báo thêm
+    private FavoriteViewModel favoriteViewModel;
 
     private String productId;
     private Product currentProduct;
@@ -80,7 +81,7 @@ public class DetailFragment extends Fragment {
         initViewModel();
         setupTabEvents();
 
-        // Setup Adapter trước khi load data
+        // Setup Adapter
         setupRelatedProductsAdapter();
 
         // Setup lắng nghe dữ liệu
@@ -91,7 +92,6 @@ public class DetailFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        // ... (Giữ nguyên phần ánh xạ View cũ của bạn)
         ivImage = view.findViewById(R.id.ivImage);
         ivHeart = view.findViewById(R.id.iv_heart_icon);
         tvLikes = view.findViewById(R.id.tv_likes_count);
@@ -107,7 +107,7 @@ public class DetailFragment extends Fragment {
         tvViews = view.findViewById(R.id.tv_views_value);
 
         btnAddToCart = view.findViewById(R.id.btn_add_to_cart);
-        btnBuyNow = view.findViewById(R.id.btnEdit);
+        btnBuyNow = view.findViewById(R.id.btnEdit); // ID nút Mua ngay
 
         tabLayout = view.findViewById(R.id.tab_layout);
         layoutDescription = view.findViewById(R.id.layout_description);
@@ -122,73 +122,112 @@ public class DetailFragment extends Fragment {
 
     private void initViewModel() {
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
+        // Dùng requireActivity để share ViewModel với Activity chính
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
-
-        // 3. Khởi tạo FavoriteViewModel
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
     }
 
-    // 4. Sửa lại hàm setup Adapter giống HomeFragment
     private void setupRelatedProductsAdapter() {
         GridLayoutManager gridLayoutManager = new GridLayoutManager(getContext(), 2);
         rvRelatedProducts.setLayoutManager(gridLayoutManager);
         rvRelatedProducts.setNestedScrollingEnabled(false);
 
-        // Khởi tạo Adapter với 3 phương thức override chuẩn (Item, Favorite, AddCart)
         relatedProductAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), new BookGridAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Product product) {
-                // Logic mở chi tiết (Khác Home một chút là dùng fragment transaction)
                 navigateToProductDetail(product.getId());
             }
 
             @Override
             public void onFavoriteClick(String productId) {
-                // Logic thả tim dùng ViewModel giống Home
                 favoriteViewModel.toggleFavorite(productId);
             }
 
             @Override
             public void onAddToCartClick(Product product) {
-                // Logic thêm giỏ hàng dùng ViewModel giống Home
-                cartViewModel.increaseQuantity(product.getId());
-                Toast.makeText(getContext(), "Đã thêm vào giỏ hàng", Toast.LENGTH_SHORT).show();
+                // Gọi hàm xử lý thêm vào giỏ
+                addToCartLogic(product.getId());
             }
         });
 
         rvRelatedProducts.setAdapter(relatedProductAdapter);
     }
 
-    // 5. Thêm hàm lắng nghe dữ liệu Favorite giống Home
     private void setupDataObservation() {
-        // Lắng nghe danh sách yêu thích để cập nhật trái tim đỏ/xám trong list Related
+        // Lắng nghe danh sách yêu thích
         favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
             if (relatedProductAdapter != null) {
                 relatedProductAdapter.setFavoriteIds(ids);
             }
-
-            // Cập nhật trái tim của sản phẩm chính đang xem (nếu muốn)
-            if (currentProduct != null && ids.contains(currentProduct.getId())) {
-                ivHeart.setImageResource(R.drawable.ic_heart_filled_red);
-            } else {
-                ivHeart.setImageResource(R.drawable.ic_heart); // Icon mặc định (viền)
-            }
-        });
-
-        cartViewModel.getMessage().observe(getViewLifecycleOwner(), message -> {
-            if (message != null && !message.isEmpty()) {
-                // Kiểm tra sơ bộ: Nếu tin nhắn chứa từ "thành công" thì có thể vẫn dùng Toast hoặc Dialog xanh
-                // Còn ở đây ta mặc định backend trả về lỗi (status: false) thì hiện Dialog đỏ
-
-                showErrorDialog(message);
-
-                // Clear message để tránh hiện lại khi xoay màn hình (nếu ViewModel chưa xử lý)
-                // cartViewModel.clearMessage();
+            if (currentProduct != null) {
+                if (ids.contains(currentProduct.getId())) {
+                    ivHeart.setImageResource(R.drawable.ic_heart_filled_red);
+                } else {
+                    ivHeart.setImageResource(R.drawable.ic_heart);
+                }
             }
         });
     }
 
-    // ... (Các hàm navigateToProductDetail, setupTabEvents, getProductData, loadRelatedProducts giữ nguyên logic cũ)
+    // --- LOGIC CART (ĐÃ BỎ NAVIGATE) ---
+    private void addToCartLogic(String productId) {
+        // Disable nút để tránh spam click
+        btnAddToCart.setEnabled(false);
+        btnBuyNow.setEnabled(false);
+
+        // Gọi ViewModel và observe kết quả ngay tại chỗ
+        cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), response -> {
+            // Enable lại nút
+            btnAddToCart.setEnabled(true);
+            btnBuyNow.setEnabled(true);
+
+            if (response != null && response.isStatus()) {
+                // Thành công -> Refresh lại giỏ hàng (để update badge số lượng)
+                cartViewModel.refreshCart();
+
+                // Chỉ hiển thị thông báo thành công (Không chuyển màn hình)
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
+
+            } else {
+                // Thất bại -> Báo lỗi
+                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối hoặc hết hàng";
+                showErrorDialog(msg);
+            }
+        });
+    }
+
+    private void setupEvents() {
+        ivImage.setOnClickListener(v -> {
+            if (currentProduct != null && currentProduct.getImage() != null) {
+                showFullScreenImage(currentProduct.getImage());
+            }
+        });
+
+        ivHeart.setOnClickListener(v -> {
+            if (currentProduct != null) {
+                favoriteViewModel.toggleFavorite(currentProduct.getId());
+                v.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).withEndAction(() ->
+                        v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                ).start();
+            }
+        });
+
+        // Nút Thêm vào giỏ
+        btnAddToCart.setOnClickListener(v -> {
+            if (currentProduct != null) {
+                addToCartLogic(currentProduct.getId());
+            }
+        });
+
+        // Nút Mua ngay (Giờ hoạt động giống thêm vào giỏ)
+        btnBuyNow.setOnClickListener(v -> {
+            if (currentProduct != null) {
+                addToCartLogic(currentProduct.getId());
+            }
+        });
+    }
+
+    // ... (Các phần code bên dưới giữ nguyên y hệt logic cũ) ...
 
     private void navigateToProductDetail(String newProductId) {
         DetailFragment newFragment = new DetailFragment();
@@ -229,6 +268,7 @@ public class DetailFragment extends Fragment {
                 if (product != null) {
                     currentProduct = product;
                     bindDataToUI(product);
+                    favoriteViewModel.refreshFavorites();
                     if (product.getCategory() != null) {
                         loadRelatedProducts(product.getCategory().get_id());
                     }
@@ -249,14 +289,12 @@ public class DetailFragment extends Fragment {
                     }
                 }
                 listRelated = filteredList;
-                // Cập nhật list cho adapter
                 relatedProductAdapter.setProducts(listRelated);
             }
         });
     }
 
     private void bindDataToUI(Product product) {
-        // ... (Giữ nguyên logic bindDataToUI đã sửa ở bước trước)
         if (product.getImage() != null && !product.getImage().isEmpty()) {
             Glide.with(this).load(product.getImage()).placeholder(R.drawable.book_cover_placeholder).into(ivImage);
         }
@@ -267,28 +305,16 @@ public class DetailFragment extends Fragment {
 
         try {
             if (product.getPublishDate() != null && !product.getPublishDate().isEmpty()) {
-                String rawDate = product.getPublishDate();
-
                 SimpleDateFormat inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
-                inputFormat.setTimeZone(TimeZone.getTimeZone("UTC")); // Quan trọng: Set múi giờ UTC để parse đúng 'Z'
-
-                // 2. Định dạng Output: dd/MM/yyyy
+                inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
                 SimpleDateFormat outputFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-
-                // 3. Thực hiện chuyển đổi
-                Date date = inputFormat.parse(rawDate);
-                if (date != null) {
-                    tvPublished.setText(outputFormat.format(date));
-                } else {
-                    tvPublished.setText(rawDate); // Fallback nếu date null
-                }
+                Date date = inputFormat.parse(product.getPublishDate());
+                tvPublished.setText(date != null ? outputFormat.format(date) : product.getPublishDate());
             } else {
                 tvPublished.setText("N/A");
             }
         } catch (Exception e) {
-            // Nếu lỗi parse (do format không khớp), hiển thị tạm chuỗi gốc hoặc N/A
             tvPublished.setText("N/A");
-            e.printStackTrace();
         }
 
         double originalPrice = product.getPrice();
@@ -311,12 +337,8 @@ public class DetailFragment extends Fragment {
         if (product.getAuthor() != null) {
             tvAuthorHeader.setText(product.getAuthor().getName());
             tvAuthorNameDetail.setText(product.getAuthor().getName());
-            if (product.getAuthor().getDescription() != null) {
-                tvAuthorBio.setText(product.getAuthor().getDescription());
-            } else {
-                tvAuthorBio.setText("Chưa có thông tin tiểu sử.");
-            }
-            if (product.getAuthor().getAvatar() != null && !product.getAuthor().getAvatar().isEmpty()) {
+            tvAuthorBio.setText(product.getAuthor().getDescription() != null ? product.getAuthor().getDescription() : "Chưa có thông tin tiểu sử.");
+            if (product.getAuthor().getAvatar() != null) {
                 Glide.with(this).load(product.getAuthor().getAvatar()).placeholder(R.drawable.book_cover_placeholder).into(ivAuthorAvatar);
             }
         } else {
@@ -327,27 +349,6 @@ public class DetailFragment extends Fragment {
         if (product.getDescription() != null) {
             tvDescription.setText(product.getDescription());
         }
-    }
-
-    private void setupEvents() {
-        // Sự kiện click nút tim ở header (Detail Fragment)
-        ivImage.setOnClickListener(v -> {
-            if (currentProduct != null && currentProduct.getImage() != null) {
-                showFullScreenImage(currentProduct.getImage());
-            }
-        });
-
-        btnAddToCart.setOnClickListener(v -> {
-            if (currentProduct != null) {
-                cartViewModel.increaseQuantity(currentProduct.getId());
-            }
-        });
-
-        btnBuyNow.setOnClickListener(v -> {
-            if (currentProduct != null) {
-                cartViewModel.increaseQuantity(currentProduct.getId());
-            }
-        });
     }
 
     private String formatPrice(double price) {
@@ -362,36 +363,19 @@ public class DetailFragment extends Fragment {
                 .setDescription(message)
                 .setPrimaryColor(R.color.red)
                 .setPositiveButtonColor(R.color.red)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
                 .hideNegativeButton(true)
-                .setPositiveButtonText("Đóng", v -> {
-                })
+                .setPositiveButtonText("Đóng", v -> {})
                 .show();
     }
 
     private void showFullScreenImage(String imageUrl) {
         if (getContext() == null) return;
-
-        // 1. Khởi tạo Dialog
         Dialog dialog = new Dialog(getContext(), android.R.style.Theme_Black_NoTitleBar_Fullscreen);
         dialog.setContentView(R.layout.layout_fullscreen_image);
-
-        // 2. Ánh xạ View trong Dialog
         ImageView ivFull = dialog.findViewById(R.id.ivFullImage);
         ImageView ivClose = dialog.findViewById(R.id.ivCloseFull);
-
-        // 3. Load ảnh bằng Glide
-        Glide.with(this)
-                .load(imageUrl)
-                .placeholder(R.drawable.book_cover_placeholder) // Ảnh chờ
-                .into(ivFull);
-
-        // 4. Xử lý sự kiện đóng
+        Glide.with(this).load(imageUrl).placeholder(R.drawable.book_cover_placeholder).into(ivFull);
         ivClose.setOnClickListener(v -> dialog.dismiss());
-//        ivFull.setOnClickListener(v -> dialog.dismiss());
-
-        // 5. Hiển thị
         dialog.show();
     }
 }

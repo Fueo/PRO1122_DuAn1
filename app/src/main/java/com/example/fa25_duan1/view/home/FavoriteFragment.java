@@ -23,6 +23,7 @@ import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
+import com.shashank.sony.fancytoastlib.FancyToast; // Thêm FancyToast
 
 import java.util.ArrayList;
 import java.util.List;
@@ -92,9 +93,8 @@ public class FavoriteFragment extends Fragment {
 
             @Override
             public void onAddToCartClick(Product product) {
-                if (product != null) {
-                    cartViewModel.increaseQuantity(product.getId());
-                }
+                // SỬA: Gọi hàm logic mới
+                addToCartLogic(product);
             }
         });
 
@@ -128,14 +128,25 @@ public class FavoriteFragment extends Fragment {
             }
         });
 
-        // --- SỬA TẠI ĐÂY ---
-        cartViewModel.getMessage().observe(getViewLifecycleOwner(), msg -> {
-            if (msg != null && !msg.isEmpty()) {
-                String msgLower = msg.toLowerCase();
-                if (msgLower.contains("giỏ") || msgLower.contains("kho") ||
-                        msgLower.contains("thành công") || msgLower.contains("hết")) {
-                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
-                }
+        // SỬA: ĐÃ XÓA observer cartViewModel.getMessage() tại đây
+    }
+
+    // --- LOGIC THÊM GIỎ HÀNG MỚI ---
+    private void addToCartLogic(Product product) {
+        if (product == null) return;
+
+        // Gọi ViewModel và lắng nghe kết quả trực tiếp
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.isStatus()) {
+                // 1. Thành công: Refresh lại giỏ hàng (để Badge cập nhật)
+                cartViewModel.refreshCart();
+
+                // 2. Hiện thông báo đẹp
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+            } else {
+                // 3. Thất bại
+                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
         });
     }

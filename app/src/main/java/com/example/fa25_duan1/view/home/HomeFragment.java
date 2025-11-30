@@ -39,6 +39,7 @@ import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import com.example.fa25_duan1.viewmodel.DiscountViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
+import com.shashank.sony.fancytoastlib.FancyToast; // Import thêm FancyToast
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -54,8 +55,6 @@ public class HomeFragment extends Fragment {
     // --- Views ---
     private ViewPager2 viewPagerBanner;
     private LinearLayout layoutIndicators;
-
-    // 1. SỬA: Layout chứa toàn bộ phần Flash Sale
     private LinearLayout layoutFlashSaleContainer;
 
     // RecyclerViews
@@ -106,7 +105,10 @@ public class HomeFragment extends Fragment {
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
         categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
+
+        // Dùng requireActivity để share với Main Activity
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
+
         discountViewModel = new ViewModelProvider(this).get(DiscountViewModel.class);
 
         setupAdapters();
@@ -119,8 +121,6 @@ public class HomeFragment extends Fragment {
     private void initViews(View view) {
         viewPagerBanner = view.findViewById(R.id.viewPagerBanner);
         layoutIndicators = view.findViewById(R.id.layoutIndicators);
-
-        // 2. SỬA: Ánh xạ container tổng của Flash Sale (Nhớ thêm ID này vào XML như hướng dẫn)
         layoutFlashSaleContainer = view.findViewById(R.id.layout_flash_sale_container);
 
         tvTimerDay = view.findViewById(R.id.tv_timer_day);
@@ -171,6 +171,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupAdapters() {
+        // Sale Adapter
         saleBookAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), new BookGridAdapter.OnItemClickListener() {
             @Override public void onItemClick(Product product) { openDetail(product.getId()); }
             @Override public void onFavoriteClick(String productId) { favoriteViewModel.toggleFavorite(productId); }
@@ -178,6 +179,7 @@ public class HomeFragment extends Fragment {
         });
         rvSaleBooks.setAdapter(saleBookAdapter);
 
+        // Grid Adapter (Gợi ý hôm nay)
         bookGridAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), new BookGridAdapter.OnItemClickListener() {
             @Override public void onItemClick(Product product) { openDetail(product.getId()); }
             @Override public void onFavoriteClick(String productId) { favoriteViewModel.toggleFavorite(productId); }
@@ -185,14 +187,16 @@ public class HomeFragment extends Fragment {
         });
         rvBooksGrid.setAdapter(bookGridAdapter);
 
+        // Horizontal Adapter (Top sách theo danh mục)
         bookHorizontalAdapter = new BookHorizontalAdapter(getContext(), new ArrayList<>(), new BookHorizontalAdapter.OnItemClickListener() {
             @Override public void onItemClick(Product product) { openDetail(product.getId()); }
-            @Override public void onBuyClick(Product product) { /* Logic mua ngay */ }
+            @Override public void onBuyClick(Product product) { addToCart(product); /* Logic mua ngay tương tự add cart */ }
             @Override public void onFavoriteClick(String productId) { favoriteViewModel.toggleFavorite(productId); }
             @Override public void onAddToCartClick(Product product) { addToCart(product); }
         });
         rvBooksHorizontal.setAdapter(bookHorizontalAdapter);
 
+        // Ranking Adapter
         rankingBookAdapter = new RankingBookAdapter(getContext(), new ArrayList<>(), product -> openDetail(product.getId()));
         rvRankingBooks.setAdapter(rankingBookAdapter);
     }
@@ -229,7 +233,6 @@ public class HomeFragment extends Fragment {
         }.start();
     }
 
-    // 3. SỬA: Hàm này giờ đây sẽ ẩn/hiện toàn bộ container
     private void handleFlashSaleVisibility(boolean isVisible) {
         if (layoutFlashSaleContainer != null) {
             layoutFlashSaleContainer.setVisibility(isVisible ? View.VISIBLE : View.GONE);
@@ -287,11 +290,7 @@ public class HomeFragment extends Fragment {
             if (bookHorizontalAdapter != null) bookHorizontalAdapter.setFavoriteIds(ids);
         });
 
-        cartViewModel.getMessage().observe(getViewLifecycleOwner(), message -> {
-            if (message != null && !message.isEmpty()) {
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            }
-        });
+        // SỬA: ĐÃ XÓA observer cartViewModel.getMessage() tại đây
     }
 
     private void fetchOnSaleProducts(int limit) {
@@ -299,8 +298,6 @@ public class HomeFragment extends Fragment {
             if (products != null && !products.isEmpty()) {
                 saleBookAdapter.setProducts(products);
             } else {
-                // Nếu có chương trình giảm giá nhưng lại không lấy được sách nào
-                // thì cũng ẩn luôn cho đỡ trống
                 handleFlashSaleVisibility(false);
             }
         });
@@ -339,8 +336,24 @@ public class HomeFragment extends Fragment {
         }
     }
 
+    // --- SỬA: LOGIC THÊM GIỎ HÀNG (MỚI) ---
     private void addToCart(Product product) {
-        if (product != null) cartViewModel.increaseQuantity(product.getId());
+        if (product == null) return;
+
+        // Gọi ViewModel và lắng nghe kết quả trực tiếp
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.isStatus()) {
+                // 1. Thành công: Refresh lại giỏ hàng (để Badge cập nhật)
+                cartViewModel.refreshCart();
+
+                // 2. Hiện thông báo đẹp (Dùng FancyToast)
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+            } else {
+                // 3. Thất bại
+                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+            }
+        });
     }
 
     private void openDetail(String productId) {

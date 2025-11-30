@@ -27,14 +27,13 @@ public class HeaderProductDetailFragment extends Fragment {
 
     private ImageView iv_back;
     private EditText etSearch;
-    private FrameLayout flCart; // Mới thêm
-    private TextView tvBadge;   // Mới thêm
-    private CartViewModel cartViewModel; // Mới thêm
+    private FrameLayout flCart;
+    private TextView tvBadge;
+    private CartViewModel cartViewModel;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Đảm bảo layout fragment_header_detail đã có fl_cart_container và tv_badge
         return inflater.inflate(R.layout.fragment_header_detail, container, false);
     }
 
@@ -45,8 +44,8 @@ public class HeaderProductDetailFragment extends Fragment {
         // 1. Ánh xạ View
         iv_back = view.findViewById(R.id.iv_back);
         etSearch = view.findViewById(R.id.et_search);
-        flCart = view.findViewById(R.id.fl_cart_container); // Copy từ HeaderHome
-        tvBadge = view.findViewById(R.id.tv_badge);         // Copy từ HeaderHome
+        flCart = view.findViewById(R.id.fl_cart_container);
+        tvBadge = view.findViewById(R.id.tv_badge);
 
         // 2. Xử lý nút Back
         iv_back.setOnClickListener(v -> {
@@ -55,7 +54,7 @@ public class HeaderProductDetailFragment extends Fragment {
             }
         });
 
-        // 3. Setup Badge giỏ hàng (Logic giống hệt HeaderHome)
+        // 3. Setup Badge giỏ hàng
         setupCartBadge();
 
         // 4. Xử lý sự kiện tìm kiếm
@@ -74,22 +73,27 @@ public class HeaderProductDetailFragment extends Fragment {
         });
     }
 
-    // --- QUAN TRỌNG: Cập nhật lại giỏ hàng khi quay lại màn hình này (Resume) ---
+    // --- Cập nhật lại giỏ hàng khi quay lại màn hình này (Resume) ---
     @Override
     public void onResume() {
         super.onResume();
         if (cartViewModel != null) {
-            cartViewModel.fetchCart();
+            // SỬA: Dùng hàm refreshCart() thay vì fetchCart()
+            cartViewModel.refreshCart();
         }
     }
 
     private void setupCartBadge() {
-        // Khởi tạo ViewModel (Lưu ý: Scope là Activity chứa Fragment này)
+        // Khởi tạo ViewModel (Scope: Activity để chia sẻ dữ liệu chung)
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
-        // --- LOGIC ĐẾM BADGE CHUẨN (Dùng .size() thay vì quantity) ---
+        // --- OBSERVE LIST ITEM ĐỂ HIỆN BADGE ---
         cartViewModel.getCartItems().observe(getViewLifecycleOwner(), items -> {
+            // Đếm số lượng loại sản phẩm trong giỏ (Size của list)
             int count = (items == null) ? 0 : items.size();
+
+            // Mẹo: Nếu bạn muốn đếm TỔNG SỐ LƯỢNG (VD: mua 2 cuốn A, 3 cuốn B -> Badge hiện 5)
+            // thì hãy observe cartViewModel.getTotalQuantity() thay vì getCartItems()
 
             if (count > 0) {
                 tvBadge.setVisibility(View.VISIBLE);
@@ -99,8 +103,8 @@ public class HeaderProductDetailFragment extends Fragment {
             }
         });
 
-        // Gọi API lấy dữ liệu ngay lập tức
-        cartViewModel.fetchCart();
+        // SỬA: Gọi API lấy dữ liệu (Hàm mới)
+        cartViewModel.refreshCart();
 
         // Xử lý click icon giỏ hàng -> Chuyển về HomeActivity và mở Fragment Cart
         flCart.setOnClickListener(v -> {
@@ -119,21 +123,17 @@ public class HeaderProductDetailFragment extends Fragment {
             imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
 
-        // Chuyển về HomeActivity và mở Fragment Product với từ khóa search
         navigateToHome("product", query);
     }
 
-    // Hàm chung để chuyển hướng về HomeActivity
     private void navigateToHome(String targetFragment, String searchQuery) {
         Intent intent = new Intent(getActivity(), HomeActivity.class);
-        intent.putExtra("target_fragment", targetFragment); // "cart" hoặc "product"
+        intent.putExtra("target_fragment", targetFragment);
 
         if (!searchQuery.isEmpty()) {
             intent.putExtra("search_query", searchQuery);
         }
 
-        // Cờ này giúp quay lại Activity cũ thay vì tạo mới chồng lên,
-        // hoặc tạo mới nếu chưa có (tuỳ logic app của bạn)
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         startActivity(intent);
     }

@@ -19,7 +19,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.view.cart.CartFragment;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 
@@ -63,24 +62,23 @@ public class HeaderHomeFragment extends Fragment {
         });
     }
 
-    // --- QUAN TRỌNG: Cập nhật lại giỏ hàng khi quay lại màn hình này ---
+    // --- Cập nhật lại giỏ hàng khi quay lại màn hình này (Resume) ---
     @Override
     public void onResume() {
         super.onResume();
         if (cartViewModel != null) {
-            // Gọi hàm fetchCart() theo đúng tên trong ViewModel của bạn
-            cartViewModel.fetchCart();
+            // SỬA: Dùng hàm refreshCart() thay vì fetchCart()
+            cartViewModel.refreshCart();
         }
     }
 
     private void setupCartBadge() {
-        // Khởi tạo ViewModel
+        // Khởi tạo ViewModel (Scope Activity)
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
-        // --- SỬA LỖI ĐẾM BADGE ---
-        // Thay vì observe getTotalQuantity (cộng dồn số lượng), hãy observe getCartItems (danh sách item)
+        // --- OBSERVE ITEM ĐỂ HIỆN BADGE ---
         cartViewModel.getCartItems().observe(getViewLifecycleOwner(), items -> {
-            // items.size() chính là số lượng đầu sản phẩm (unique product)
+            // items.size() là số loại sản phẩm.
             int count = (items == null) ? 0 : items.size();
 
             if (count > 0) {
@@ -91,8 +89,8 @@ public class HeaderHomeFragment extends Fragment {
             }
         });
 
-        // Gọi API lấy giỏ hàng ngay lập tức
-        cartViewModel.fetchCart();
+        // SỬA: Gọi API làm mới dữ liệu
+        cartViewModel.refreshCart();
 
         // Xử lý click icon giỏ hàng
         flCart.setOnClickListener(v -> {

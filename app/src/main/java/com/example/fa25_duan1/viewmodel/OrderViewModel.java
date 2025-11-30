@@ -4,8 +4,7 @@ import android.app.Application;
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
+import androidx.lifecycle.MediatorLiveData;
 
 import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.CheckoutRequest;
@@ -13,107 +12,54 @@ import com.example.fa25_duan1.model.CheckoutResponse;
 import com.example.fa25_duan1.model.Order;
 import com.example.fa25_duan1.repository.OrderRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderViewModel extends AndroidViewModel {
 
     private final OrderRepository repository;
 
-    // LiveData danh sách đơn hàng
-    private final MutableLiveData<List<Order>> orderHistory = new MutableLiveData<>();
-
-    // LiveData thông báo lỗi (Chỉ dùng để bắn lỗi ra UI)
-    private final MutableLiveData<String> message = new MutableLiveData<>();
-
-    // LiveData báo hiệu Checkout thành công (chứa OrderId)
-    private final MutableLiveData<String> checkoutSuccessOrderId = new MutableLiveData<>();
+    // Dùng MediatorLiveData để quản lý danh sách lịch sử (Giống AddressViewModel)
+    private final MediatorLiveData<List<Order>> orderHistory = new MediatorLiveData<>();
+    private LiveData<List<Order>> currentSource;
 
     public OrderViewModel(@NonNull Application application) {
         super(application);
         repository = new OrderRepository(application);
+        // Tự động tải lịch sử khi khởi tạo (nếu muốn)
+        // fetchOrderHistory();
     }
 
-    // --- Getters ---
     public LiveData<List<Order>> getOrderHistory() { return orderHistory; }
-    public LiveData<String> getMessage() { return message; }
-    public LiveData<String> getCheckoutSuccessOrderId() { return checkoutSuccessOrderId; }
 
-    // --- 1. CHECKOUT (ĐÃ SỬA) ---
-    public void checkout(String fullname, String address, String phone, String note, String paymentMethod) {
+    // --- 1. CHECKOUT (CHUẨN: Trả về LiveData) ---
+    // Fragment sẽ gọi hàm này và observe kết quả trực tiếp
+    public LiveData<ApiResponse<CheckoutResponse>> checkout(String fullname, String address, String phone, String note, String paymentMethod) {
         CheckoutRequest request = new CheckoutRequest(fullname, address, phone, note, paymentMethod);
-
-        // Reset lại trạng thái trước khi gọi API để tránh bị trigger sự kiện cũ
-        message.setValue(null);
-        checkoutSuccessOrderId.setValue(null);
-
-        LiveData<ApiResponse<CheckoutResponse>> liveData = repository.checkout(request);
-        liveData.observeForever(new Observer<ApiResponse<CheckoutResponse>>() {
-            @Override
-            public void onChanged(ApiResponse<CheckoutResponse> response) {
-                if (response != null && response.isStatus()) {
-                    // --- THAY ĐỔI QUAN TRỌNG Ở ĐÂY ---
-
-                    // 1. KHÔNG set message khi thành công nữa.
-                    // message.setValue("Đặt hàng thành công!"); // <--- Đã xóa dòng này để tránh hiện Toast đỏ
-
-                    // 2. Chỉ bắn OrderId để hiện Dialog Success
-                    if (response.getData() != null) {
-                        checkoutSuccessOrderId.setValue(response.getData().getOrderId());
-                    }
-                } else {
-                    // Khi thất bại thì mới bắn message để hiện Toast lỗi
-                    if (response != null && response.getMessage() != null) {
-                        message.setValue(response.getMessage());
-                    } else {
-                        message.setValue("Đặt hàng thất bại. Vui lòng thử lại.");
-                    }
-                }
-                liveData.removeObserver(this);
-            }
-        });
+        return repository.checkout(request);
     }
 
-    // --- 2. FETCH HISTORY ---
+    // --- 2. FETCH HISTORY (CHUẨN: Dùng Mediator) ---
     public void fetchOrderHistory() {
-        LiveData<List<Order>> liveData = repository.getOrderHistory();
-        liveData.observeForever(new Observer<List<Order>>() {
-            @Override
-            public void onChanged(List<Order> orders) {
-                if (orders != null) {
-                    orderHistory.setValue(orders);
-                } else {
-                    // Chỉ báo lỗi nếu thực sự cần thiết, hoặc có thể để null
-                    // message.setValue("Lỗi tải lịch sử");
-                    orderHistory.setValue(null);
-                }
-                liveData.removeObserver(this);
+        if (currentSource != null) {
+            orderHistory.removeSource(currentSource);
+        }
+
+        currentSource = repository.getOrderHistory();
+
+        orderHistory.addSource(currentSource, orders -> {
+            if (orders == null) {
+                orders = new ArrayList<>();
             }
+            // Có thể sort danh sách tại đây nếu cần (VD: Đơn mới nhất lên đầu)
+            // orders.sort((o1, o2) -> o2.getDate().compareTo(o1.getDate()));
+
+            orderHistory.setValue(orders);
         });
     }
 
-    // --- 3. CANCEL ORDER ---
-    public void cancelOrder(String orderId) {
-        // Reset message
-        message.setValue(null);
-
-        LiveData<ApiResponse<Void>> liveData = repository.cancelOrder(orderId);
-        liveData.observeForever(new Observer<ApiResponse<Void>>() {
-            @Override
-            public void onChanged(ApiResponse<Void> response) {
-                if (response != null && response.isStatus()) {
-                    // Với hủy đơn hàng, ta vẫn cần thông báo Toast cho người dùng biết
-                    // Nhưng ở Fragment quản lý đơn hàng, bạn nên dùng Toast Success (Màu xanh)
-                    // Hoặc tạm thời cứ để message, nhưng bên Fragment phải xử lý hiển thị đúng màu.
-                    // Tuy nhiên, ở đây tôi set null message và load lại list để UI tự cập nhật
-
-                    message.setValue("Đã hủy đơn hàng thành công"); // Cái này sẽ hiện Toast đỏ nếu Fragment checkout dùng chung logic, nhưng Cancel thường ở màn hình khác.
-
-                    fetchOrderHistory(); // Reload lại list
-                } else {
-                    message.setValue(response != null ? response.getMessage() : "Lỗi khi hủy đơn");
-                }
-                liveData.removeObserver(this);
-            }
-        });
+    // --- 3. CANCEL ORDER (CHUẨN: Trả về LiveData) ---
+    public LiveData<ApiResponse<Void>> cancelOrder(String orderId) {
+        return repository.cancelOrder(orderId);
     }
 }
