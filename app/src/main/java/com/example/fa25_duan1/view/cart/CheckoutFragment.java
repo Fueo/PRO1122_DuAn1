@@ -74,10 +74,9 @@ public class CheckoutFragment extends Fragment {
         initViews(view);
         setupEvents();
         setupDataObservers();
-
-        // Tải dữ liệu cần thiết
-        cartViewModel.refreshCart(); // Đảm bảo giá tiền là mới nhất
         loadDefaultAddress();
+
+        cartViewModel.refreshCart();
     }
 
     @Override
@@ -131,18 +130,24 @@ public class CheckoutFragment extends Fragment {
         btnCheckout.setOnClickListener(v -> handleCheckoutButton());
     }
 
-    // --- SETUP OBSERVERS (Chỉ observe dữ liệu thụ động) ---
     private void setupDataObservers() {
-        // Lắng nghe tổng tiền từ CartViewModel (đã được tính toán tự động)
-        cartViewModel.getTotalPrice().observe(getViewLifecycleOwner(), subtotal -> {
-            DecimalFormat formatter = new DecimalFormat("###,###,###");
-            long shippingFee = (subtotal > 0) ? 25000 : 0;
-            long total = subtotal + shippingFee;
+        cartViewModel.getCartItems().observe(getViewLifecycleOwner(), items -> {
 
-            tvSubtotal.setText(formatter.format(subtotal).replace(",", ".") + " VNĐ");
-            tvShippingFee.setText(formatter.format(shippingFee).replace(",", ".") + " VNĐ");
-            tvTotal.setText(formatter.format(total).replace(",", ".") + " VNĐ");
         });
+        cartViewModel.getTotalPrice().observe(getViewLifecycleOwner(), this::updateOrderSummary);
+    }
+
+    private void updateOrderSummary(long subtotal) {
+        DecimalFormat formatter = new DecimalFormat("###,###,###");
+
+        // Logic: Nếu tổng tiền > 0 thì mới tính ship 25k, ngược lại là 0
+        long shippingFee = (subtotal > 0) ? 25000 : 0;
+        long total = subtotal + shippingFee;
+
+        // Sửa lại đơn vị từ "VNĐ" thành "đ" cho đồng bộ
+        tvSubtotal.setText(formatter.format(subtotal).replace(",", ".") + " đ");
+        tvShippingFee.setText(formatter.format(shippingFee).replace(",", ".") + " đ");
+        tvTotal.setText(formatter.format(total).replace(",", ".") + " đ");
     }
 
     // --- LOGIC ĐỊA CHỈ ---

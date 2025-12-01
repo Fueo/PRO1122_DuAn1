@@ -25,7 +25,7 @@ public class RetrofitClient {
     private final OrderApi orderApi;
     private final AddressApi addressApi;
 
-    private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
+    private static final String BASE_URL = BuildConfig.BASE_URL_ATSCHOOL;
 
     // --- SỬA LẠI CONSTRUCTOR: Bỏ tham số CartApi thừa ---
     private RetrofitClient(Context context) {
