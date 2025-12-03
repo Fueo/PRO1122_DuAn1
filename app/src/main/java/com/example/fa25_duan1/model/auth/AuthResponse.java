@@ -1,5 +1,5 @@
 // AuthResponse.java
-package com.example.fa25_duan1.model.Auth;
+package com.example.fa25_duan1.model.auth;
 
 import com.example.fa25_duan1.model.User;
 

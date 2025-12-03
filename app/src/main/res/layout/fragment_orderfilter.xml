@@ -180,21 +180,21 @@
                     app:layout_constraintTop_toBottomOf="@+id/tvLabelStatus">
 
                     <CheckBox
-                        android:id="@+id/cbPending"
+                        android:id="@+id/cbWaitConfirm"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Đang xử lý"
+                        android:text="Chờ xác nhận"
                         android:textSize="13sp"
                         android:buttonTint="@color/blue"
                         android:fontFamily="@font/robotoserif_regular"/>
 
                     <CheckBox
-                        android:id="@+id/cbShipping"
+                        android:id="@+id/cbPending"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="Đang giao"
+                        android:text="Đang xử lý"
                         android:textSize="13sp"
                         android:buttonTint="@color/blue"
                         android:fontFamily="@font/robotoserif_regular"/>
@@ -208,6 +208,16 @@
                     app:layout_constraintTop_toBottomOf="@+id/layout_status_row1">
 
                     <CheckBox
+                        android:id="@+id/cbShipping"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Đang giao"
+                        android:textSize="13sp"
+                        android:buttonTint="@color/blue"
+                        android:fontFamily="@font/robotoserif_regular"/>
+
+                    <CheckBox
                         android:id="@+id/cbCompleted"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -216,6 +226,14 @@
                         android:textSize="13sp"
                         android:buttonTint="@color/blue"
                         android:fontFamily="@font/robotoserif_regular"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/layout_status_row3"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    app:layout_constraintTop_toBottomOf="@+id/layout_status_row2">
 
                     <CheckBox
                         android:id="@+id/cbCancelled"
@@ -226,8 +244,12 @@
                         android:textSize="13sp"
                         android:buttonTint="@color/blue"
                         android:fontFamily="@font/robotoserif_regular"/>
-                </LinearLayout>
 
+                    <View
+                        android:layout_width="0dp"
+                        android:layout_height="1dp"
+                        android:layout_weight="1"/>
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/tvLabelTotal"
@@ -239,7 +261,7 @@
                     android:textSize="14sp"
                     android:text="Tổng tiền (VNĐ)"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toBottomOf="@id/layout_status_row2"
+                    app:layout_constraintTop_toBottomOf="@id/layout_status_row3"
                     />
 
                 <LinearLayout
@@ -313,7 +335,6 @@
                         android:layout_height="40dp"
                         android:layout_weight="1"
                         android:layout_marginEnd="8dp"
-
                         android:text="Thiết lập lại"
                         android:textAllCaps="false"
                         android:textSize="14sp"

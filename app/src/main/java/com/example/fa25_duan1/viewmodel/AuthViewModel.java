@@ -7,8 +7,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 
 import com.example.fa25_duan1.model.ApiResponse;
-import com.example.fa25_duan1.model.Auth.AuthResponse;
-import com.example.fa25_duan1.model.Auth.RefreshTokenResponse;
+import com.example.fa25_duan1.model.auth.AuthResponse;
+import com.example.fa25_duan1.model.auth.RefreshTokenResponse;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.repository.AuthRepository;
 

@@ -66,6 +66,20 @@ public class ProductFragment extends Fragment {
         fragmentFilterContainer = view.findViewById(R.id.fragment_filter);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Khi quay lại màn hình Home, gọi refresh để lấy danh sách yêu thích mới nhất
+        if (favoriteViewModel != null) {
+            favoriteViewModel.refreshFavorites();
+        }
+
+        // (Tùy chọn) Nếu bạn muốn reload cả giỏ hàng để cập nhật badge số lượng
+        if (cartViewModel != null) {
+            cartViewModel.refreshCart();
+        }
+    }
+
     private void handleArguments(Bundle savedInstanceState) {
         Bundle args = getArguments();
 

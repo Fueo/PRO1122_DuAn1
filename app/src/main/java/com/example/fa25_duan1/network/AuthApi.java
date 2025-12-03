@@ -1,12 +1,12 @@
 package com.example.fa25_duan1.network;
 
 import com.example.fa25_duan1.model.ApiResponse;
-import com.example.fa25_duan1.model.Auth.AuthResponse;
+import com.example.fa25_duan1.model.auth.AuthResponse;
 import com.example.fa25_duan1.model.ChangePasswordRequest;
-import com.example.fa25_duan1.model.Auth.LoginRequest;
-import com.example.fa25_duan1.model.Auth.RefreshTokenRequest;
-import com.example.fa25_duan1.model.Auth.RefreshTokenResponse;
-import com.example.fa25_duan1.model.Auth.RegisterRequest;
+import com.example.fa25_duan1.model.auth.LoginRequest;
+import com.example.fa25_duan1.model.auth.RefreshTokenRequest;
+import com.example.fa25_duan1.model.auth.RefreshTokenResponse;
+import com.example.fa25_duan1.model.auth.RegisterRequest;
 import com.example.fa25_duan1.model.User;
 
 import okhttp3.MultipartBody;

@@ -21,11 +21,10 @@ import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.ActionButtonAdapter;
 import com.example.fa25_duan1.model.MenuItem;
 import com.example.fa25_duan1.model.User;
+import com.example.fa25_duan1.model.statistic.StatsDashboard;
 import com.example.fa25_duan1.view.management.ManageActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
-import com.example.fa25_duan1.viewmodel.CategoryViewModel;
-import com.example.fa25_duan1.viewmodel.ProductViewModel;
-import com.example.fa25_duan1.viewmodel.UserViewModel;
+import com.example.fa25_duan1.viewmodel.StatisticViewModel; // [MỚI] Import StatisticViewModel
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -41,12 +40,11 @@ public class AdminFragment extends Fragment {
     private TextView tvTotalProduct;
     private TextView tvTotalCategory;
     private TextView tvTotalAccount;
+    private TextView tvTotalInvoice;
 
     // Khai báo các ViewModel
-    private ProductViewModel productViewModel;
-    private CategoryViewModel categoryViewModel;
-    private UserViewModel userViewModel;
     private AuthViewModel authViewModel;
+    private StatisticViewModel statisticViewModel; // [MỚI] Thay thế các ViewModel lẻ
 
     @Nullable
     @Override
@@ -68,61 +66,48 @@ public class AdminFragment extends Fragment {
         tvTotalProduct = view.findViewById(R.id.tvTotalProduct);
         tvTotalCategory = view.findViewById(R.id.tvTotalCategory);
         tvTotalAccount = view.findViewById(R.id.tvTotalAccount);
+        tvTotalInvoice = view.findViewById(R.id.tvTotalInvoice);
     }
 
     private void setupViewModels() {
-        // --- AUTH VIEW MODEL ---
+        // --- AUTH VIEW MODEL (Để check quyền Role 1) ---
         authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
         authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.getData() != null) {
                 User currentUser = response.getData();
 
-                // Nếu là Nhân viên (Role = 1)
+                // Nếu là Nhân viên (Role = 1) -> Ẩn bớt chức năng quản lý sâu
                 if (currentUser.getRole() == 1) {
-                    // LƯU Ý: Không ẩn tvTotalAccount nữa vì Role 1 được phép xem số lượng
-                    // tvTotalAccount.setVisibility(View.GONE); <--- Đã bỏ dòng này
-
-                    // Chỉ ẩn Menu chức năng (để không vào được trang quản lý chi tiết)
                     filterMenuForEmployee();
                 }
             }
         });
 
-        // --- PRODUCT VIEW MODEL ---
-        productViewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
-        categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
-        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+        // --- STATISTIC VIEW MODEL (Để lấy số liệu Dashboard) ---
+        statisticViewModel = new ViewModelProvider(this).get(StatisticViewModel.class);
+
+        // Gọi dữ liệu lần đầu
         loadData();
     }
 
-    // Hàm riêng để gọi API lấy số lượng Account
+    // Hàm gọi API lấy tổng quan dashboard (1 API trả về cả 4 số liệu)
     private void loadData() {
-        if (userViewModel != null) {
-            userViewModel.getTotalAccount().observe(getViewLifecycleOwner(), count -> {
-                if (count != null) {
-                    tvTotalAccount.setText(String.valueOf(count));
-                } else {
-                    tvTotalAccount.setText("0");
-                }
-            });
-        }
+        if (statisticViewModel != null) {
+            statisticViewModel.getDashboardStats().observe(getViewLifecycleOwner(), response -> {
+                if (response != null && response.isStatus() && response.getData() != null) {
+                    StatsDashboard stats = response.getData();
 
-        if (productViewModel != null) {
-            productViewModel.getTotalProduct().observe(getViewLifecycleOwner(), count -> {
-                if (count != null) {
-                    tvTotalProduct.setText(String.valueOf(count));
+                    // Cập nhật UI
+                    tvTotalProduct.setText(String.valueOf(stats.getTotalProducts()));
+                    tvTotalCategory.setText(String.valueOf(stats.getTotalCategories()));
+                    tvTotalAccount.setText(String.valueOf(stats.getTotalUsers()));
+                    tvTotalInvoice.setText(String.valueOf(stats.getTotalOrders()));
                 } else {
+                    // Xử lý khi lỗi hoặc không có dữ liệu
                     tvTotalProduct.setText("0");
-                }
-            });
-        }
-
-        if (categoryViewModel != null) {
-            categoryViewModel.getTotalCategory().observe(getViewLifecycleOwner(), count -> {
-                if (count != null) {
-                    tvTotalCategory.setText(String.valueOf(count));
-                } else {
                     tvTotalCategory.setText("0");
+                    tvTotalAccount.setText("0");
+                    tvTotalInvoice.setText("0");
                 }
             });
         }
@@ -133,6 +118,7 @@ public class AdminFragment extends Fragment {
             Iterator<MenuItem> iterator = listButtonData.iterator();
             while (iterator.hasNext()) {
                 MenuItem item = iterator.next();
+                // Ẩn Quản lý Account (5) và Thống kê chi tiết (6) đối với nhân viên
                 if (item.getId() == 5 || item.getId() == 6) {
                     iterator.remove();
                 }
@@ -175,8 +161,8 @@ public class AdminFragment extends Fragment {
                     intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "account");
                     break;
                 case 6:
-                    Toast.makeText(getActivity(), "Vào trang Statistic", Toast.LENGTH_SHORT).show();
-                    return;
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "statistic");
+                    break;
             }
             startActivity(intent);
         });
@@ -187,15 +173,11 @@ public class AdminFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if(productViewModel != null) productViewModel.refreshData();
-        if(categoryViewModel != null) categoryViewModel.refreshData();
-
-        // KHÔNG gọi userViewModel.refreshData() vì hàm đó gọi getAllUsers() => Role 1 sẽ bị crash/lỗi mạng
-        // if(userViewModel != null) userViewModel.refreshData();
-
-        // Thay vào đó, gọi lại hàm lấy số lượng
+        // Refresh lại dữ liệu mỗi khi quay lại màn hình này
         loadData();
 
-        if(authViewModel != null) authViewModel.getMyInfo();
+        if (authViewModel != null) {
+            authViewModel.getMyInfo();
+        }
     }
 }

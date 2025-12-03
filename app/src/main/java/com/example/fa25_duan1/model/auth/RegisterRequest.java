@@ -1,4 +1,4 @@
-package com.example.fa25_duan1.model.Auth;
+package com.example.fa25_duan1.model.auth;
 
 // RegisterRequest.java
 public class RegisterRequest {

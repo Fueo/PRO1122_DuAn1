@@ -137,7 +137,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:text="Đã giao"
+                        android:text="Sách đã đọc"
                         android:textColor="#555"
                         android:textSize="12sp" />
                 </LinearLayout>
@@ -163,7 +163,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:text="Đã hủy"
+                        android:text="Đơn đã hủy"
                         android:textColor="#555"
                         android:textSize="12sp" />
                 </LinearLayout>

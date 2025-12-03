@@ -7,11 +7,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -23,7 +24,7 @@ import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
-import com.shashank.sony.fancytoastlib.FancyToast; // Thêm FancyToast
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -41,6 +42,7 @@ public class FavoriteFragment extends Fragment {
     private ProductViewModel productViewModel;
     private CartViewModel cartViewModel;
 
+    // List tạm để gom dữ liệu từ nhiều request lẻ
     private List<Product> tempProductList = new ArrayList<>();
 
     @Nullable
@@ -54,8 +56,27 @@ public class FavoriteFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         initViews(view);
-        setupViewModels();
         setupAdapter();
+
+        // 1. Chỉ đăng ký lắng nghe (Observer) tại đây
+        // Việc gọi dữ liệu sẽ để cho onResume lo
+        setupViewModels();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // 2. Kích hoạt lấy dữ liệu mới nhất mỗi khi màn hình hiện lên
+        // (Bao gồm lần đầu tiên và khi quay lại từ màn hình Detail)
+        if (favoriteViewModel != null) {
+            favoriteViewModel.refreshFavorites();
+        }
+
+        // Cập nhật giỏ hàng để đồng bộ Badge (nếu có)
+        if (cartViewModel != null) {
+            cartViewModel.refreshCart();
+        }
     }
 
     private void initViews(View view) {
@@ -82,10 +103,17 @@ public class FavoriteFragment extends Fragment {
 
             @Override
             public void onFavoriteClick(String productId) {
+                // Xử lý bỏ thích ngay tại màn hình này
                 favoriteViewModel.toggleFavorite(productId);
+
+                // Xóa khỏi adapter để UI cập nhật ngay lập tức
                 bookGridAdapter.removeProductById(productId);
+
+                // Cập nhật lại số lượng title
                 int newCount = bookGridAdapter.getItemCount();
                 updateTotalCount(newCount);
+
+                // Nếu xóa hết thì hiện layout trống
                 if (newCount == 0) {
                     if (layoutEmpty != null) layoutEmpty.setVisibility(View.VISIBLE);
                 }
@@ -93,7 +121,6 @@ public class FavoriteFragment extends Fragment {
 
             @Override
             public void onAddToCartClick(Product product) {
-                // SỬA: Gọi hàm logic mới
                 addToCartLogic(product);
             }
         });
@@ -106,65 +133,101 @@ public class FavoriteFragment extends Fragment {
     private void setupViewModels() {
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-
-        // QUAN TRỌNG: Dùng requireActivity() để chia sẻ ViewModel với HomeActivity
+        // Dùng requireActivity() để share ViewModel với Activity chính (đồng bộ giỏ hàng)
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
         if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
 
+        // Lắng nghe sự thay đổi của danh sách ID yêu thích
         favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
+            // Cập nhật list ID cho adapter (để icon tim hiển thị đúng màu)
             bookGridAdapter.setFavoriteIds(ids);
 
             if (ids == null || ids.isEmpty()) {
+                // Nếu không có ID nào -> Ẩn loading, hiện layout trống
                 if (progressBar != null) progressBar.setVisibility(View.GONE);
                 if (layoutEmpty != null) layoutEmpty.setVisibility(View.VISIBLE);
                 rvProducts.setVisibility(View.GONE);
                 bookGridAdapter.setProducts(new ArrayList<>());
                 updateTotalCount(0);
             } else {
+                // Nếu có ID -> Hiện recyclerview, bắt đầu tải chi tiết sản phẩm
                 if (layoutEmpty != null) layoutEmpty.setVisibility(View.GONE);
                 rvProducts.setVisibility(View.VISIBLE);
                 fetchProductsFromIds(ids);
             }
         });
-
-        // SỬA: ĐÃ XÓA observer cartViewModel.getMessage() tại đây
     }
 
-    // --- LOGIC THÊM GIỎ HÀNG MỚI ---
     private void addToCartLogic(Product product) {
         if (product == null) return;
 
-        // Gọi ViewModel và lắng nghe kết quả trực tiếp
         cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.isStatus()) {
-                // 1. Thành công: Refresh lại giỏ hàng (để Badge cập nhật)
                 cartViewModel.refreshCart();
-
-                // 2. Hiện thông báo đẹp
                 FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
             } else {
-                // 3. Thất bại
                 String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
                 FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
         });
     }
 
+    /**
+     * Hàm tải chi tiết sản phẩm từ danh sách ID.
+     * Đã được sửa lỗi duplicate item.
+     */
     private void fetchProductsFromIds(List<String> ids) {
+        // Clear danh sách cũ để tránh bị cộng dồn
         tempProductList.clear();
+
+        if (ids == null || ids.isEmpty()) {
+            if (progressBar != null) progressBar.setVisibility(View.GONE);
+            return;
+        }
+
+        // Dùng AtomicInteger để đếm số lượng request hoàn thành
         AtomicInteger completedRequests = new AtomicInteger(0);
         int totalRequests = ids.size();
 
         for (String id : ids) {
-            productViewModel.getProductByID(id).observe(getViewLifecycleOwner(), product -> {
-                if (product != null) {
-                    tempProductList.add(product);
-                }
-                if (completedRequests.incrementAndGet() == totalRequests) {
-                    if (progressBar != null) progressBar.setVisibility(View.GONE);
-                    bookGridAdapter.setProducts(new ArrayList<>(tempProductList));
-                    updateTotalCount(tempProductList.size());
+            // Lấy LiveData
+            LiveData<Product> liveData = productViewModel.getProductByID(id);
+
+            // Observer ẩn danh
+            liveData.observe(getViewLifecycleOwner(), new Observer<Product>() {
+                @Override
+                public void onChanged(Product product) {
+                    // [QUAN TRỌNG 1] Hủy đăng ký ngay lập tức để tránh gọi lại nhiều lần
+                    liveData.removeObserver(this);
+
+                    if (product != null) {
+                        // [QUAN TRỌNG 2] Kiểm tra trùng lặp trước khi add (Double check)
+                        boolean exists = false;
+                        for (Product p : tempProductList) {
+                            if (p.getId().equals(product.getId())) {
+                                exists = true;
+                                break;
+                            }
+                        }
+                        if (!exists) {
+                            tempProductList.add(product);
+                        }
+                    }
+
+                    // Kiểm tra xem đã chạy xong hết tất cả ID chưa
+                    if (completedRequests.incrementAndGet() == totalRequests) {
+                        if (progressBar != null) progressBar.setVisibility(View.GONE);
+
+                        // Update Adapter
+                        bookGridAdapter.setProducts(new ArrayList<>(tempProductList));
+                        updateTotalCount(tempProductList.size());
+
+                        // Check lại lần cuối để hiện layout empty nếu cần
+                        if (tempProductList.isEmpty() && layoutEmpty != null) {
+                            layoutEmpty.setVisibility(View.VISIBLE);
+                        }
+                    }
                 }
             });
         }

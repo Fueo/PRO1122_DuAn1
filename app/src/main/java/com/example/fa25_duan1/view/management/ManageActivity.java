@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment;
 
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.Order;
+import com.example.fa25_duan1.view.detail.HeaderDetailFragment;
 import com.example.fa25_duan1.view.management.account.AccountHeaderFragment;
 import com.example.fa25_duan1.view.management.account.AccountManageFragment;
 import com.example.fa25_duan1.view.management.author.AuthorHeaderFragment;
@@ -22,6 +23,7 @@ import com.example.fa25_duan1.view.management.order.OrderHeaderFragment;
 import com.example.fa25_duan1.view.management.order.OrderManageFragment;
 import com.example.fa25_duan1.view.management.product.ProductHeaderFragment;
 import com.example.fa25_duan1.view.management.product.ProductManageFragment;
+import com.example.fa25_duan1.view.management.statistic.StatisticsFragment;
 
 public class ManageActivity extends AppCompatActivity {
 
@@ -70,6 +72,8 @@ public class ManageActivity extends AppCompatActivity {
             return new SelectProductFragment();
         }else if ("order".equals(fragmentName)) {
             return new OrderManageFragment();
+        } else if ("statistic".equals(fragmentName)) {
+            return new StatisticsFragment();
         }
         return null;
     }
@@ -90,6 +94,8 @@ public class ManageActivity extends AppCompatActivity {
             return new SelectProductHeaderFragment();
         }else if ("order".equals(fragmentName)) {
             return new OrderHeaderFragment();
+        }else if ("statistic".equals(fragmentName)) {
+            return HeaderDetailFragment.newInstance("Thống kê");
         }
         return null;
     }

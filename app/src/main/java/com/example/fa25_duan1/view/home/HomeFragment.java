@@ -139,6 +139,20 @@ public class HomeFragment extends Fragment {
         btnSeeMoreSale = view.findViewById(R.id.btn_see_more_sale);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Khi quay lại màn hình Home, gọi refresh để lấy danh sách yêu thích mới nhất
+        if (favoriteViewModel != null) {
+            favoriteViewModel.refreshFavorites();
+        }
+
+        // (Tùy chọn) Nếu bạn muốn reload cả giỏ hàng để cập nhật badge số lượng
+        if (cartViewModel != null) {
+            cartViewModel.refreshCart();
+        }
+    }
+
     private void setupClickEvents() {
         if (btnSeeMore != null) {
             btnSeeMore.setOnClickListener(v -> handleSeeMoreClick());
@@ -238,6 +252,8 @@ public class HomeFragment extends Fragment {
             layoutFlashSaleContainer.setVisibility(isVisible ? View.VISIBLE : View.GONE);
         }
     }
+
+
 
     private void setupDataObservation() {
         // --- LOGIC FLASH SALE ---

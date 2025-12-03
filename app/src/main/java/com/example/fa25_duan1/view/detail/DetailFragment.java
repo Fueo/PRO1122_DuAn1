@@ -160,10 +160,12 @@ public class DetailFragment extends Fragment {
                 relatedProductAdapter.setFavoriteIds(ids);
             }
             if (currentProduct != null) {
-                if (ids.contains(currentProduct.getId())) {
+                if (ids != null && ids.contains(currentProduct.getId())) {
+                    // Đã yêu thích -> Tim đỏ
                     ivHeart.setImageResource(R.drawable.ic_heart_filled_red);
                 } else {
-                    ivHeart.setImageResource(R.drawable.ic_heart);
+                    // Chưa yêu thích -> Tim xám viền
+                    ivHeart.setImageResource(R.drawable.ic_heart_outline_gray);
                 }
             }
         });
@@ -203,9 +205,38 @@ public class DetailFragment extends Fragment {
             }
         });
 
+        // --- SỬA ĐỔI LOGIC CLICK TIM ---
         ivHeart.setOnClickListener(v -> {
             if (currentProduct != null) {
+                // 1. Lấy trạng thái hiện tại từ ViewModel
+                List<String> currentIds = favoriteViewModel.getFavoriteIds().getValue();
+                boolean isCurrentlyFavorite = currentIds != null && currentIds.contains(currentProduct.getId());
+
+                // 2. Xử lý số lượng hiển thị (Optimistic UI update)
+                try {
+                    int currentCount = Integer.parseInt(tvLikes.getText().toString());
+
+                    if (isCurrentlyFavorite) {
+                        // Nếu đang thích mà bấm -> Bỏ thích -> Giảm 1
+                        currentCount = Math.max(0, currentCount - 1);
+                    } else {
+                        // Nếu chưa thích mà bấm -> Thích -> Tăng 1
+                        currentCount = currentCount + 1;
+                    }
+                    // Cập nhật text ngay lập tức
+                    tvLikes.setText(String.valueOf(currentCount));
+
+                    // Cập nhật lại biến local currentProduct để đồng bộ dữ liệu nếu cần dùng lại
+                    currentProduct.setFavorite(currentCount);
+
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+
+                // 3. Gọi ViewModel để xử lý logic lưu xuống DB/API
                 favoriteViewModel.toggleFavorite(currentProduct.getId());
+
+                // 4. Hiệu ứng Animation
                 v.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).withEndAction(() ->
                         v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
                 ).start();
@@ -219,7 +250,7 @@ public class DetailFragment extends Fragment {
             }
         });
 
-        // Nút Mua ngay (Giờ hoạt động giống thêm vào giỏ)
+        // Nút Mua ngay
         btnBuyNow.setOnClickListener(v -> {
             if (currentProduct != null) {
                 addToCartLogic(currentProduct.getId());

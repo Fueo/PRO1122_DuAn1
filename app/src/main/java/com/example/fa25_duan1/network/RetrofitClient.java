@@ -24,6 +24,7 @@ public class RetrofitClient {
     private final DiscountApi discountApi;
     private final OrderApi orderApi;
     private final AddressApi addressApi;
+    private final StatisticApi statisticApi;
 
     private static final String BASE_URL = BuildConfig.BASE_URL_ATHOME;
 
@@ -55,6 +56,7 @@ public class RetrofitClient {
         orderApi = retrofit.create(OrderApi.class);
         cartApi = retrofit.create(CartApi.class);
         addressApi = retrofit.create(AddressApi.class);
+        statisticApi = retrofit.create(StatisticApi.class);
     }
 
     public static synchronized RetrofitClient getInstance(Context context) {
@@ -98,4 +100,6 @@ public class RetrofitClient {
     public OrderApi getOrderApi() {return orderApi;}
 
     public AddressApi getAddressApi() {return addressApi;}
+
+    public StatisticApi getStatisticApi() {return statisticApi;}
 }

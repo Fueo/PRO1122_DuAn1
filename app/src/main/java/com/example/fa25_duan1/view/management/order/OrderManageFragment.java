@@ -81,7 +81,7 @@ public class OrderManageFragment extends Fragment {
         if (order == null) return;
 
         Intent intent = new Intent(getContext(), UpdateActivity.class);
-        intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Chi tiết đơn hàng");
+        intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Cập nhật đơn hàng");
         intent.putExtra(UpdateActivity.EXTRA_CONTENT_FRAGMENT, "order");
 
         // --- CHỈ TRUYỀN ID STRING (Tránh lỗi Serializable) ---

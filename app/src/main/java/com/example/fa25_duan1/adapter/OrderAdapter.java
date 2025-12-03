@@ -20,7 +20,11 @@ import com.example.fa25_duan1.model.Order;
 import net.cachapa.expandablelayout.ExpandableLayout;
 
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat; // Import Date parsing
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.TimeZone; // Import TimeZone
 
 public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHolder> {
 
@@ -31,6 +35,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
     public interface OnOrderActionListener {
         void onCancelOrder(String orderId);
         void onRepurchase(Order order);
+        void onViewDetail(Order order);
     }
 
     public OrderAdapter(Context context, List<Order> orders, OnOrderActionListener listener) {
@@ -56,30 +61,25 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         Order order = orders.get(position);
         if (order == null) return;
 
-        // --- 1. BIND DATA CƠ BẢN ---
+        // --- BIND DATA CƠ BẢN ---
         holder.tvOrderCode.setText(order.getId());
         holder.tvReceiverName.setText(order.getFullname());
 
         DecimalFormat formatter = new DecimalFormat("###,###,###");
         holder.tvTotal.setText(formatter.format(order.getTotal()) + " đ");
 
-        if (order.getDate() != null && order.getDate().contains("T")) {
-            holder.tvDate.setText(order.getDate().replace("T", " ").substring(0, 16));
-        } else {
-            holder.tvDate.setText(order.getDate());
-        }
+        // [SỬA ĐỔI]: Dùng hàm convertUtcToLocal thay vì cắt chuỗi
+        holder.tvDate.setText(convertUtcToLocal(order.getDate()));
 
         holder.tvAddress.setText(order.getAddress());
         holder.tvPhone.setText(order.getPhone());
         holder.tvPaymentMethod.setText(order.getPaymentMethod());
 
-        // --- 2. XỬ LÝ TRẠNG THÁI & ẨN HIỆN NÚT ---
+        // --- XỬ LÝ TRẠNG THÁI ---
         String status = order.getStatus() != null ? order.getStatus().toLowerCase().trim() : "";
 
-        // Reset nút (Mặc định ẩn hết)
         holder.btnCancel.setVisibility(View.GONE);
         holder.btnBuyAgain.setVisibility(View.GONE);
-
         holder.btnCancel.setOnClickListener(null);
         holder.btnBuyAgain.setOnClickListener(null);
 
@@ -89,8 +89,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                 holder.tvStatus.setText("Chờ xác nhận");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
                 holder.tvStatus.setTextColor(Color.parseColor("#0486E9"));
-
-                // Logic: Hiện nút Hủy
                 holder.btnCancel.setVisibility(View.VISIBLE);
                 break;
 
@@ -99,8 +97,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                 holder.tvStatus.setText("Đang xử lý");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
                 holder.tvStatus.setTextColor(Color.parseColor("#0486E9"));
-
-                // Logic: Hiện nút Hủy
                 holder.btnCancel.setVisibility(View.VISIBLE);
                 break;
 
@@ -111,8 +107,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                 holder.tvStatus.setText("Đang giao");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
                 holder.tvStatus.setTextColor(Color.parseColor("#FF8C00"));
-
-                // [SỬA ĐỔI]: Đang giao -> ẨN nút hủy (Không cho hủy khi đang giao)
                 holder.btnCancel.setVisibility(View.GONE);
                 break;
 
@@ -122,8 +116,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                 holder.tvStatus.setText("Hoàn thành");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_done);
                 holder.tvStatus.setTextColor(Color.parseColor("#188038"));
-
-                // Logic: Hiện nút Mua lại
                 holder.btnBuyAgain.setVisibility(View.VISIBLE);
                 break;
 
@@ -132,8 +124,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                 holder.tvStatus.setText("Đã hủy");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_canceled);
                 holder.tvStatus.setTextColor(Color.parseColor("#FF3B30"));
-
-                // Logic: Hiện nút Mua lại
                 holder.btnBuyAgain.setVisibility(View.VISIBLE);
                 break;
 
@@ -142,7 +132,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                 break;
         }
 
-        // --- 3. SỰ KIỆN CLICK ---
+        // --- SỰ KIỆN CLICK CÁC NÚT ---
         holder.btnCancel.setOnClickListener(v -> {
             if (actionListener != null) actionListener.onCancelOrder(order.getId());
         });
@@ -151,24 +141,60 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             if (actionListener != null) actionListener.onRepurchase(order);
         });
 
-        // Nút xem chi tiết (Mở rộng layout)
-        holder.btnDetail.setOnClickListener(v -> toggleExpand(holder, order));
+        holder.btnDetail.setOnClickListener(v -> {
+            if (actionListener != null) {
+                actionListener.onViewDetail(order);
+            }
+        });
 
-        // --- 4. LIST SẢN PHẨM CON ---
+        // --- EXPANDABLE LOGIC (Chỉ dùng cho mũi tên) ---
         if (order.getOrderDetails() != null) {
             OrderItemAdapter itemAdapter = new OrderItemAdapter(order.getOrderDetails());
             holder.rvOrderItems.setAdapter(itemAdapter);
         }
 
-        // --- 5. EXPANDABLE LOGIC ---
         holder.layoutDetail.setExpanded(order.isExpanded(), false);
         updateToggleIcon(holder, order.isExpanded());
 
         View.OnClickListener expandListener = v -> toggleExpand(holder, order);
 
-        // Chỉ set click cho 2 mũi tên (fix lỗi click header)
+        // Chỉ click vào mũi tên mới xổ xuống danh sách con
         holder.imgToggleHeader.setOnClickListener(expandListener);
         holder.imgToggleDetail.setOnClickListener(expandListener);
+    }
+
+    /**
+     * Hàm chuyển đổi thời gian UTC từ Server sang giờ địa phương
+     */
+    private String convertUtcToLocal(String utcDateString) {
+        if (utcDateString == null || utcDateString.isEmpty()) return "";
+
+        try {
+            // Định dạng đầu vào (Input): UTC
+            SimpleDateFormat inputFormat;
+            if (utcDateString.contains(".")) {
+                inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
+            } else {
+                inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
+            }
+            // QUAN TRỌNG: Input là UTC
+            inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+
+            Date date = inputFormat.parse(utcDateString);
+
+            // Định dạng đầu ra (Output): Giờ địa phương (tự lấy theo máy)
+            SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault());
+
+            return outputFormat.format(date);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback nếu lỗi
+            if (utcDateString.contains("T")) {
+                return utcDateString.replace("T", " ").split("\\.")[0];
+            }
+            return utcDateString;
+        }
     }
 
     private void toggleExpand(OrderViewHolder holder, Order order) {
@@ -200,22 +226,15 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
     static class OrderViewHolder extends RecyclerView.ViewHolder {
         LinearLayout layoutHeader;
         ExpandableLayout layoutDetail;
-
-        // Đã xóa layoutRightButtons vì dùng LinearLayout trong XML không cần xử lý code nữa
-
         TextView tvOrderCode, tvPaymentMethod, tvTotal, tvStatus, tvDate, tvAddress, tvPhone, tvReceiverName;
         ImageView imgToggleHeader, imgToggleDetail;
         RecyclerView rvOrderItems;
-
-        Button btnCancel;
-        Button btnBuyAgain;
-        Button btnDetail;
+        Button btnCancel, btnBuyAgain, btnDetail;
 
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
             layoutHeader = itemView.findViewById(R.id.layoutHeader);
             layoutDetail = itemView.findViewById(R.id.layoutDetail);
-
             tvOrderCode = itemView.findViewById(R.id.tvOrderCode);
             tvReceiverName = itemView.findViewById(R.id.tvReceiverName);
             tvPaymentMethod = itemView.findViewById(R.id.tvPaymentMethod);
@@ -224,13 +243,10 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             tvDate = itemView.findViewById(R.id.tvDate);
             tvAddress = itemView.findViewById(R.id.tvAddress);
             tvPhone = itemView.findViewById(R.id.tvPhone);
-
             imgToggleHeader = itemView.findViewById(R.id.imgToggleHeader);
             imgToggleDetail = itemView.findViewById(R.id.imgToggleDetail);
-
             rvOrderItems = itemView.findViewById(R.id.rvOrderItems);
             rvOrderItems.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
-
             btnCancel = itemView.findViewById(R.id.btnCancel);
             btnBuyAgain = itemView.findViewById(R.id.btnBuyAgain);
             btnDetail = itemView.findViewById(R.id.btnDetail);

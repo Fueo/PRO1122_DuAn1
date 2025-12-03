@@ -14,6 +14,7 @@ import com.example.fa25_duan1.view.profile.AddressFragment;
 import com.example.fa25_duan1.view.profile.ChangeContactInforFragment;
 import com.example.fa25_duan1.view.profile.ChangePasswordFragment;
 import com.example.fa25_duan1.view.profile.OrderHistoryFragment;
+import com.example.fa25_duan1.view.profile.OrderViewFragment;
 import com.example.fa25_duan1.view.profile.ProfileFragment;
 
 public class DetailActivity extends AppCompatActivity {
@@ -67,6 +68,8 @@ public class DetailActivity extends AppCompatActivity {
             return new ChangePasswordFragment();
         } else if ("address".equals(fragmentName)) {
             return new AddressFragment();
+        }else if ("order".equals(fragmentName)) {
+            return new OrderViewFragment();
         }
 
         return null;

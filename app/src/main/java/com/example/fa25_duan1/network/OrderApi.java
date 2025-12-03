@@ -41,4 +41,11 @@ public interface OrderApi {
     // Endpoint này khớp với route backend: router.get("/detail/:orderId", ...)
     @GET("order/detail/{orderId}")
     Call<ApiResponse<Order>> getOrderById(@Path("orderId") String orderId);
+
+    @GET("order/stats/status-count")
+    Call<ApiResponse<Map<String, Integer>>> getStatusCount();
+
+    // [MỚI 8] Lấy tổng số lượng đơn hàng
+    @GET("order/stats/total-orders")
+    Call<ApiResponse<Integer>> getTotalOrders();
 }

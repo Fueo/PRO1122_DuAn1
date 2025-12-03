@@ -25,19 +25,27 @@ import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
+import com.example.fa25_duan1.viewmodel.OrderViewModel; // [MỚI] Import OrderViewModel
 import com.example.fa25_duan1.viewmodel.UserViewModel;
 import com.shashank.sony.fancytoastlib.FancyToast;
+
+import java.util.Map;
 
 import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class UserFragment extends Fragment {
     LinearLayout rlProfile, rlHistory, lnEmailContainer;
     TextView tvName, tvRole, tvEmail, tvVerifyLabel;
+
+    // [MỚI] Các TextView thống kê đơn hàng
+    TextView tvOrderConfirm, tvOrderSuccess, tvOrderCancelled;
+
     ImageView ivProfile, ivVerifyStatus;
     Button btnLogout;
 
     AuthViewModel authViewModel;
-    User currentUser; // Lưu user hiện tại
+    OrderViewModel orderViewModel; // [MỚI] Khai báo
+    User currentUser;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -50,6 +58,8 @@ public class UserFragment extends Fragment {
         initViews(view);
 
         authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
+        // [MỚI] Khởi tạo OrderViewModel (Dùng requireActivity để share data nếu cần)
+        orderViewModel = new ViewModelProvider(requireActivity()).get(OrderViewModel.class);
 
         // Click menu profile
         rlProfile.setOnClickListener(v -> {
@@ -67,16 +77,14 @@ public class UserFragment extends Fragment {
             startActivity(intent);
         });
 
-        // Click logout
         btnLogout.setOnClickListener(v -> showLogoutDialogConfirm());
 
-        // --- SỰ KIỆN CLICK EMAIL ĐỂ XÁC THỰC ---
         lnEmailContainer.setOnClickListener(v -> {
             if (currentUser != null) {
                 if (currentUser.isVerifiedEmail()) {
                     FancyToast.makeText(requireContext(), "Email đã được xác thực!", FancyToast.LENGTH_SHORT, FancyToast.INFO, true).show();
                 } else {
-                    showDialogConfirmSendMail(); // Gọi hàm hiển thị dialog đẹp
+                    showDialogConfirmSendMail();
                 }
             }
         });
@@ -86,6 +94,30 @@ public class UserFragment extends Fragment {
     public void onResume() {
         super.onResume();
         loadUserData();
+        loadOrderStats(); // [MỚI] Gọi hàm tải thống kê khi màn hình hiện lên
+    }
+
+    // [MỚI] Hàm tải và hiển thị số lượng đơn hàng
+    private void loadOrderStats() {
+        orderViewModel.getStatusCount().observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.isStatus() && response.getData() != null) {
+                Map<String, Integer> stats = response.getData();
+
+                // Lấy số liệu từ Map (Key phải khớp với Backend trả về: Pending, Completed, Cancelled)
+                // Dùng getOrDefault (hoặc check null) để tránh lỗi nếu key không tồn tại
+                int pendingCount = stats.get("Pending") != null ? stats.get("Pending") : 0;
+                // Nếu backend trả "Processing" thì cộng thêm vào mục Chờ xác nhận (tùy logic)
+                int processingCount = stats.get("Processing") != null ? stats.get("Processing") : 0;
+
+                int completedCount = stats.get("Delivered") != null ? stats.get("Delivered") : 0;
+                int cancelledCount = stats.get("Cancelled") != null ? stats.get("Cancelled") : 0;
+
+                // Hiển thị lên UI
+                tvOrderConfirm.setText(String.valueOf(pendingCount + processingCount)); // Gom Pending + Processing
+                tvOrderSuccess.setText(String.valueOf(completedCount));
+                tvOrderCancelled.setText(String.valueOf(cancelledCount));
+            }
+        });
     }
 
     private void loadUserData() {
@@ -109,7 +141,6 @@ public class UserFragment extends Fragment {
             ivProfile.setImageResource(R.drawable.ic_avatar_placeholder);
         }
 
-        // --- CHECK TRẠNG THÁI XÁC THỰC ---
         if (user.isVerifiedEmail()) {
             ivVerifyStatus.setVisibility(View.VISIBLE);
             tvVerifyLabel.setVisibility(View.GONE);
@@ -129,17 +160,20 @@ public class UserFragment extends Fragment {
         tvEmail = view.findViewById(R.id.tvEmail);
         ivProfile = view.findViewById(R.id.ivProfile);
 
-        // Các view mới cho phần xác thực Email
         lnEmailContainer = view.findViewById(R.id.lnEmailContainer);
         ivVerifyStatus = view.findViewById(R.id.ivVerifyStatus);
         tvVerifyLabel = view.findViewById(R.id.tvVerifyLabel);
+
+        // [MỚI] Ánh xạ các TextView thống kê
+        tvOrderConfirm = view.findViewById(R.id.tvOrderConfirm);
+        tvOrderSuccess = view.findViewById(R.id.tvOrderSuccess);
+        tvOrderCancelled = view.findViewById(R.id.tvOrderCancelled);
     }
 
     // =========================================================================
-    // KHU VỰC XỬ LÝ XÁC THỰC EMAIL
+    // KHU VỰC XỬ LÝ XÁC THỰC EMAIL (Giữ nguyên code cũ)
     // =========================================================================
 
-    // 1. Dialog Xác nhận gửi mã (GIAO DIỆN ĐẸP)
     private void showDialogConfirmSendMail() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         LayoutInflater inflater = getLayoutInflater();
@@ -153,26 +187,19 @@ public class UserFragment extends Fragment {
         dialog.setCancelable(false);
         dialog.show();
 
-        // Ánh xạ View
         TextView tvContent = dialogView.findViewById(R.id.tvConfirmContent);
         Button btnConfirm = dialogView.findViewById(R.id.btnConfirmSend);
         Button btnCancel = dialogView.findViewById(R.id.btnCancelSend);
 
-        // Set nội dung chi tiết (hiện rõ email cho uy tín)
         tvContent.setText("Hệ thống sẽ gửi mã OTP 6 số đến email:\n" + currentUser.getEmail() + "\nBạn có muốn tiếp tục?");
 
-        // Sự kiện Hủy
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-        // Sự kiện Gửi
         btnConfirm.setOnClickListener(v -> {
-            dialog.dismiss(); // Đóng dialog xác nhận trước
-
-            // Gọi API gửi mã
+            dialog.dismiss();
             authViewModel.sendVerifyEmail(currentUser.getUserID()).observe(getViewLifecycleOwner(), res -> {
                 if ("OK".equals(res)) {
                     FancyToast.makeText(requireContext(), "Đã gửi mã xác nhận!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
-                    // Mở tiếp Dialog nhập OTP
                     showInputOTPDialog();
                 } else {
                     FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
@@ -181,32 +208,26 @@ public class UserFragment extends Fragment {
         });
     }
 
-    // 2. Dialog nhập OTP (GIAO DIỆN ĐẸP)
     private void showInputOTPDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         LayoutInflater inflater = getLayoutInflater();
-        // Inflate layout tùy chỉnh chúng ta đã tạo
         View dialogView = inflater.inflate(R.layout.layout_dialog_verify_otp, null);
         builder.setView(dialogView);
 
         AlertDialog dialog = builder.create();
 
-        // Làm nền dialog trong suốt để thấy được bo góc của CardView
         if (dialog.getWindow() != null) {
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
-        dialog.setCancelable(false); // Bắt buộc user phải bấm Hủy hoặc Xác nhận
+        dialog.setCancelable(false);
         dialog.show();
 
-        // Ánh xạ View trong Dialog
         EditText etOtpInput = dialogView.findViewById(R.id.etOtpInput);
         Button btnConfirm = dialogView.findViewById(R.id.btnConfirmOtp);
         Button btnCancel = dialogView.findViewById(R.id.btnCancelOtp);
 
-        // Xử lý nút Hủy
         btnCancel.setOnClickListener(v -> dialog.dismiss());
 
-        // Xử lý nút Xác nhận
         btnConfirm.setOnClickListener(v -> {
             String otp = etOtpInput.getText().toString().trim();
 
@@ -215,23 +236,21 @@ public class UserFragment extends Fragment {
                 return;
             }
 
-            // Gọi API xác thực
             authViewModel.verifyEmailOTP(currentUser.getUserID(), otp).observe(getViewLifecycleOwner(), res -> {
                 if ("OK".equals(res)) {
                     dialog.dismiss();
                     FancyToast.makeText(requireContext(), "Xác thực thành công!", FancyToast.LENGTH_LONG, FancyToast.SUCCESS, true).show();
-                    // Load lại dữ liệu để cập nhật giao diện (hiện tích xanh)
                     loadUserData();
                 } else {
                     FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
-                    etOtpInput.setText(""); // Xóa mã sai để nhập lại
+                    etOtpInput.setText("");
                 }
             });
         });
     }
 
     // =========================================================================
-    // KHU VỰC XỬ LÝ ĐĂNG XUẤT
+    // KHU VỰC XỬ LÝ ĐĂNG XUẤT (Giữ nguyên code cũ)
     // =========================================================================
 
     private void showLogoutDialogConfirm() {

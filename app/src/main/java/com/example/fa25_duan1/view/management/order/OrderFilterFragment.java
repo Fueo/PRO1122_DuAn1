@@ -49,8 +49,8 @@ public class OrderFilterFragment extends Fragment {
     private long startTimeMillis = 0;
     private long endTimeMillis = 0;
 
-    // Status Checkboxes
-    private CheckBox cbPending, cbShipping, cbCompleted, cbCancelled;
+    // [CẬP NHẬT] Status Checkboxes (Thêm cbWaitConfirm)
+    private CheckBox cbWaitConfirm, cbPending, cbShipping, cbCompleted, cbCancelled;
 
     // Price Checkboxes
     private CheckBox cbTotalRange1, cbTotalRange2, cbTotalRange3, cbTotalRange4;
@@ -64,7 +64,7 @@ public class OrderFilterFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Lưu ý: Đổi tên layout này thành tên file XML bộ lọc của bạn (ví dụ: fragment_order_filter)
+        // [LƯU Ý] Hãy đảm bảo tên file XML đúng với file bạn vừa tạo (ví dụ: fragment_order_filter.xml)
         return inflater.inflate(R.layout.fragment_orderfilter, container, false);
     }
 
@@ -101,7 +101,8 @@ public class OrderFilterFragment extends Fragment {
         calendarStart = Calendar.getInstance();
         calendarEnd = Calendar.getInstance();
 
-        // Checkbox Status
+        // [CẬP NHẬT] Checkbox Status (Khớp ID trong XML)
+        cbWaitConfirm = view.findViewById(R.id.cbWaitConfirm); // Mới
         cbPending = view.findViewById(R.id.cbPending);
         cbShipping = view.findViewById(R.id.cbShipping);
         cbCompleted = view.findViewById(R.id.cbCompleted);
@@ -175,13 +176,14 @@ public class OrderFilterFragment extends Fragment {
         // 1. Lấy kiểu sắp xếp
         int sortType = spSort.getSelectedIndex();
 
-        // 2. Lấy danh sách trạng thái
+        // 2. Lấy danh sách trạng thái [QUAN TRỌNG: Khớp logic ViewModel]
         List<Integer> statusList = new ArrayList<>();
-        // 0: Pending, 1: Shipping, 2: Completed, 3: Cancelled (Cần khớp với logic ViewModel)
-        if (cbPending.isChecked()) statusList.add(1);   // pending
-        if (cbShipping.isChecked()) statusList.add(2);  // shipping
-        if (cbCompleted.isChecked()) statusList.add(3); // delivered/completed
-        if (cbCancelled.isChecked()) statusList.add(4); // Hủy
+
+        if (cbWaitConfirm.isChecked()) statusList.add(0); // Chờ xác nhận
+        if (cbPending.isChecked()) statusList.add(1);     // Đang xử lý
+        if (cbShipping.isChecked()) statusList.add(2);    // Đang giao
+        if (cbCompleted.isChecked()) statusList.add(3);   // Hoàn thành
+        if (cbCancelled.isChecked()) statusList.add(4);   // Đã hủy
 
         // 3. Lấy khoảng giá
         List<Integer> priceRanges = new ArrayList<>();
@@ -207,16 +209,20 @@ public class OrderFilterFragment extends Fragment {
         // Reset UI về mặc định
         spSort.setSelectedIndex(0);
 
+        // Reset Status
+        cbWaitConfirm.setChecked(false);
         cbPending.setChecked(false);
         cbShipping.setChecked(false);
         cbCompleted.setChecked(false);
         cbCancelled.setChecked(false);
 
+        // Reset Price
         cbTotalRange1.setChecked(false);
         cbTotalRange2.setChecked(false);
         cbTotalRange3.setChecked(false);
         cbTotalRange4.setChecked(false);
 
+        // Reset Date
         tvStartDate.setText("");
         tvEndDate.setText("");
         startTimeMillis = 0;

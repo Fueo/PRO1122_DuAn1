@@ -116,24 +116,8 @@ public class CartViewModel extends AndroidViewModel {
         return repository.clearCart();
     }
 
-    public LiveData<List<CartItem>> fetchCartSnapshotOneShot() {
-        MutableLiveData<List<CartItem>> result = new MutableLiveData<>();
-
-        LiveData<List<CartItem>> source = repository.getCart();
-
-        Observer<List<CartItem>> oneShotObserver = new Observer<List<CartItem>>() {
-            @Override
-            public void onChanged(List<CartItem> data) {
-                result.setValue(data);
-
-                // Dừng lắng nghe ngay sau lần đầu
-                source.removeObserver(this);
-            }
-        };
-
-        // Lắng nghe 1 lần
-        source.observeForever(oneShotObserver);
-
-        return result;
+    public LiveData<ApiResponse<CartItem>> addToCart(String productId, int quantity) {
+        return repository.addToCart(productId, quantity);
     }
+
 }

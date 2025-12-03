@@ -4,8 +4,8 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.example.fa25_duan1.BuildConfig;
-import com.example.fa25_duan1.model.Auth.RefreshTokenRequest;
-import com.example.fa25_duan1.model.Auth.RefreshTokenResponse;
+import com.example.fa25_duan1.model.auth.RefreshTokenRequest;
+import com.example.fa25_duan1.model.auth.RefreshTokenResponse;
 import android.util.Log;
 import java.io.IOException;
 

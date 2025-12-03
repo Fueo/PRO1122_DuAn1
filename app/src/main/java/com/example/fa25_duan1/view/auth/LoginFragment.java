@@ -17,15 +17,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.viewpager2.widget.ViewPager2;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.model.Auth.AuthResponse;
 import com.example.fa25_duan1.view.home.HomeActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
-import com.example.fa25_duan1.viewmodel.UserViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.shashank.sony.fancytoastlib.FancyToast;
