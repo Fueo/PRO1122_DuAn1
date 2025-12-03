@@ -29,4 +29,7 @@ public interface CartApi {
 
     @GET("cart/check")
     Call<ApiResponse<Boolean>> checkCartAvailability();
+
+    @DELETE("cart/clear")
+    Call<ApiResponse<Void>> clearCart();
 }

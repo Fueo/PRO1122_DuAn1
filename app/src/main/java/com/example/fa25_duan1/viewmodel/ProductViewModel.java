@@ -59,6 +59,9 @@ public class ProductViewModel extends AndroidViewModel {
         return repository.viewProduct(id);
     }
 
+    public LiveData<Integer> getTotalProduct() { return repository.getTotalProduct(); }
+
+
     public LiveData<List<Product>> getOnSaleProductsApi(int limit) {
         return repository.getOnSaleProducts(limit);
     }

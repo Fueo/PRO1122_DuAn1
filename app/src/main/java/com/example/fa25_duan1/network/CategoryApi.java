@@ -27,6 +27,9 @@ public interface CategoryApi {
     @POST("categories/add")
     Call<ApiResponse<Category>> addCategory(@Body Category category);
 
+    @GET("categories/get-total-category")
+    Call<ApiResponse<Integer>> getTotalCategory();
+
     // PUT: Cập nhật danh mục theo ID (Gửi JSON Body)
     @PUT("categories/update/{id}")
     Call<ApiResponse<Category>> updateCategory(@Path("id") String id, @Body Category category);

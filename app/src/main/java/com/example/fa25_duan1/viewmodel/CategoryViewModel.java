@@ -41,6 +41,7 @@ public class CategoryViewModel extends AndroidViewModel {
         return displayedCategoriesLiveData;
     }
 
+
     /**
      * Tải lại dữ liệu từ Server
      */
@@ -69,6 +70,9 @@ public class CategoryViewModel extends AndroidViewModel {
             displayedCategoriesLiveData.setValue(sorted);
         });
     }
+
+    public LiveData<Integer> getTotalCategory() { return repository.getTotalCategory(); }
+
 
     // --- CRUD OPERATIONS ---
 

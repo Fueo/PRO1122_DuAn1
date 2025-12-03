@@ -179,4 +179,90 @@ public class AuthRepository {
         });
         return liveData;
     }
+
+    // --- 3 HÀM MỚI ---
+    public LiveData<String> forgotPassword(String username, String email) {
+        MutableLiveData<String> msg = new MutableLiveData<>();
+        authApi.forgotPassword(username, email).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if(response.isSuccessful() && response.body() != null) {
+                    if(response.body().isStatus()) msg.setValue("OK");
+                    else msg.setValue(response.body().getMessage());
+                } else msg.setValue("Lỗi kết nối.");
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) { msg.setValue("Lỗi mạng: " + t.getMessage()); }
+        });
+        return msg;
+    }
+
+    public LiveData<String> sendVerifyEmail(String userId) {
+        MutableLiveData<String> msg = new MutableLiveData<>();
+        authApi.sendVerifyEmail(userId).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if(response.isSuccessful() && response.body() != null) {
+                    if(response.body().isStatus()) msg.setValue("OK");
+                    else msg.setValue(response.body().getMessage());
+                } else msg.setValue("Lỗi server.");
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) { msg.setValue(t.getMessage()); }
+        });
+        return msg;
+    }
+
+    public LiveData<String> verifyEmailOTP(String userId, String otp) {
+        MutableLiveData<String> msg = new MutableLiveData<>();
+        authApi.verifyEmailOTP(userId, otp).enqueue(new Callback<ApiResponse<User>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<User>> call, Response<ApiResponse<User>> response) {
+                if(response.isSuccessful() && response.body() != null) {
+                    if(response.body().isStatus()) msg.setValue("OK");
+                    else msg.setValue(response.body().getMessage());
+                } else msg.setValue("Mã không đúng.");
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<User>> call, Throwable t) { msg.setValue(t.getMessage()); }
+        });
+        return msg;
+    }
+
+    public LiveData<String> resetPassword(String email, String otp, String newPassword) {
+        MutableLiveData<String> msg = new MutableLiveData<>();
+        authApi.resetPassword(email, otp, newPassword).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if(response.isSuccessful() && response.body() != null) {
+                    if(response.body().isStatus()) msg.setValue("OK");
+                    else msg.setValue(response.body().getMessage());
+                } else msg.setValue("Lỗi kết nối.");
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) { msg.setValue(t.getMessage()); }
+        });
+        return msg;
+    }
+
+    public LiveData<String> checkOtpForgot(String email, String otp) {
+        MutableLiveData<String> msg = new MutableLiveData<>();
+        authApi.checkOtpForgot(email, otp).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if(response.isSuccessful() && response.body() != null) {
+                    if(response.body().isStatus()) msg.setValue("OK");
+                    else msg.setValue(response.body().getMessage());
+                } else {
+                    // Sửa lại đoạn này để biết lỗi gì
+                    msg.setValue("Lỗi Server: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                msg.setValue("Lỗi kết nối: " + t.getMessage());
+            }
+        });
+        return msg;
+    }
 }

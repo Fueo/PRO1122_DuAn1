@@ -136,50 +136,6 @@
                 android:textSize="16sp"
                 android:textStyle="bold" />
 
-            <!-- Mật khẩu cũ -->
-            <TextView
-                android:id="@+id/tvTitleOldPassword"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:fontFamily="@font/robotoserif_regular"
-                android:text="Mật khẩu cũ"
-                android:textColor="@color/black"
-                android:textSize="13sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/bg_edit_input"
-                android:gravity="center_vertical">
-
-                <com.google.android.material.textfield.TextInputLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    app:boxBackgroundMode="none"
-                    app:boxCornerRadiusBottomEnd="10dp"
-                    app:boxCornerRadiusBottomStart="10dp"
-                    app:boxCornerRadiusTopEnd="10dp"
-                    app:boxCornerRadiusTopStart="10dp"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp"
-                    app:endIconMode="password_toggle"
-                    app:endIconTint="@color/blue">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/edtPassword"
-                        android:layout_width="match_parent"
-                        android:layout_height="20dp"
-                        android:fontFamily="@font/robotoserif_regular"
-                        android:gravity="center_vertical"
-                        android:inputType="textPassword"
-                        android:paddingVertical="0dp"
-                        android:textColor="@color/black" />
-                </com.google.android.material.textfield.TextInputLayout>
-
-            </LinearLayout>
-
             <TextView
                 android:id="@+id/tvTitleNewPassword"
                 android:layout_width="wrap_content"

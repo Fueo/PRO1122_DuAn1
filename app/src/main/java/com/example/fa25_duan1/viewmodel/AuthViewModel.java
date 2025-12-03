@@ -51,4 +51,22 @@ public class AuthViewModel extends AndroidViewModel {
     public LiveData<ApiResponse<Void>> changePassword(String currentPassword, String newPassword) {
         return repository.changePassword(currentPassword, newPassword);
     }
+    // --- 3 HÀM MỚI ---
+    public LiveData<String> forgotPassword(String username, String email) {
+        return repository.forgotPassword(username, email);
+    }
+    public LiveData<String> sendVerifyEmail(String userId) {
+        return repository.sendVerifyEmail(userId);
+    }
+    public LiveData<String> verifyEmailOTP(String userId, String otp) {
+        return repository.verifyEmailOTP(userId, otp);
+    }
+
+    public LiveData<String> resetPassword(String email, String otp, String newPassword) {
+        return repository.resetPassword(email, otp, newPassword);
+    }
+
+    public LiveData<String> checkOtpForgot(String email, String otp) {
+        return repository.checkOtpForgot(email, otp);
+    }
 }

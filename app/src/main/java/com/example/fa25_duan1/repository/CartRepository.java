@@ -51,29 +51,52 @@ public class CartRepository {
     // Trả về ApiResponse để lấy được message lỗi (VD: Hết hàng)
     public LiveData<ApiResponse<CartItem>> addToCart(String productId, int quantity) {
         MutableLiveData<ApiResponse<CartItem>> result = new MutableLiveData<>();
+
         cartApi.addToCart(new CartRequest(productId, quantity)).enqueue(new Callback<ApiResponse<CartItem>>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<CartItem>> call, @NonNull Response<ApiResponse<CartItem>> response) {
+                // TRƯỜNG HỢP THÀNH CÔNG (200 OK)
                 if (response.isSuccessful() && response.body() != null) {
                     result.setValue(response.body());
-                } else {
-                    // Nếu server trả về lỗi 400/500 nhưng có body JSON (message lỗi)
-                    // Ta vẫn cố gắng trả về body để ViewModel lấy message
-                    // Tuy nhiên Retrofit đưa vào errorBody, nên ở đây ta trả về null hoặc custom logic.
-                    // Để đơn giản theo pattern Category, ta trả về null nếu không success.
-                    // NHƯNG với Cart, cần message, nên ta sẽ xử lý ở ViewModel nếu result là null.
-                    result.setValue(null);
+                }
+                // TRƯỜNG HỢP LỖI (400, 404, 500...)
+                else {
+                    try {
+                        if (response.errorBody() != null) {
+                            // 1. Lấy chuỗi JSON lỗi từ server
+                            String errorJson = response.errorBody().string();
 
-                    // Mở rộng: Nếu muốn lấy message lỗi từ errorBody ở đây thì phức tạp hơn một chút,
-                    // Nên giữ logic đơn giản giống CategoryRepository là trả về null khi lỗi mạng/server.
+                            // 2. Parse lấy message
+                            org.json.JSONObject jsonObject = new org.json.JSONObject(errorJson);
+                            String msg = jsonObject.optString("message", "Có lỗi xảy ra");
+
+                            // 3. Tạo object lỗi giả để trả về UI
+                            ApiResponse<CartItem> errorResponse = new ApiResponse<>();
+                            errorResponse.setStatus(false);
+                            errorResponse.setMessage(msg);
+                            errorResponse.setData(null);
+
+                            // --- SỬA LỖI Ở ĐÂY: Dùng 'result' thay vì 'data' ---
+                            result.setValue(errorResponse);
+                        } else {
+                            result.setValue(null);
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // --- SỬA LỖI Ở ĐÂY: Dùng 'result' thay vì 'data' ---
+                        result.setValue(null);
+                    }
                 }
             }
 
             @Override
             public void onFailure(@NonNull Call<ApiResponse<CartItem>> call, @NonNull Throwable t) {
+                // Lỗi mạng (mất mạng, server down)
                 result.setValue(null);
             }
         });
+
         return result;
     }
 
@@ -136,6 +159,30 @@ public class CartRepository {
                 result.setValue(false);
             }
         });
+        return result;
+    }
+
+    public LiveData<Boolean> clearCart() {
+        MutableLiveData<Boolean> result = new MutableLiveData<>();
+
+        cartApi.clearCart().enqueue(new Callback<ApiResponse<Void>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Void>> call, @NonNull Response<ApiResponse<Void>> response) {
+                // Kiểm tra thành công (status code 200 và body.status = true)
+                if (response.isSuccessful() && response.body() != null && response.body().isStatus()) {
+                    result.setValue(true);
+                } else {
+                    result.setValue(false);
+                }
+            }
+
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Void>> call, @NonNull Throwable t) {
+                // Lỗi kết nối
+                result.setValue(false);
+            }
+        });
+
         return result;
     }
 }

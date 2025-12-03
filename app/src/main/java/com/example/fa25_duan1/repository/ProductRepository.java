@@ -70,6 +70,20 @@ public class ProductRepository {
         return data;
     }
 
+    public LiveData<Integer> getTotalProduct() {
+        MutableLiveData<Integer> countData = new MutableLiveData<>();
+        productApi.getTotalProduct().enqueue(new Callback<ApiResponse<Integer>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Integer>> call, @NonNull Response<ApiResponse<Integer>> response) {
+                if (response.isSuccessful() && response.body() != null) countData.setValue(response.body().getData());
+                else countData.setValue(0);
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Integer>> call, @NonNull Throwable t) { countData.setValue(0); }
+        });
+        return countData;
+    }
+
     public LiveData<List<Product>> getProductsByCategory(String categoryId) {
         MutableLiveData<List<Product>> data = new MutableLiveData<>();
 

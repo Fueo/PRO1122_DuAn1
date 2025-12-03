@@ -192,27 +192,28 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
                     android:padding="16dp">
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:layout_marginTop="12dp"
-                        android:layout_marginBottom="12dp"
-                        android:background="#F0F0F0"/>
 
                     <LinearLayout
+                        android:id="@+id/lnEmailContainer"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                        android:orientation="horizontal"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
                         <ImageView
                             android:layout_width="20dp"
                             android:layout_height="20dp"
                             android:src="@drawable/ic_email_gray"
                             app:tint="@color/blue"/>
+
                         <TextView
                             android:id="@+id/tvEmail"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
+                            android:layout_weight="1"
                             android:layout_marginStart="16dp"
                             android:fontFamily="@font/robotoserif_regular"
                             android:text="anhphungcanhmo@gmail.com"
@@ -220,6 +221,23 @@
                             android:textSize="14sp"
                             android:ellipsize="end"
                             android:maxLines="1"/>
+
+                        <ImageView
+                            android:id="@+id/ivVerifyStatus"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:src="@drawable/ic_check_circle"
+                            android:visibility="gone"
+                            app:tint="#4CAF50"/>
+
+                        <TextView
+                            android:id="@+id/tvVerifyLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="(Chưa xác thực)"
+                            android:textSize="12sp"
+                            android:textColor="#FF9800"
+                            android:layout_marginStart="5dp"/>
                     </LinearLayout>
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

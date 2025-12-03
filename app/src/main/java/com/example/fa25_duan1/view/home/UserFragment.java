@@ -1,5 +1,6 @@
 package com.example.fa25_duan1.view.home;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -18,22 +20,24 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
+import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
-import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
-
-// --- IMPORT THƯ VIỆN UI MỚI ---
+import com.example.fa25_duan1.viewmodel.UserViewModel;
 import com.shashank.sony.fancytoastlib.FancyToast;
+
 import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class UserFragment extends Fragment {
-    LinearLayout rlProfile, rlHistory;
-    TextView tvName, tvRole, tvEmail;
+    LinearLayout rlProfile, rlHistory, lnEmailContainer;
+    TextView tvName, tvRole, tvEmail, tvVerifyLabel;
+    ImageView ivProfile, ivVerifyStatus;
     Button btnLogout;
-    ImageView ivProfile;
+
     AuthViewModel authViewModel;
+    User currentUser; // Lưu user hiện tại
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -43,14 +47,11 @@ public class UserFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
-        // 1. Ánh xạ View
         initViews(view);
 
-        // 2. Khởi tạo ViewModel
-        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
 
-        // 3. Xử lý sự kiện Click
+        // Click menu profile
         rlProfile.setOnClickListener(v -> {
             Intent intent = new Intent(view.getContext(), DetailActivity.class);
             intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang cá nhân");
@@ -58,6 +59,7 @@ public class UserFragment extends Fragment {
             startActivity(intent);
         });
 
+        // Click menu history
         rlHistory.setOnClickListener(v -> {
             Intent intent = new Intent(view.getContext(), DetailActivity.class);
             intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Lịch sử mua hàng");
@@ -65,8 +67,18 @@ public class UserFragment extends Fragment {
             startActivity(intent);
         });
 
-        btnLogout.setOnClickListener(v -> {
-            showLogoutDialogConfirm();
+        // Click logout
+        btnLogout.setOnClickListener(v -> showLogoutDialogConfirm());
+
+        // --- SỰ KIỆN CLICK EMAIL ĐỂ XÁC THỰC ---
+        lnEmailContainer.setOnClickListener(v -> {
+            if (currentUser != null) {
+                if (currentUser.isVerifiedEmail()) {
+                    FancyToast.makeText(requireContext(), "Email đã được xác thực!", FancyToast.LENGTH_SHORT, FancyToast.INFO, true).show();
+                } else {
+                    showDialogConfirmSendMail(); // Gọi hàm hiển thị dialog đẹp
+                }
+            }
         });
     }
 
@@ -76,38 +88,35 @@ public class UserFragment extends Fragment {
         loadUserData();
     }
 
-    // --- HÀM LOAD DỮ LIỆU ---
     private void loadUserData() {
-        if (authViewModel.getMyInfo() != null) {
-            authViewModel.getMyInfo().removeObservers(getViewLifecycleOwner());
-        }
-
         authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.getData() != null) {
-                User user = response.getData();
-                updateUI(user);
-            } else {
-                // Có thể thêm Toast lỗi nhẹ nếu cần, hoặc để trống
+                currentUser = response.getData();
+                updateUI(currentUser);
             }
         });
     }
 
-    // --- HÀM CẬP NHẬT GIAO DIỆN ---
     private void updateUI(User user) {
-        String role = user.getRole() == 0 ? "Khách hàng" : user.getRole() == 1 ? "Nhân viên" : "Admin";
-
+        String roleStr = user.getRole() == 0 ? "Khách hàng" : user.getRole() == 1 ? "Nhân viên" : "Admin";
         tvName.setText(user.getName());
-        tvRole.setText(role);
+        tvRole.setText(roleStr);
         tvEmail.setText(user.getEmail());
 
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
-            Glide.with(requireActivity())
-                    .load(user.getAvatar())
-                    .placeholder(R.drawable.ic_avatar_placeholder)
-                    .error(R.drawable.ic_avatar_placeholder)
-                    .into(ivProfile);
+            Glide.with(requireActivity()).load(user.getAvatar()).placeholder(R.drawable.ic_avatar_placeholder).into(ivProfile);
         } else {
             ivProfile.setImageResource(R.drawable.ic_avatar_placeholder);
+        }
+
+        // --- CHECK TRẠNG THÁI XÁC THỰC ---
+        if (user.isVerifiedEmail()) {
+            ivVerifyStatus.setVisibility(View.VISIBLE);
+            tvVerifyLabel.setVisibility(View.GONE);
+        } else {
+            ivVerifyStatus.setVisibility(View.GONE);
+            tvVerifyLabel.setVisibility(View.VISIBLE);
+            tvVerifyLabel.setText("(Chưa xác thực - Nhấn để gửi mã)");
         }
     }
 
@@ -119,76 +128,138 @@ public class UserFragment extends Fragment {
         tvRole = view.findViewById(R.id.tvRole);
         tvEmail = view.findViewById(R.id.tvEmail);
         ivProfile = view.findViewById(R.id.ivProfile);
+
+        // Các view mới cho phần xác thực Email
+        lnEmailContainer = view.findViewById(R.id.lnEmailContainer);
+        ivVerifyStatus = view.findViewById(R.id.ivVerifyStatus);
+        tvVerifyLabel = view.findViewById(R.id.tvVerifyLabel);
     }
 
-    // --- CÁC HÀM XỬ LÝ LOGOUT ---
-    private void handleLogoutSuccess(SharedPreferences sharedPref) {
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.remove("accessToken");
-        editor.remove("refreshToken");
-        editor.remove("rememberMe");
-        editor.apply();
+    // =========================================================================
+    // KHU VỰC XỬ LÝ XÁC THỰC EMAIL
+    // =========================================================================
 
-        // Thay Toast thường bằng FancyToast SUCCESS
-        FancyToast.makeText(requireContext(),
-                "Đăng xuất thành công!",
-                FancyToast.LENGTH_SHORT,
-                FancyToast.SUCCESS,
-                true).show();
+    // 1. Dialog Xác nhận gửi mã (GIAO DIỆN ĐẸP)
+    private void showDialogConfirmSendMail() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.layout_dialog_confirm_send, null);
+        builder.setView(dialogView);
 
-        startAuthActivity(0);
-        requireActivity().finish();
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        dialog.setCancelable(false);
+        dialog.show();
+
+        // Ánh xạ View
+        TextView tvContent = dialogView.findViewById(R.id.tvConfirmContent);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirmSend);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancelSend);
+
+        // Set nội dung chi tiết (hiện rõ email cho uy tín)
+        tvContent.setText("Hệ thống sẽ gửi mã OTP 6 số đến email:\n" + currentUser.getEmail() + "\nBạn có muốn tiếp tục?");
+
+        // Sự kiện Hủy
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        // Sự kiện Gửi
+        btnConfirm.setOnClickListener(v -> {
+            dialog.dismiss(); // Đóng dialog xác nhận trước
+
+            // Gọi API gửi mã
+            authViewModel.sendVerifyEmail(currentUser.getUserID()).observe(getViewLifecycleOwner(), res -> {
+                if ("OK".equals(res)) {
+                    FancyToast.makeText(requireContext(), "Đã gửi mã xác nhận!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
+                    // Mở tiếp Dialog nhập OTP
+                    showInputOTPDialog();
+                } else {
+                    FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                }
+            });
+        });
     }
 
-    private void startAuthActivity(int tab) {
-        Intent intent = new Intent(requireActivity(), AuthActivity.class);
-        intent.putExtra("DEFAULT_TAB", tab);
-        startActivity(intent);
+    // 2. Dialog nhập OTP (GIAO DIỆN ĐẸP)
+    private void showInputOTPDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        LayoutInflater inflater = getLayoutInflater();
+        // Inflate layout tùy chỉnh chúng ta đã tạo
+        View dialogView = inflater.inflate(R.layout.layout_dialog_verify_otp, null);
+        builder.setView(dialogView);
+
+        AlertDialog dialog = builder.create();
+
+        // Làm nền dialog trong suốt để thấy được bo góc của CardView
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        }
+        dialog.setCancelable(false); // Bắt buộc user phải bấm Hủy hoặc Xác nhận
+        dialog.show();
+
+        // Ánh xạ View trong Dialog
+        EditText etOtpInput = dialogView.findViewById(R.id.etOtpInput);
+        Button btnConfirm = dialogView.findViewById(R.id.btnConfirmOtp);
+        Button btnCancel = dialogView.findViewById(R.id.btnCancelOtp);
+
+        // Xử lý nút Hủy
+        btnCancel.setOnClickListener(v -> dialog.dismiss());
+
+        // Xử lý nút Xác nhận
+        btnConfirm.setOnClickListener(v -> {
+            String otp = etOtpInput.getText().toString().trim();
+
+            if (otp.length() < 6) {
+                FancyToast.makeText(requireContext(), "Vui lòng nhập đủ 6 số!", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+                return;
+            }
+
+            // Gọi API xác thực
+            authViewModel.verifyEmailOTP(currentUser.getUserID(), otp).observe(getViewLifecycleOwner(), res -> {
+                if ("OK".equals(res)) {
+                    dialog.dismiss();
+                    FancyToast.makeText(requireContext(), "Xác thực thành công!", FancyToast.LENGTH_LONG, FancyToast.SUCCESS, true).show();
+                    // Load lại dữ liệu để cập nhật giao diện (hiện tích xanh)
+                    loadUserData();
+                } else {
+                    FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                    etOtpInput.setText(""); // Xóa mã sai để nhập lại
+                }
+            });
+        });
     }
+
+    // =========================================================================
+    // KHU VỰC XỬ LÝ ĐĂNG XUẤT
+    // =========================================================================
 
     private void showLogoutDialogConfirm() {
-        // --- SỬ DỤNG CUTEDIALOG (ĐĂNG XUẤT) ---
         new CuteDialog.withIcon(requireActivity())
-                .setIcon(R.drawable.ic_dialog_info) // Nên dùng icon logout nếu có (R.drawable.ic_logout)
+                .setIcon(R.drawable.ic_dialog_info)
                 .setTitle("Đăng xuất")
-                .setDescription("Bạn có chắc chắn muốn đăng xuất khỏi ứng dụng?")
-
-                // --- CẤU HÌNH MÀU SẮC (BLUE) ---
+                .setDescription("Bạn có chắc chắn muốn đăng xuất?")
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
-
-                .setPositiveButtonText("Đăng xuất", v -> {
-                    performLogout();
-                })
-                .setNegativeButtonText("Hủy", v -> {
-                    // Đóng dialog
-                })
+                .setPositiveButtonText("Đăng xuất", v -> performLogout())
+                .setNegativeButtonText("Hủy", v -> {})
                 .show();
     }
 
     private void performLogout() {
         SharedPreferences sharedPref = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         String refreshToken = sharedPref.getString("refreshToken", null);
-
         if (refreshToken != null) {
-            authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), response -> {
-                if (response != null) {
-                    handleLogoutSuccess(sharedPref);
-                } else {
-                    // Thay Toast lỗi bằng FancyToast WARNING
-                    FancyToast.makeText(requireContext(),
-                            "Lỗi mạng, đăng xuất cục bộ.",
-                            FancyToast.LENGTH_SHORT,
-                            FancyToast.WARNING,
-                            true).show();
-
-                    handleLogoutSuccess(sharedPref);
-                }
-            });
+            authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), response -> handleLogoutSuccess(sharedPref));
         } else {
             handleLogoutSuccess(sharedPref);
         }
+    }
+
+    private void handleLogoutSuccess(SharedPreferences sharedPref) {
+        sharedPref.edit().clear().apply();
+        FancyToast.makeText(requireContext(), "Đăng xuất thành công!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
+        startActivity(new Intent(requireActivity(), AuthActivity.class));
+        requireActivity().finish();
     }
 }

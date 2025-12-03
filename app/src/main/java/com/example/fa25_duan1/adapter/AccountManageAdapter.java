@@ -54,7 +54,7 @@ public class AccountManageAdapter extends RecyclerView.Adapter<AccountManageAdap
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             ivEdit = itemView.findViewById(R.id.iv_edit);
-            ivDelete = itemView.findViewById(R.id.ivDelete);
+            ivDelete = itemView.findViewById(R.id.iv_delete);
             tvName = itemView.findViewById(R.id.tv_name);
             tvTag = itemView.findViewById(R.id.tv_tag);
             cvAvatar = itemView.findViewById(R.id.cvAvatar);

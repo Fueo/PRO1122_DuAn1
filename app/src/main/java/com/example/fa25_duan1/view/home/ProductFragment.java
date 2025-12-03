@@ -147,17 +147,30 @@ public class ProductFragment extends Fragment {
     }
 
     private void setupDataObservation() {
+        // --- SỬA ĐOẠN NÀY ---
         productViewModel.getDisplayedProducts().observe(getViewLifecycleOwner(), products -> {
-            checkDataAndShow(products);
+            // Tạo list mới để chứa sản phẩm đang kinh doanh
+            List<Product> activeProducts = new ArrayList<>();
+
+            if (products != null) {
+                for (Product p : products) {
+                    // Chỉ thêm vào nếu status = true
+                    if (p.isStatus()) {
+                        activeProducts.add(p);
+                    }
+                }
+            }
+
+            // Hiển thị list đã lọc (activeProducts) thay vì list gốc (products)
+            checkDataAndShow(activeProducts);
         });
+        // --------------------
 
         favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
             if (bookGridAdapter != null) {
                 bookGridAdapter.setFavoriteIds(ids);
             }
         });
-
-        // SỬA: ĐÃ XÓA observer cartViewModel.getMessage() tại đây
     }
 
     // --- LOGIC THÊM GIỎ HÀNG MỚI ---

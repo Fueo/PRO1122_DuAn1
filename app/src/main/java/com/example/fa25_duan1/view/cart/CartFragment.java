@@ -25,6 +25,8 @@ import com.google.android.material.button.MaterialButton;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 
+import io.github.cutelibs.cutedialog.CuteDialog;
+
 public class CartFragment extends Fragment implements CartAdapter.OnCartItemClickListener {
 
     private RecyclerView recyclerView;
@@ -165,7 +167,7 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
                         } else {
                             // Thất bại: Hiển thị lỗi (ví dụ: Không đủ hàng trong kho)
                             String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
-                            Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                            showErrorDialog(msg);
                         }
                     });
         }
@@ -182,13 +184,29 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
                                 cartViewModel.refreshCart();
                             } else {
                                 String msg = (response != null) ? response.getMessage() : "Lỗi giảm số lượng";
-                                Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
+                                showErrorDialog(msg);
                             }
                         });
             } else {
-                Toast.makeText(getContext(), "Số lượng tối thiểu là 1. Hãy bấm nút Xóa nếu muốn bỏ sản phẩm.", Toast.LENGTH_SHORT).show();
+                showErrorDialog("Số lượng tối thiểu là 1. Hãy bấm nút Xóa nếu muốn bỏ sản phẩm.");
             }
         }
+    }
+
+    private void showErrorDialog(String msg) {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_error)
+                .setTitle("Lỗi")
+                .setDescription(msg)
+
+                .setPrimaryColor(R.color.blue)
+                .setPositiveButtonColor(R.color.blue)
+                .setTitleTextColor(R.color.black)
+                .setDescriptionTextColor(R.color.gray_text)
+
+                .setPositiveButtonText("Đóng", v -> {})
+                .hideNegativeButton(true)
+                .show();
     }
 
     @Override

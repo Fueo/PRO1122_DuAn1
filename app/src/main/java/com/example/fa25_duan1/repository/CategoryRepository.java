@@ -45,6 +45,20 @@ public class CategoryRepository {
         return data;
     }
 
+    public LiveData<Integer> getTotalCategory() {
+        MutableLiveData<Integer> countData = new MutableLiveData<>();
+        categoryApi.getTotalCategory().enqueue(new Callback<ApiResponse<Integer>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Integer>> call, @NonNull Response<ApiResponse<Integer>> response) {
+                if (response.isSuccessful() && response.body() != null) countData.setValue(response.body().getData());
+                else countData.setValue(0);
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Integer>> call, @NonNull Throwable t) { countData.setValue(0); }
+        });
+        return countData;
+    }
+
     // --- Get Category by ID ---
     public LiveData<Category> getCategoryByID(String id) {
         MutableLiveData<Category> data = new MutableLiveData<>();

@@ -4,7 +4,8 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingVertical="4dp">
+    android:paddingVertical="6dp"
+    android:paddingHorizontal="12dp">
 
     <LinearLayout
         android:id="@+id/layoutRoot"
@@ -12,7 +13,8 @@
         android:layout_height="wrap_content"
         android:background="@drawable/bg_order_card"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="12dp"
+        android:elevation="2dp">
 
         <LinearLayout
             android:id="@+id/layoutHeader"
@@ -40,7 +42,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
                     android:fontFamily="@font/robotoserif_regular"
-                    android:text="9:42 11/10/2025"
+                    android:text="00:00 01/01/2025"
                     android:textColor="#757575"
                     android:textSize="11sp" />
             </LinearLayout>
@@ -77,7 +79,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:fontFamily="@font/robotoserif_bold"
-                            android:text="#6915dbd3"
+                            android:text="#CODE"
                             android:textColor="#1A5BD4"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -105,7 +107,7 @@
                             android:ellipsize="end"
                             android:fontFamily="@font/robotoserif_bold"
                             android:maxLines="1"
-                            android:text="Nguyễn Văn A"
+                            android:text="Tên Khách Hàng"
                             android:textColor="#000000"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -130,7 +132,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="6dp"
                             android:fontFamily="@font/robotoserif_bold"
-                            android:text="150.000 đ"
+                            android:text="0 đ"
                             android:textColor="#FF3B30"
                             android:textSize="14sp" />
                     </LinearLayout>
@@ -222,7 +224,7 @@
                         android:layout_marginStart="8dp"
                         android:fontFamily="@font/robotoserif_regular"
                         android:lineSpacingExtra="2dp"
-                        android:text="120 Yên Lãng, Phường Đống Đa, Hà Nội"
+                        android:text="Địa chỉ..."
                         android:textColor="#333333"
                         android:textSize="13sp" />
                 </LinearLayout>
@@ -246,7 +248,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:text="0912 345 678"
+                        android:text="Số điện thoại..."
                         android:textColor="#333333"
                         android:textSize="13sp" />
                 </LinearLayout>
@@ -270,7 +272,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:text="Thanh toán khi nhận hàng"
+                        android:text="Thanh toán..."
                         android:textColor="#333333"
                         android:textSize="13sp" />
                 </LinearLayout>
@@ -321,24 +323,54 @@
                         android:textColor="@color/dark_blue"
                         android:textSize="14sp" />
                 </LinearLayout>
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:gravity="center">
+                    android:gravity="center"
+                    android:orientation="horizontal">
 
-                    <Button
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btnCancel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_btn_outline_red"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:paddingHorizontal="12dp"
+                        android:text="Hủy đơn"
+                        android:textAllCaps="false"
+                        android:textColor="#D32F2F"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <androidx.appcompat.widget.AppCompatButton
                         android:id="@+id/btnBuyAgain"
                         android:layout_width="wrap_content"
-                        android:layout_height="40dp"
-                        android:background="@drawable/bg_buy_again"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_btn_outline_blue"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:paddingHorizontal="12dp"
+                        android:text="Đặt lại"
+                        android:textAllCaps="false"
+                        android:textColor="#1A5BD4"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btnDetail"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:background="@drawable/bg_btn_solid_blue"
                         android:fontFamily="@font/robotoserif_bold"
-                        android:paddingHorizontal="24dp"
-                        android:text="Hủy đơn hàng"
+                        android:paddingHorizontal="16dp"
+                        android:text="Xem chi tiết"
                         android:textAllCaps="false"
                         android:textColor="#FFFFFF"
-                        android:textSize="14sp"
-                        app:backgroundTint="@null" />
+                        android:textSize="13sp" />
+
                 </LinearLayout>
 
                 <LinearLayout
@@ -351,6 +383,7 @@
                         android:id="@+id/imgToggleDetail"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
+                        android:padding="4dp"
                         android:src="@drawable/ic_arrow_up"
                         app:tint="#757575" />
                 </LinearLayout>

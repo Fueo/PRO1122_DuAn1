@@ -1,23 +1,30 @@
 package com.example.fa25_duan1.view.profile;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.OrderAdapter;
+import com.example.fa25_duan1.model.CartItem;
 import com.example.fa25_duan1.model.Order;
+import com.example.fa25_duan1.model.OrderDetail;
+import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.viewmodel.OrderViewModel;
-import com.shashank.sony.fancytoastlib.FancyToast; // Thêm FancyToast
+import com.example.fa25_duan1.viewmodel.CartViewModel; // 1. Import CartViewModel
+
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +37,9 @@ public class OrderHistoryFragment extends Fragment {
     private View layoutEmpty;
     private OrderAdapter orderAdapter;
     private List<Order> orderList = new ArrayList<>();
+
     private OrderViewModel orderViewModel;
+    private CartViewModel cartViewModel; // 2. Khai báo biến
 
     @Nullable
     @Override
@@ -42,43 +51,42 @@ public class OrderHistoryFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Ánh xạ View
         rvOrders = view.findViewById(R.id.rvOrders);
         layoutEmpty = view.findViewById(R.id.layout_empty_cart);
 
         rvOrders.setLayoutManager(new LinearLayoutManager(getContext()));
         rvOrders.setHasFixedSize(true);
 
-        // 2. Khởi tạo ViewModel
+        // 3. Khởi tạo ViewModel
+        // Dùng requireActivity() để CartViewModel sống chung với Activity (giữ data giỏ hàng toàn cục)
         orderViewModel = new ViewModelProvider(this).get(OrderViewModel.class);
+        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
-        // 3. Setup Adapter
         orderAdapter = new OrderAdapter(getContext(), orderList, new OrderAdapter.OnOrderActionListener() {
             @Override
             public void onCancelOrder(String orderId) {
                 showConfirmCancelDialog(orderId);
             }
+
+            @Override
+            public void onRepurchase(Order order) {
+                handleRepurchaseOrder(order);
+            }
         });
         rvOrders.setAdapter(orderAdapter);
 
-        // 4. Lắng nghe dữ liệu
         setupObservers();
-
-        // 5. Gọi API lấy danh sách
         orderViewModel.fetchOrderHistory();
     }
 
     private void setupObservers() {
-        // Chỉ lắng nghe danh sách đơn hàng trả về (Dữ liệu thụ động)
         orderViewModel.getOrderHistory().observe(getViewLifecycleOwner(), orders -> {
             orderList.clear();
-
             if (orders != null) {
                 orderList.addAll(orders);
             }
             orderAdapter.notifyDataSetChanged();
 
-            // Logic kiểm tra hiển thị layout empty
             if (orderList.isEmpty()) {
                 rvOrders.setVisibility(View.GONE);
                 layoutEmpty.setVisibility(View.VISIBLE);
@@ -87,50 +95,73 @@ public class OrderHistoryFragment extends Fragment {
                 layoutEmpty.setVisibility(View.GONE);
             }
         });
+    }
 
-        // SỬA: Đã XÓA observer orderViewModel.getMessage() tại đây
+    private void handleRepurchaseOrder(Order order) {
+    }
+
+    /**
+     * Helper: observe LiveData chỉ 1 lần
+     */
+    private <T> void observeOnce(LiveData<T> liveData, Observer<T> observer) {
+        liveData.observe(getViewLifecycleOwner(), new Observer<T>() {
+            @Override
+            public void onChanged(T t) {
+                liveData.removeObserver(this);
+                observer.onChanged(t);
+            }
+        });
+    }
+
+    private void addItemsFromOrderToCart(Order order) {
+        FancyToast.makeText(getContext(), "Đang thêm sản phẩm vào giỏ...", FancyToast.LENGTH_SHORT, FancyToast.INFO, false).show();
+
+        for (OrderDetail item : order.getOrderDetails()) {
+
+            if (item.getProduct() != null && item.getProduct().getId() != null) {
+
+                String productId = String.valueOf(item.getProduct().getId());
+                int quantity = item.getQuantity();
+
+                // Thêm đúng số lượng đã mua
+                for (int i = 0; i < quantity; i++) {
+                    cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), res -> {
+                        cartViewModel.refreshCart(); // refresh ngầm
+                    });
+                }
+            }
+        }
+
+        FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+
+        Intent intent = new Intent(getContext(), DetailActivity.class);
+        intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
+        intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
+        startActivity(intent);
+        requireActivity().finish();
     }
 
     private void showConfirmCancelDialog(String orderId) {
         new CuteDialog.withIcon(requireActivity())
                 .setIcon(R.drawable.ic_dialog_confirm)
                 .setTitle("Xác nhận hủy đơn")
-                .setDescription("Bạn có chắc chắn muốn hủy đơn hàng này không? Hành động này không thể hoàn tác.")
+                .setDescription("Bạn có chắc chắn muốn hủy đơn hàng này không?")
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
-                .setPositiveButtonText("Xác nhận", v -> {
-                    // GỌI HÀM HỦY ĐƠN (LOGIC MỚI)
-                    performCancelOrder(orderId);
-                })
+                .setPositiveButtonText("Xác nhận", v -> performCancelOrder(orderId))
                 .setNegativeButtonText("Hủy", v -> {})
                 .show();
     }
 
-    // --- LOGIC HỦY ĐƠN MỚI ---
     private void performCancelOrder(String orderId) {
-        // Gọi ViewModel và lắng nghe kết quả trực tiếp
         orderViewModel.cancelOrder(orderId).observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.isStatus()) {
-                // 1. Thành công
                 FancyToast.makeText(getContext(), "Đã hủy đơn hàng thành công", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
-
-                // 2. Refresh lại danh sách
                 orderViewModel.fetchOrderHistory();
             } else {
-                // 3. Thất bại
                 String msg = (response != null) ? response.getMessage() : "Lỗi khi hủy đơn";
                 FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
         });
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        if (orderViewModel != null) {
-            orderViewModel.fetchOrderHistory();
-        }
     }
 }

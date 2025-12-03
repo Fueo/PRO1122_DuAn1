@@ -403,23 +403,51 @@ public class HomeFragment extends Fragment {
     }
 
     private void loadTopBooksByCategory(String categoryId) {
-        if (currentTopBooksLiveData != null && currentTopBooksObserver != null) currentTopBooksLiveData.removeObserver(currentTopBooksObserver);
+        if (currentTopBooksLiveData != null && currentTopBooksObserver != null)
+            currentTopBooksLiveData.removeObserver(currentTopBooksObserver);
+
         currentTopBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentTopBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
-            bookHorizontalAdapter.setProducts(products);
+
+            // --- [MỚI] BƯỚC LỌC SẢN PHẨM ACTIVE ---
+            List<Product> activeProducts = new ArrayList<>();
+            for (Product p : products) {
+                // Chỉ lấy sản phẩm có status = true (Đang kinh doanh)
+                if (p.isStatus()) {
+                    activeProducts.add(p);
+                }
+            }
+
+            // Đưa list đã lọc vào adapter
+            bookHorizontalAdapter.setProducts(activeProducts);
         };
         currentTopBooksLiveData.observe(getViewLifecycleOwner(), currentTopBooksObserver);
     }
 
+    // --- SỬA THÊM HÀM NÀY CHO ĐỒNG BỘ (BẢNG XẾP HẠNG) ---
     private void loadRankingBooksByCategory(String categoryId) {
-        if (currentRankingBooksLiveData != null && currentRankingBooksObserver != null) currentRankingBooksLiveData.removeObserver(currentRankingBooksObserver);
+        if (currentRankingBooksLiveData != null && currentRankingBooksObserver != null)
+            currentRankingBooksLiveData.removeObserver(currentRankingBooksObserver);
+
         currentRankingBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentRankingBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
-            Collections.sort(products, (p1, p2) -> Integer.compare(p2.getFavorite(), p1.getFavorite()));
-            int limit = Math.min(products.size(), 5);
-            rankingBookAdapter.setProducts(products.subList(0, limit));
+
+            // --- [MỚI] BƯỚC LỌC SẢN PHẨM ACTIVE ---
+            List<Product> activeProducts = new ArrayList<>();
+            for (Product p : products) {
+                if (p.isStatus()) {
+                    activeProducts.add(p);
+                }
+            }
+
+            // Sau đó mới sắp xếp trên danh sách đã lọc
+            Collections.sort(activeProducts, (p1, p2) -> Integer.compare(p2.getFavorite(), p1.getFavorite()));
+
+            // Lấy top 5
+            int limit = Math.min(activeProducts.size(), 5);
+            rankingBookAdapter.setProducts(activeProducts.subList(0, limit));
         };
         currentRankingBooksLiveData.observe(getViewLifecycleOwner(), currentRankingBooksObserver);
     }

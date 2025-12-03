@@ -30,9 +30,8 @@ public class Order implements Serializable {
     @SerializedName("status")
     private String status;
 
-    @SerializedName("createAt")
-    private String date; // Backend trả về chuỗi ISO date "2025-11-26T..."
-
+    @SerializedName(value = "createAt", alternate = {"createdAt", "date"})
+    private String date;
     // Đây là phần quan trọng nhất: Danh sách chi tiết được lồng bên trong
     @SerializedName("orderDetails")
     private List<OrderDetail> orderDetails;

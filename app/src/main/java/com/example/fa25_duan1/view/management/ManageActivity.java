@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.model.Order;
 import com.example.fa25_duan1.view.management.account.AccountHeaderFragment;
 import com.example.fa25_duan1.view.management.account.AccountManageFragment;
 import com.example.fa25_duan1.view.management.author.AuthorHeaderFragment;
@@ -17,6 +18,8 @@ import com.example.fa25_duan1.view.management.discount.DiscountHeaderFragment;
 import com.example.fa25_duan1.view.management.discount.DiscountManageFragment;
 import com.example.fa25_duan1.view.management.discount.SelectProductFragment;
 import com.example.fa25_duan1.view.management.discount.SelectProductHeaderFragment;
+import com.example.fa25_duan1.view.management.order.OrderHeaderFragment;
+import com.example.fa25_duan1.view.management.order.OrderManageFragment;
 import com.example.fa25_duan1.view.management.product.ProductHeaderFragment;
 import com.example.fa25_duan1.view.management.product.ProductManageFragment;
 
@@ -65,6 +68,8 @@ public class ManageActivity extends AppCompatActivity {
             return new DiscountManageFragment();
         }else if ("productdiscount".equals(fragmentName)) {
             return new SelectProductFragment();
+        }else if ("order".equals(fragmentName)) {
+            return new OrderManageFragment();
         }
         return null;
     }
@@ -83,6 +88,8 @@ public class ManageActivity extends AppCompatActivity {
             return new DiscountHeaderFragment();
         }else if ("productdiscount".equals(fragmentName)) {
             return new SelectProductHeaderFragment();
+        }else if ("order".equals(fragmentName)) {
+            return new OrderHeaderFragment();
         }
         return null;
     }

@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Observer;
 
 import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.CartItem;
@@ -109,5 +110,30 @@ public class CartViewModel extends AndroidViewModel {
         // Cập nhật lên LiveData
         totalPrice.setValue(total);
         totalQuantity.setValue(count);
+    }
+
+    public LiveData<Boolean> clearCart() {
+        return repository.clearCart();
+    }
+
+    public LiveData<List<CartItem>> fetchCartSnapshotOneShot() {
+        MutableLiveData<List<CartItem>> result = new MutableLiveData<>();
+
+        LiveData<List<CartItem>> source = repository.getCart();
+
+        Observer<List<CartItem>> oneShotObserver = new Observer<List<CartItem>>() {
+            @Override
+            public void onChanged(List<CartItem> data) {
+                result.setValue(data);
+
+                // Dừng lắng nghe ngay sau lần đầu
+                source.removeObserver(this);
+            }
+        };
+
+        // Lắng nghe 1 lần
+        source.observeForever(oneShotObserver);
+
+        return result;
     }
 }

@@ -1,12 +1,10 @@
 package com.example.fa25_duan1.viewmodel;
 
 import android.app.Application;
-
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
-
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.repository.UserRepository;
 import java.util.ArrayList;
@@ -15,7 +13,6 @@ import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
 public class UserViewModel extends AndroidViewModel {
-
     private final UserRepository repository;
     private final MediatorLiveData<List<User>> allUsersLiveData = new MediatorLiveData<>();
     private final MediatorLiveData<List<User>> displayedUsersLiveData = new MediatorLiveData<>();
@@ -27,19 +24,13 @@ public class UserViewModel extends AndroidViewModel {
         refreshData();
     }
 
-    public LiveData<List<User>> getDisplayedUsers() {
-        return displayedUsersLiveData;
-    }
+    public LiveData<List<User>> getDisplayedUsers() { return displayedUsersLiveData; }
 
     public void refreshData() {
-        if (currentRepoSource != null) {
-            displayedUsersLiveData.removeSource(currentRepoSource);
-        }
+        if (currentRepoSource != null) displayedUsersLiveData.removeSource(currentRepoSource);
         currentRepoSource = repository.getAllUsers();
         displayedUsersLiveData.addSource(currentRepoSource, users -> {
-            if (users == null) {
-                users = new ArrayList<>();
-            }
+            if (users == null) users = new ArrayList<>();
             allUsersLiveData.setValue(users);
             List<User> sorted = new ArrayList<>(users);
             sorted.sort((u1, u2) -> {
@@ -50,45 +41,23 @@ public class UserViewModel extends AndroidViewModel {
         });
     }
 
-    public LiveData<Integer> getTotalAccount() {
-        return repository.getTotalAccount();
-    }
+    public LiveData<Integer> getTotalAccount() { return repository.getTotalAccount(); }
 
-    // --- CÁC HÀM CRUD (Đã bỏ phone, address) ---
-    public LiveData<User> addUserWithAvatar(RequestBody username,
-                                            RequestBody password,
-                                            RequestBody name,
-                                            RequestBody email,
-                                            RequestBody role,
-                                            MultipartBody.Part avatar) {
+    public LiveData<User> addUserWithAvatar(RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
         return repository.addUserWithAvatar(username, password, name, email, role, avatar);
     }
-
-    public LiveData<User> updateUserWithAvatar(String id,
-                                               RequestBody username,
-                                               RequestBody password,
-                                               RequestBody name,
-                                               RequestBody email,
-                                               RequestBody role,
-                                               MultipartBody.Part avatar) {
+    public LiveData<User> updateUserWithAvatar(String id, RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
         return repository.updateUserWithAvatar(id, username, password, name, email, role, avatar);
     }
+    public LiveData<Boolean> deleteUser(String id) { return repository.deleteUser(id); }
+    public LiveData<User> getUserByID(String id) { return repository.getUserByID(id); }
 
-    public LiveData<Boolean> deleteUser(String id) {
-        return repository.deleteUser(id);
-    }
 
-    public LiveData<User> getUserByID(String id) {
-        return repository.getUserByID(id);
-    }
 
-    /**
-     * Tìm kiếm user (Đã xóa logic tìm theo Phone)
-     */
+    // --- Search Logic (Giữ nguyên của bạn) ---
     public void searchUsers(String query, String type) {
         List<User> masterList = allUsersLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
-
         if (query == null || query.trim().isEmpty()) {
             List<User> sorted = new ArrayList<>(masterList);
             sorted.sort((u1, u2) -> {
@@ -98,26 +67,12 @@ public class UserViewModel extends AndroidViewModel {
             displayedUsersLiveData.setValue(sorted);
             return;
         }
-
         String q = query.toLowerCase().trim();
         List<User> result = new ArrayList<>();
-
         for (User u : masterList) {
-            switch (type.toLowerCase()) {
-                case "name":
-                    if (u.getName() != null && u.getName().toLowerCase().contains(q)) result.add(u);
-                    break;
-                case "email":
-                    if (u.getEmail() != null && u.getEmail().toLowerCase().contains(q)) result.add(u);
-                    break;
-                // Đã xóa case "phone"
-                default:
-                    // Mặc định tìm theo Name hoặc Email
-                    if ((u.getName() != null && u.getName().toLowerCase().contains(q)) ||
-                            (u.getEmail() != null && u.getEmail().toLowerCase().contains(q))) {
-                        result.add(u);
-                    }
-                    break;
+            if ((u.getName() != null && u.getName().toLowerCase().contains(q)) ||
+                    (u.getEmail() != null && u.getEmail().toLowerCase().contains(q))) {
+                result.add(u);
             }
         }
         displayedUsersLiveData.setValue(result);

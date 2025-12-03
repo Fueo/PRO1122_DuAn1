@@ -5,7 +5,6 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -22,21 +21,21 @@ import net.cachapa.expandablelayout.ExpandableLayout;
 import java.text.DecimalFormat;
 import java.util.List;
 
-public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHolder> {
+public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.OrderViewHolder> {
 
     private Context context;
     private List<Order> orders;
-    private OnOrderActionListener actionListener;
+    private OnOrderClickListener listener;
 
-    public interface OnOrderActionListener {
-        void onCancelOrder(String orderId);
-        void onRepurchase(Order order);
+    // ================= CALLBACK ================
+    public interface OnOrderClickListener {
+        void onOrderClick(Order order);
     }
 
-    public OrderAdapter(Context context, List<Order> orders, OnOrderActionListener listener) {
+    public OrderManageAdapter(Context context, List<Order> orders, OnOrderClickListener listener) {
         this.context = context;
         this.orders = orders;
-        this.actionListener = listener;
+        this.listener = listener;
     }
 
     public void setData(List<Order> newOrders) {
@@ -53,133 +52,91 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
     @Override
     public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
+
         Order order = orders.get(position);
         if (order == null) return;
 
-        // --- 1. BIND DATA CƠ BẢN ---
+        DecimalFormat formatter = new DecimalFormat("###,###,###");
+
+        // ========= HEADER ==========
         holder.tvOrderCode.setText(order.getId());
         holder.tvReceiverName.setText(order.getFullname());
-
-        DecimalFormat formatter = new DecimalFormat("###,###,###");
+        holder.tvPaymentMethod.setText(order.getPaymentMethod());
         holder.tvTotal.setText(formatter.format(order.getTotal()) + " đ");
 
         if (order.getDate() != null && order.getDate().contains("T")) {
-            holder.tvDate.setText(order.getDate().replace("T", " ").substring(0, 16));
-        } else {
-            holder.tvDate.setText(order.getDate());
-        }
+            holder.tvDate.setText(order.getDate().split("T")[0]);
+        } else holder.tvDate.setText(order.getDate());
 
         holder.tvAddress.setText(order.getAddress());
         holder.tvPhone.setText(order.getPhone());
-        holder.tvPaymentMethod.setText(order.getPaymentMethod());
 
-        // --- 2. XỬ LÝ TRẠNG THÁI & ẨN HIỆN NÚT ---
-        String status = order.getStatus() != null ? order.getStatus().toLowerCase().trim() : "";
+        // ========= STATUS UI ==========
+        String status = order.getStatus();
+        if (status == null) status = "";
 
-        // Reset nút (Mặc định ẩn hết)
-        holder.btnCancel.setVisibility(View.GONE);
-        holder.btnBuyAgain.setVisibility(View.GONE);
-
-        holder.btnCancel.setOnClickListener(null);
-        holder.btnBuyAgain.setOnClickListener(null);
-
-        switch (status) {
+        switch (status.toLowerCase()) {
             case "pending":
-            case "chờ xác nhận":
                 holder.tvStatus.setText("Chờ xác nhận");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
                 holder.tvStatus.setTextColor(Color.parseColor("#0486E9"));
-
-                // Logic: Hiện nút Hủy
-                holder.btnCancel.setVisibility(View.VISIBLE);
                 break;
 
             case "processing":
-            case "đang xử lý":
                 holder.tvStatus.setText("Đang xử lý");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
                 holder.tvStatus.setTextColor(Color.parseColor("#0486E9"));
-
-                // Logic: Hiện nút Hủy
-                holder.btnCancel.setVisibility(View.VISIBLE);
                 break;
 
             case "shipping":
             case "shipped":
-            case "đang giao hàng":
-            case "đang giao":
                 holder.tvStatus.setText("Đang giao");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
                 holder.tvStatus.setTextColor(Color.parseColor("#FF8C00"));
-
-                // [SỬA ĐỔI]: Đang giao -> ẨN nút hủy (Không cho hủy khi đang giao)
-                holder.btnCancel.setVisibility(View.GONE);
                 break;
 
             case "delivered":
             case "completed":
-            case "hoàn thành":
                 holder.tvStatus.setText("Hoàn thành");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_done);
                 holder.tvStatus.setTextColor(Color.parseColor("#188038"));
-
-                // Logic: Hiện nút Mua lại
-                holder.btnBuyAgain.setVisibility(View.VISIBLE);
                 break;
 
             case "cancelled":
-            case "đã hủy":
                 holder.tvStatus.setText("Đã hủy");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_canceled);
                 holder.tvStatus.setTextColor(Color.parseColor("#FF3B30"));
-
-                // Logic: Hiện nút Mua lại
-                holder.btnBuyAgain.setVisibility(View.VISIBLE);
-                break;
-
-            default:
-                holder.tvStatus.setText(status);
                 break;
         }
 
-        // --- 3. SỰ KIỆN CLICK ---
-        holder.btnCancel.setOnClickListener(v -> {
-            if (actionListener != null) actionListener.onCancelOrder(order.getId());
-        });
-
-        holder.btnBuyAgain.setOnClickListener(v -> {
-            if (actionListener != null) actionListener.onRepurchase(order);
-        });
-
-        // Nút xem chi tiết (Mở rộng layout)
-        holder.btnDetail.setOnClickListener(v -> toggleExpand(holder, order));
-
-        // --- 4. LIST SẢN PHẨM CON ---
+        // ========= ITEMS SẢN PHẨM ==========
         if (order.getOrderDetails() != null) {
             OrderItemAdapter itemAdapter = new OrderItemAdapter(order.getOrderDetails());
             holder.rvOrderItems.setAdapter(itemAdapter);
         }
 
-        // --- 5. EXPANDABLE LOGIC ---
+        // ========= EXPAND / COLLAPSE ==========
         holder.layoutDetail.setExpanded(order.isExpanded(), false);
         updateToggleIcon(holder, order.isExpanded());
 
-        View.OnClickListener expandListener = v -> toggleExpand(holder, order);
+        View.OnClickListener expandListener = v -> {
+            boolean willExpand = !order.isExpanded();
+            order.setExpanded(willExpand);
 
-        // Chỉ set click cho 2 mũi tên (fix lỗi click header)
+            if (willExpand) holder.layoutDetail.expand();
+            else holder.layoutDetail.collapse();
+
+            updateToggleIcon(holder, willExpand);
+        };
+
+        holder.layoutHeader.setOnClickListener(expandListener);
         holder.imgToggleHeader.setOnClickListener(expandListener);
         holder.imgToggleDetail.setOnClickListener(expandListener);
-    }
 
-    private void toggleExpand(OrderViewHolder holder, Order order) {
-        boolean willExpand = !order.isExpanded();
-        order.setExpanded(willExpand);
-        if (willExpand) {
-            holder.layoutDetail.expand();
-        } else {
-            holder.layoutDetail.collapse();
-        }
-        updateToggleIcon(holder, willExpand);
+        // ========= CLICK VÀO ITEM (ADMIN) ==========
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onOrderClick(order);
+        });
     }
 
     private void updateToggleIcon(OrderViewHolder holder, boolean isExpanded) {
@@ -197,22 +154,19 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         return orders == null ? 0 : orders.size();
     }
 
+    // ===================== VIEW HOLDER =====================
     static class OrderViewHolder extends RecyclerView.ViewHolder {
+
         LinearLayout layoutHeader;
         ExpandableLayout layoutDetail;
-
-        // Đã xóa layoutRightButtons vì dùng LinearLayout trong XML không cần xử lý code nữa
 
         TextView tvOrderCode, tvPaymentMethod, tvTotal, tvStatus, tvDate, tvAddress, tvPhone, tvReceiverName;
         ImageView imgToggleHeader, imgToggleDetail;
         RecyclerView rvOrderItems;
 
-        Button btnCancel;
-        Button btnBuyAgain;
-        Button btnDetail;
-
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
+
             layoutHeader = itemView.findViewById(R.id.layoutHeader);
             layoutDetail = itemView.findViewById(R.id.layoutDetail);
 
@@ -230,10 +184,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
             rvOrderItems = itemView.findViewById(R.id.rvOrderItems);
             rvOrderItems.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
-
-            btnCancel = itemView.findViewById(R.id.btnCancel);
-            btnBuyAgain = itemView.findViewById(R.id.btnBuyAgain);
-            btnDetail = itemView.findViewById(R.id.btnDetail);
         }
     }
 }

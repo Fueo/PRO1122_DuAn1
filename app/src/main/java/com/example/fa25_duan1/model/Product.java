@@ -2,7 +2,9 @@ package com.example.fa25_duan1.model;
 
 import com.google.gson.annotations.SerializedName;
 
-public class Product {
+import java.io.Serializable;
+
+public class Product implements Serializable {
 
     @SerializedName("_id")
     private String id;

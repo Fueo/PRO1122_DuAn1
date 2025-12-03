@@ -33,6 +33,9 @@ public interface ProductApi {
     @GET("products/search")
     Call<ApiResponse<List<Product>>> searchProductsByName(@Query("name") String name);
 
+    @GET("products/get-total-product")
+    Call<ApiResponse<Integer>> getTotalProduct();
+
     // 🆕 GET: Lấy danh sách sản phẩm ngẫu nhiên (PUBLIC)
     // API: /api/products/random/:limit
     @GET("products/random/{limit}")

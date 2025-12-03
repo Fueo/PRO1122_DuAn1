@@ -72,7 +72,7 @@ public class AdminFragment extends Fragment {
 
     private void setupViewModels() {
         // --- AUTH VIEW MODEL ---
-        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+        authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
         authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.getData() != null) {
                 User currentUser = response.getData();
@@ -89,43 +89,40 @@ public class AdminFragment extends Fragment {
         });
 
         // --- PRODUCT VIEW MODEL ---
-        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-        productViewModel.getDisplayedProducts().observe(getViewLifecycleOwner(), products -> {
-            if (products != null) {
-                tvTotalProduct.setText(String.valueOf(products.size()));
-            } else {
-                tvTotalProduct.setText("0");
-            }
-        });
-
-        // --- CATEGORY VIEW MODEL ---
-        categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
-        categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
-            if (categories != null) {
-                tvTotalCategory.setText(String.valueOf(categories.size()));
-            } else {
-                tvTotalCategory.setText("0");
-            }
-        });
-
-        // --- USER (ACCOUNT) VIEW MODEL ---
-        userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
-
-        // CŨ: Lấy danh sách (Role 1 gọi cái này sẽ bị lỗi 403 Forbidden)
-        // userViewModel.getDisplayedUsers().observe(...)
-
-        // MỚI: Gọi API lấy tổng số lượng (Role 1 và 2 đều dùng được)
-        loadTotalAccount();
+        productViewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
+        categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
+        userViewModel = new ViewModelProvider(requireActivity()).get(UserViewModel.class);
+        loadData();
     }
 
     // Hàm riêng để gọi API lấy số lượng Account
-    private void loadTotalAccount() {
+    private void loadData() {
         if (userViewModel != null) {
             userViewModel.getTotalAccount().observe(getViewLifecycleOwner(), count -> {
                 if (count != null) {
                     tvTotalAccount.setText(String.valueOf(count));
                 } else {
                     tvTotalAccount.setText("0");
+                }
+            });
+        }
+
+        if (productViewModel != null) {
+            productViewModel.getTotalProduct().observe(getViewLifecycleOwner(), count -> {
+                if (count != null) {
+                    tvTotalProduct.setText(String.valueOf(count));
+                } else {
+                    tvTotalProduct.setText("0");
+                }
+            });
+        }
+
+        if (categoryViewModel != null) {
+            categoryViewModel.getTotalCategory().observe(getViewLifecycleOwner(), count -> {
+                if (count != null) {
+                    tvTotalCategory.setText(String.valueOf(count));
+                } else {
+                    tvTotalCategory.setText("0");
                 }
             });
         }
@@ -166,8 +163,8 @@ public class AdminFragment extends Fragment {
                     intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "product");
                     break;
                 case 2:
-                    Toast.makeText(getActivity(), "Vào trang Invoice", Toast.LENGTH_SHORT).show();
-                    return;
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "order");
+                    break;
                 case 3:
                     intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "discount");
                     break;
@@ -197,7 +194,7 @@ public class AdminFragment extends Fragment {
         // if(userViewModel != null) userViewModel.refreshData();
 
         // Thay vào đó, gọi lại hàm lấy số lượng
-        loadTotalAccount();
+        loadData();
 
         if(authViewModel != null) authViewModel.getMyInfo();
     }
