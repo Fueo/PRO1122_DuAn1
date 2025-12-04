@@ -31,4 +31,12 @@ public class StatisticViewModel extends AndroidViewModel {
     public LiveData<ApiResponse<StatsDailyOverview>> getDailyOverview() {
         return repository.getDailyOverview();
     }
+
+    public LiveData<ApiResponse<StatsOrder>> getOrderStats(String period) {
+        return repository.getOrderStats(period);
+    }
+
+    public LiveData<ApiResponse<StatsProductOverview>> getProductOverview(String period) {
+        return repository.getProductOverview(period);
+    }
 }

@@ -23,7 +23,7 @@ public class FavoriteViewModel extends AndroidViewModel {
         super(application);
         repository = new FavoriteRepository(application.getApplicationContext());
         // Load danh sách yêu thích ngay khi khởi tạo
-        refreshFavorites();
+//        refreshFavorites();
     }
 
     public LiveData<List<String>> getFavoriteIds() {

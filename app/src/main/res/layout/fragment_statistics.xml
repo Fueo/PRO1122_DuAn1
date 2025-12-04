@@ -150,16 +150,34 @@
         </LinearLayout>
     </LinearLayout>
 
-    <com.google.android.material.tabs.TabLayout
-        android:id="@+id/tabLayoutStats"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white_background"
-        app:tabIndicatorColor="@color/blue"
-        app:tabSelectedTextColor="@color/blue"
-        app:tabTextColor="@color/gray_text"
-        app:tabMode="fixed"
-        app:tabGravity="fill"/>
+        android:orientation="vertical">
+
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/tabLayoutStats"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white_background"
+            app:tabIndicatorColor="@color/blue"
+            app:tabSelectedTextColor="@color/dark_blue"
+            app:tabTextColor="@color/gray_text"
+            app:tabMode="fixed"
+            app:tabGravity="fill"
+            app:tabIndicatorFullWidth="false"
+            app:tabIndicatorHeight="2dp"
+            app:tabRippleColor="@null"
+            app:tabTextAppearance="@style/CustomTabTextAppearance" />
+
+        <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginHorizontal="17dp"
+        android:layout_marginTop="2dp"
+        android:background="@color/gray" />
+
+    </LinearLayout>
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPagerStats"

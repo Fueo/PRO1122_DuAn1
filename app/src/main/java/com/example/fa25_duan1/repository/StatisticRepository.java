@@ -39,6 +39,19 @@ public class StatisticRepository {
         return data;
     }
 
+    public LiveData<ApiResponse<StatsOrder>> getOrderStats(String period) {
+        MutableLiveData<ApiResponse<StatsOrder>> data = new MutableLiveData<>();
+        // Gọi API stats/order-stats với tham số period
+        api.getOrderStats(period).enqueue(makeCallback(data));
+        return data;
+    }
+
+    public LiveData<ApiResponse<StatsProductOverview>> getProductOverview(String period) {
+        MutableLiveData<ApiResponse<StatsProductOverview>> data = new MutableLiveData<>();
+        api.getProductOverview(period).enqueue(makeCallback(data));
+        return data;
+    }
+
     // Helper để giảm code lặp
     private <T> Callback<ApiResponse<T>> makeCallback(MutableLiveData<ApiResponse<T>> liveData) {
         return new Callback<ApiResponse<T>>() {

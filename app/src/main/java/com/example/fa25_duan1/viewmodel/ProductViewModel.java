@@ -22,14 +22,21 @@ import okhttp3.RequestBody;
 
 public class ProductViewModel extends AndroidViewModel {
 
+    // Các hằng số cho chế độ sắp xếp
     public static final int SORT_DATE_NEWEST = 0;
     public static final int SORT_DATE_OLDEST = 1;
     public static final int SORT_PRICE_ASC = 2;
     public static final int SORT_PRICE_DESC = 3;
 
     private final ProductRepository repository;
+
+    // LiveData chứa danh sách gốc (tất cả sản phẩm lấy từ API về)
     private final MediatorLiveData<List<Product>> allProductsLiveData = new MediatorLiveData<>();
+
+    // LiveData chứa danh sách đang hiển thị (đã qua lọc, sắp xếp)
     private final MediatorLiveData<List<Product>> displayedProductsLiveData = new MediatorLiveData<>();
+
+    // Nguồn dữ liệu hiện tại (để switch giữa các API khác nhau)
     private LiveData<List<Product>> currentRepoSource;
 
     private int currentSortMode = SORT_DATE_NEWEST;
@@ -39,6 +46,7 @@ public class ProductViewModel extends AndroidViewModel {
         repository = new ProductRepository(application.getApplicationContext());
     }
 
+    // --- Getters ---
     public LiveData<List<Product>> getDisplayedProducts() {
         return displayedProductsLiveData;
     }
@@ -47,6 +55,7 @@ public class ProductViewModel extends AndroidViewModel {
         return displayedProductsLiveData;
     }
 
+    // --- Data Fetching & Refresh ---
     public void refreshData() {
         switchSource(repository.getAllProducts());
     }
@@ -55,12 +64,14 @@ public class ProductViewModel extends AndroidViewModel {
         refreshData();
     }
 
+    // --- API Wrappers ---
     public LiveData<Product> viewProductApi(String id) {
         return repository.viewProduct(id);
     }
 
-    public LiveData<Integer> getTotalProduct() { return repository.getTotalProduct(); }
-
+    public LiveData<Integer> getTotalProduct() {
+        return repository.getTotalProduct();
+    }
 
     public LiveData<List<Product>> getOnSaleProductsApi(int limit) {
         return repository.getOnSaleProducts(limit);
@@ -70,6 +81,40 @@ public class ProductViewModel extends AndroidViewModel {
         switchSource(repository.getProductsByCategory(categoryId));
     }
 
+    public void searchProductsByNameApi(String keyword) {
+        switchSource(repository.searchProductsByName(keyword));
+    }
+
+    public LiveData<List<Product>> getRandomProductsApi(int limit) {
+        return repository.getRandomProducts(limit);
+    }
+
+    // Các hàm CRUD sản phẩm
+    public LiveData<Product> addProductWithImage(RequestBody name, RequestBody description, RequestBody pages, RequestBody publishDate, RequestBody status, RequestBody categoryID, RequestBody authorID, RequestBody price, RequestBody quantity, MultipartBody.Part image) {
+        return repository.addProductWithImage(name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image);
+    }
+
+    public LiveData<Product> updateProductWithImage(String id, RequestBody name, RequestBody description, RequestBody pages, RequestBody publishDate, RequestBody status, RequestBody categoryID, RequestBody authorID, RequestBody price, RequestBody quantity, MultipartBody.Part image) {
+        return repository.updateProductWithImage(id, name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image);
+    }
+
+    public LiveData<Boolean> deleteProduct(String id) {
+        return repository.deleteProduct(id);
+    }
+
+    public LiveData<Product> getProductByID(String id) {
+        return repository.getProductByID(id);
+    }
+
+    public LiveData<List<Product>> getProductsByAuthor(String authorId) {
+        return repository.getProductsByAuthor(authorId);
+    }
+
+    public LiveData<List<Product>> getProductsByCategory(String categoryId) {
+        return repository.getProductsByCategory(categoryId);
+    }
+
+    // --- Helper: Switch Source ---
     private void switchSource(LiveData<List<Product>> newSource) {
         if (currentRepoSource != null) {
             displayedProductsLiveData.removeSource(currentRepoSource);
@@ -78,25 +123,18 @@ public class ProductViewModel extends AndroidViewModel {
         displayedProductsLiveData.addSource(currentRepoSource, products -> {
             if (products == null) products = new ArrayList<>();
             allProductsLiveData.setValue(products);
+            // Mỗi khi có dữ liệu mới, copy sang displayed list và sắp xếp
             List<Product> sorted = new ArrayList<>(products);
             sortListInternal(sorted, currentSortMode);
             displayedProductsLiveData.setValue(sorted);
         });
     }
 
-    public void searchProductsByNameApi(String keyword) {
-        switchSource(repository.searchProductsByName(keyword));
-    }
-    public LiveData<List<Product>> getRandomProductsApi(int limit) { return repository.getRandomProducts(limit); }
-    public LiveData<Product> addProductWithImage(RequestBody name, RequestBody description, RequestBody pages, RequestBody publishDate, RequestBody status, RequestBody categoryID, RequestBody authorID, RequestBody price, RequestBody quantity, MultipartBody.Part image) { return repository.addProductWithImage(name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image); }
-    public LiveData<Product> updateProductWithImage(String id, RequestBody name, RequestBody description, RequestBody pages, RequestBody publishDate, RequestBody status, RequestBody categoryID, RequestBody authorID, RequestBody price, RequestBody quantity, MultipartBody.Part image) { return repository.updateProductWithImage(id, name, description, pages, publishDate, status, categoryID, authorID, price, quantity, image); }
-    public LiveData<Boolean> deleteProduct(String id) { return repository.deleteProduct(id); }
-    public LiveData<Product> getProductByID(String id) { return repository.getProductByID(id); }
-    public LiveData<List<Product>> getProductsByAuthor(String authorId) { return repository.getProductsByAuthor(authorId); }
-    public LiveData<List<Product>> getProductsByCategory(String categoryId) { return repository.getProductsByCategory(categoryId); }
+    // ========================================================================
+    // CLIENT-SIDE LOGIC (XỬ LÝ TRÊN APP)
+    // ========================================================================
 
-    // --- CLIENT-SIDE LOGIC ---
-
+    // 1. Tìm kiếm (Client-side filtering)
     public void searchProducts(String query, String type) {
         List<Product> masterList = allProductsLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
@@ -126,10 +164,12 @@ public class ProductViewModel extends AndroidViewModel {
         displayedProductsLiveData.setValue(result);
     }
 
+    // 2. Lọc nhanh sản phẩm giảm giá (API)
     public void filterOnSaleProductsApi() {
         switchSource(repository.getOnSaleProducts(0));
     }
 
+    // 3. Sắp xếp
     public void sortProducts(int sortMode) {
         this.currentSortMode = sortMode;
         List<Product> current = displayedProductsLiveData.getValue();
@@ -140,41 +180,51 @@ public class ProductViewModel extends AndroidViewModel {
         displayedProductsLiveData.setValue(listToSort);
     }
 
-    public void filterProducts(boolean showSelling, boolean showStopped, List<Integer> priceRanges, List<String> categoryIds) {
+    /**
+     * [CẬP NHẬT MỚI] Hàm lọc sản phẩm chi tiết
+     * @param showSelling : Lọc trạng thái Đang bán
+     * @param showStopped : Lọc trạng thái Ngừng bán
+     * @param minPrice    : Giá thấp nhất (từ thanh trượt)
+     * @param maxPrice    : Giá cao nhất (từ thanh trượt)
+     * @param categoryIds : Danh sách ID danh mục cần lọc
+     */
+    public void filterProducts(boolean showSelling, boolean showStopped, boolean showLowStock,
+                               float minPrice, float maxPrice, boolean filterByOriginalPrice,
+                               List<String> categoryIds) {
+
         List<Product> masterList = allProductsLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
         List<Product> result = new ArrayList<>();
 
         for (Product p : masterList) {
-            // 1. Lọc theo trạng thái
+            // A. Lọc theo trạng thái
             boolean statusMatch = false;
             if (p.isStatus() && showSelling) statusMatch = true;
             if (!p.isStatus() && showStopped) statusMatch = true;
             if (!statusMatch) continue;
 
-            // 2. Lọc theo giá (ĐÃ SỬA LỖI Ở ĐÂY)
-            boolean priceMatch = false;
-            if (priceRanges == null || priceRanges.isEmpty()) {
-                priceMatch = true;
-            } else {
-                double originalPrice = p.getPrice();
-
-                // SỬA: Bỏ check null vì getDiscount() trả về int
-                double discountPercent = p.getDiscount();
-
-                // Tính giá thực tế
-                double finalPrice = originalPrice * (1 - (discountPercent / 100.0));
-
-                for (int range : priceRanges) {
-                    if (range == 0 && finalPrice >= 0 && finalPrice <= 150000) priceMatch = true;
-                    if (range == 1 && finalPrice > 150000 && finalPrice <= 300000) priceMatch = true;
-                    if (range == 2 && finalPrice > 300000 && finalPrice <= 500000) priceMatch = true;
-                    if (range == 3 && finalPrice > 500000) priceMatch = true;
-                }
+            // B. Lọc theo tồn kho (MỚI)
+            // Nếu user check "Sắp hết hàng", chỉ lấy sp có quantity < 10
+            if (showLowStock && p.getQuantity() >= 10) {
+                continue;
             }
-            if (!priceMatch) continue;
 
-            // 3. Lọc theo Category ID
+            // C. Lọc theo khoảng giá
+            double originalPrice = p.getPrice();
+            double priceToCheck;
+
+            if (filterByOriginalPrice) {
+                priceToCheck = originalPrice;
+            } else {
+                double discountPercent = p.getDiscount();
+                priceToCheck = originalPrice * (1 - (discountPercent / 100.0));
+            }
+
+            if (priceToCheck < minPrice || priceToCheck > maxPrice) {
+                continue;
+            }
+
+            // D. Lọc theo Category ID
             boolean categoryMatch = false;
             if (categoryIds == null || categoryIds.isEmpty()) {
                 categoryMatch = true;
@@ -186,30 +236,37 @@ public class ProductViewModel extends AndroidViewModel {
 
             result.add(p);
         }
+
         sortListInternal(result, currentSortMode);
         displayedProductsLiveData.setValue(result);
     }
 
+    // Helper: Logic sắp xếp nội bộ
     private void sortListInternal(List<Product> list, int sortMode) {
         SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         Collections.sort(list, (p1, p2) -> {
 
-            // SỬA: Bỏ check null cho discount ở đây luôn
+            // Tính giá thực tế để sắp xếp cho chuẩn
             double p1Price = p1.getPrice() * (1 - (p1.getDiscount() / 100.0));
             double p2Price = p2.getPrice() * (1 - (p2.getDiscount() / 100.0));
 
             if (sortMode == SORT_PRICE_ASC) return Double.compare(p1Price, p2Price);
             else if (sortMode == SORT_PRICE_DESC) return Double.compare(p2Price, p1Price);
 
+            // Sắp xếp theo ngày
             try {
                 String d1Str = p1.getCreatedAt();
                 String d2Str = p2.getCreatedAt();
+                // Xử lý null safety cho ngày
                 if (d1Str == null && d2Str == null) return 0;
                 if (d1Str == null) return 1;
                 if (d2Str == null) return -1;
+
                 Date date1 = isoFormat.parse(d1Str);
                 Date date2 = isoFormat.parse(d2Str);
+
                 if (date1 == null || date2 == null) return 0;
+
                 if (sortMode == SORT_DATE_NEWEST) return date2.compareTo(date1);
                 else return date1.compareTo(date2);
             } catch (ParseException e) {

@@ -1,9 +1,9 @@
 package com.example.fa25_duan1.view.management.statistic;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
-import android.media.Image;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,24 +14,27 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.StatisticsPagerAdapter;
+import com.example.fa25_duan1.adapter.TopProductAdapter; // Adapter mới
 import com.example.fa25_duan1.model.statistic.StatsDailyOverview;
-import com.example.fa25_duan1.model.statistic.StatsOrderStatus;
+import com.example.fa25_duan1.model.statistic.StatsOrder;
+import com.example.fa25_duan1.model.statistic.StatsProductOverview;
 import com.example.fa25_duan1.model.statistic.StatsRevenue;
+import com.example.fa25_duan1.view.management.ManageActivity;
 import com.example.fa25_duan1.viewmodel.StatisticViewModel;
-import com.github.mikephil.charting.charts.HorizontalBarChart;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.XAxis;
-import com.github.mikephil.charting.data.BarData;
-import com.github.mikephil.charting.data.BarDataSet;
-import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -58,11 +61,13 @@ public class StatisticsFragment extends Fragment {
     private TabLayout tabLayoutStats;
     private ViewPager2 viewPagerStats;
 
-    // --- ViewModel ---
+    // --- ViewModel & Adapters ---
     private StatisticViewModel viewModel;
+    private TopProductAdapter topProductAdapter; // Adapter cho list Top Sách
 
     // --- Colors ---
-    private int colorBlue, colorDarkBlue, colorRed, colorGray, colorGrayText;
+    private int colorPending, colorProcessing, colorShipping, colorCompleted, colorCancelled, colorDefault;
+    private int colorBlue, colorDarkBlue, colorGrayText;
 
     @Nullable
     @Override
@@ -86,9 +91,14 @@ public class StatisticsFragment extends Fragment {
         Context context = requireContext();
         colorBlue = ContextCompat.getColor(context, R.color.blue);
         colorDarkBlue = ContextCompat.getColor(context, R.color.dark_blue);
-        colorRed = ContextCompat.getColor(context, R.color.red);
-        colorGray = ContextCompat.getColor(context, R.color.gray);
         colorGrayText = ContextCompat.getColor(context, R.color.gray_text);
+
+        colorPending = Color.parseColor("#FF9800");
+        colorProcessing = Color.parseColor("#2196F3");
+        colorShipping = Color.parseColor("#673AB7");
+        colorCompleted = Color.parseColor("#4CAF50");
+        colorCancelled = Color.parseColor("#F44336");
+        colorDefault = Color.parseColor("#9E9E9E");
     }
 
     private void initViews(View view) {
@@ -115,9 +125,6 @@ public class StatisticsFragment extends Fragment {
         });
     }
 
-    // ========================================================================
-    // SETUP TABS & DATA LOADING
-    // ========================================================================
     private void setupTabs() {
         List<String> timeFilters = new LinkedList<>(Arrays.asList("7 ngày qua", "30 ngày qua", "Tháng này", "Năm nay"));
 
@@ -128,51 +135,78 @@ public class StatisticsFragment extends Fragment {
             public void onBindRevenue(View view) {
                 LineChart chart = view.findViewById(R.id.lineChartRevenue);
                 NiceSpinner spTimeFilter = view.findViewById(R.id.spTimeFilter);
-
                 TextView tvTotalRevenue = view.findViewById(R.id.tvStatTotalRevenue);
                 ImageView ivArrow = view.findViewById(R.id.ivArrow);
                 TextView tvGrowth = view.findViewById(R.id.tvStatGrowth);
                 TextView tvAvgOrder = view.findViewById(R.id.tvStatAvgOrder);
                 TextView tvTotalSuccess = view.findViewById(R.id.tvStatTotalSuccess);
-
                 ProgressBar pbCOD = view.findViewById(R.id.progressCOD);
                 ProgressBar pbBanking = view.findViewById(R.id.progressBanking);
                 TextView tvPercentCOD = view.findViewById(R.id.tvPercentCOD);
                 TextView tvPercentBanking = view.findViewById(R.id.tvPercentBanking);
 
                 spTimeFilter.attachDataSource(timeFilters);
-
-                // Load dữ liệu mặc định 7 ngày
                 loadRevenueData(chart, tvTotalRevenue, tvGrowth, ivArrow, tvAvgOrder, tvTotalSuccess, pbCOD, pbBanking, tvPercentCOD, tvPercentBanking, "7_days");
 
                 spTimeFilter.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
-                    String selectedPeriod = "7_days";
-                    switch (position) {
-                        case 0: selectedPeriod = "7_days"; break;
-                        case 1: selectedPeriod = "30_days"; break;
-                        case 2: selectedPeriod = "this_month"; break;
-                        case 3: selectedPeriod = "this_year"; break;
-                    }
+                    String selectedPeriod = getPeriodKey(position);
                     loadRevenueData(chart, tvTotalRevenue, tvGrowth, ivArrow, tvAvgOrder, tvTotalSuccess, pbCOD, pbBanking, tvPercentCOD, tvPercentBanking, selectedPeriod);
                 });
             }
 
-            // --- TAB 2: ĐƠN HÀNG (Giữ nguyên) ---
+            // --- TAB 2: ĐƠN HÀNG ---
             @Override
             public void onBindOrders(View view) {
                 PieChart chart = view.findViewById(R.id.pieChartOrderStatus);
                 NiceSpinner spTimeFilter = view.findViewById(R.id.spTimeFilterOrders);
                 TextView tvSuccessRate = view.findViewById(R.id.tvStatSuccessRate);
                 TextView tvCancelRate = view.findViewById(R.id.tvStatCancelRate);
+                TextView tvAvgOrderValue = view.findViewById(R.id.tvAvgOrderValue);
+                TextView tvMaxOrderValue = view.findViewById(R.id.tvMaxOrderValue);
 
                 spTimeFilter.attachDataSource(timeFilters);
-                loadOrderStatusData(chart, tvSuccessRate, tvCancelRate);
+                loadOrderStatsData(chart, tvSuccessRate, tvCancelRate, tvAvgOrderValue, tvMaxOrderValue, "7_days");
+
+                spTimeFilter.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
+                    String selectedPeriod = getPeriodKey(position);
+                    loadOrderStatsData(chart, tvSuccessRate, tvCancelRate, tvAvgOrderValue, tvMaxOrderValue, selectedPeriod);
+                });
             }
 
-            // --- TAB 3: TẠM ẨN ---
+            // --- TAB 3: TOP SÁCH (DÙNG RECYCLERVIEW) ---
             @Override
             public void onBindProducts(View view) {
-                // Không làm gì hoặc ẩn view đi
+                // Ánh xạ RecyclerView thay vì Chart
+                RecyclerView rvTopProducts = view.findViewById(R.id.rvTopProducts);
+                NiceSpinner spTimeFilter = view.findViewById(R.id.spTimeFilterProducts);
+                TextView tvLowStockAlert = view.findViewById(R.id.tvLowStockAlert);
+                TextView tvStatTotalProducts = view.findViewById(R.id.tvStatTotalProducts);
+                TextView tvStatOutOfStock = view.findViewById(R.id.tvStatOutOfStock);
+                CardView cvLowStockAlert = view.findViewById(R.id.cvLowStockAlert);
+                // Lấy View Card chứa cảnh báo tồn kho
+                View cardLowStock = (View) tvLowStockAlert.getParent().getParent().getParent();
+
+                // Cấu hình RecyclerView & Adapter
+                rvTopProducts.setLayoutManager(new LinearLayoutManager(getContext()));
+                topProductAdapter = new TopProductAdapter(getContext());
+                rvTopProducts.setAdapter(topProductAdapter);
+
+                spTimeFilter.attachDataSource(timeFilters);
+
+                // Load dữ liệu
+                loadProductOverviewData(tvLowStockAlert, tvStatTotalProducts, tvStatOutOfStock, cardLowStock, "7_days");
+
+                spTimeFilter.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
+                    String selectedPeriod = getPeriodKey(position);
+                    loadProductOverviewData(tvLowStockAlert, tvStatTotalProducts, tvStatOutOfStock, cardLowStock, selectedPeriod);
+                });
+
+                cvLowStockAlert.setOnClickListener(v -> {
+                    Intent intent = new Intent(getActivity(), ManageActivity.class);
+                    intent.putExtra(ManageActivity.EXTRA_CONTENT_FRAGMENT, "product");
+                    intent.putExtra("FILTER_LOW_STOCK", true);
+                    startActivity(intent);
+                });
             }
         });
 
@@ -182,98 +216,103 @@ public class StatisticsFragment extends Fragment {
             switch (position) {
                 case 0: tab.setText("Doanh thu"); break;
                 case 1: tab.setText("Đơn hàng"); break;
-                 case 2: tab.setText("Top Sách"); break;
+                case 2: tab.setText("Top Sách"); break;
             }
         }).attach();
     }
 
-    // --- Helper Load Data: Revenue (Chi tiết) ---
+    private String getPeriodKey(int position) {
+        switch (position) {
+            case 0: return "7_days";
+            case 1: return "30_days";
+            case 2: return "this_month";
+            case 3: return "this_year";
+            default: return "7_days";
+        }
+    }
+
+    // --- Helper Load Data ---
+
     private void loadRevenueData(LineChart chart, TextView tvTotal, TextView tvGrowth, ImageView ivArrow, TextView tvAvg, TextView tvCount,
                                  ProgressBar pbCOD, ProgressBar pbBanking, TextView txtCOD, TextView txtBanking, String period) {
-
         viewModel.getRevenueStats(period).observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.isStatus() && response.getData() != null) {
                 StatsRevenue data = response.getData();
-
-                // 1. Cập nhật Text chỉ số
                 if (tvTotal != null) tvTotal.setText(formatCurrency(data.getTotalRevenue()));
                 if (tvAvg != null) tvAvg.setText(formatCurrency(data.getAvgOrderValue()));
                 if (tvCount != null) tvCount.setText(data.getTotalOrders() + " đơn");
-
                 if (tvGrowth != null) {
                     float growth = data.getGrowth();
                     tvGrowth.setText((growth > 0 ? "+" : "") + growth + "%");
-                    tvGrowth.setTextColor(growth >= 0 ? Color.parseColor("#4CAF50") : Color.RED);
-                    ivArrow.setImageTintList(growth >= 0 ? ColorStateList.valueOf(Color.parseColor("#4CAF50")): ColorStateList.valueOf(Color.RED));
+                    int growthColor = growth >= 0 ? Color.parseColor("#4CAF50") : Color.RED;
+                    tvGrowth.setTextColor(growthColor);
+                    ivArrow.setImageTintList(ColorStateList.valueOf(growthColor));
                     ivArrow.setRotation(growth >= 0 ? 0 : 180);
                 }
-
-                // 2. Cập nhật Nguồn tiền
-                if (pbCOD != null) {
-                    pbCOD.setMax(100);
-                    pbCOD.setProgress(data.getCodPercent());
-                }
+                if (pbCOD != null) { pbCOD.setMax(100); pbCOD.setProgress(data.getCodPercent()); }
                 if (txtCOD != null) txtCOD.setText(data.getCodPercent() + "%");
-
-                if (pbBanking != null) {
-                    pbBanking.setMax(100);
-                    pbBanking.setProgress(data.getBankingPercent());
-                }
+                if (pbBanking != null) { pbBanking.setMax(100); pbBanking.setProgress(data.getBankingPercent()); }
                 if (txtBanking != null) txtBanking.setText(data.getBankingPercent() + "%");
-
-                // 3. Cập nhật biểu đồ LineChart bằng dữ liệu API
                 setupRevenueChart(chart, data.getChartData());
-            } else {
-                android.util.Log.e("STATS_DEBUG", "Response null hoặc lỗi khi load Revenue");
             }
         });
     }
 
-    // --- Helper Load Data: Order Status ---
-    private void loadOrderStatusData(PieChart chart, TextView tvSuccess, TextView tvCancel) {
-        viewModel.getOrderStatusStats().observe(getViewLifecycleOwner(), response -> {
+    private void loadOrderStatsData(PieChart chart, TextView tvSuccess, TextView tvCancel,
+                                    TextView tvAvgValue, TextView tvMaxValue, String period) {
+        viewModel.getOrderStats(period).observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.isStatus() && response.getData() != null) {
-                StatsOrderStatus stats = response.getData();
-                updateOrderStatusChart(chart, stats);
+                StatsOrder data = response.getData();
+                if (tvSuccess != null) tvSuccess.setText(data.getSuccessRate() + "%");
+                if (tvCancel != null) tvCancel.setText(data.getCancelRate() + "%");
+                if (tvAvgValue != null) tvAvgValue.setText(formatCurrency(data.getAvgOrderValue()));
+                if (tvMaxValue != null) tvMaxValue.setText(formatCurrency(data.getMaxOrderValue()));
+                setupPieChart(chart, data.getPieData());
+            } else {
+                if (chart != null) chart.clear();
+            }
+        });
+    }
 
-                int total = stats.getCompleted() + stats.getPending() + stats.getProcessing() + stats.getShipping() + stats.getCancelled();
-                if (total > 0) {
-                    float successRate = (float) stats.getCompleted() / total * 100;
-                    float cancelRate = (float) stats.getCancelled() / total * 100;
+    private void loadProductOverviewData(TextView tvLowStockAlert, TextView tvStatTotalProducts,
+                                         TextView tvStatOutOfStock, View cardLowStock, String period) {
+        viewModel.getProductOverview(period).observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.isStatus() && response.getData() != null) {
+                StatsProductOverview data = response.getData();
 
-                    if (tvSuccess != null) tvSuccess.setText(String.format("%.1f%%", successRate));
-                    if (tvCancel != null) tvCancel.setText(String.format("%.1f%%", cancelRate));
+                if (tvStatTotalProducts != null) tvStatTotalProducts.setText(data.getActiveCount() + " đầu sách");
+                if (tvStatOutOfStock != null) tvStatOutOfStock.setText(data.getOutOfStockCount() + " sản phẩm");
+
+                if (data.getLowStockCount() > 0) {
+                    if (cardLowStock != null) cardLowStock.setVisibility(View.VISIBLE);
+                    if (tvLowStockAlert != null) tvLowStockAlert.setText("Có " + data.getLowStockCount() + " sách còn dưới 10 cuốn");
+                } else {
+                    if (cardLowStock != null) cardLowStock.setVisibility(View.GONE);
+                }
+
+                // Cập nhật Adapter cho RecyclerView
+                if (topProductAdapter != null) {
+                    topProductAdapter.setList(data.getTopProducts());
                 }
             }
         });
     }
 
     // ========================================================================
-    // CẬP NHẬT BIỂU ĐỒ (VISUALS)
+    // CẤU HÌNH BIỂU ĐỒ (VISUALS)
     // ========================================================================
 
-    // [CẬP NHẬT] Hàm nhận dữ liệu API
     private void setupRevenueChart(LineChart chart, List<StatsRevenue.ChartData> apiData) {
-        if (chart == null || apiData == null || apiData.isEmpty()) {
-            chart.clear();
-            return;
-        }
-
+        if (chart == null || apiData == null || apiData.isEmpty()) { chart.clear(); return; }
         List<Entry> entries = new ArrayList<>();
         List<String> labels = new ArrayList<>();
-
-        // 1. Chuyển đổi dữ liệu API sang định dạng Chart Entry
         for (int i = 0; i < apiData.size(); i++) {
             StatsRevenue.ChartData data = apiData.get(i);
-            // Giả sử API trả về số tiền nguyên (VND), chia cho 1,000,000 để vẽ đơn vị Triệu
             entries.add(new Entry(i, data.getValue() / 1000000f));
-
-            // Lấy 5 ký tự cuối (MM-DD) và thay '-' bằng '/' cho label
             String fullDate = data.getDate();
-            String dateLabel = fullDate.substring(5).replace('-', '/');
+            String dateLabel = fullDate.length() > 5 ? fullDate.substring(5).replace('-', '/') : fullDate;
             labels.add(dateLabel);
         }
-
         LineDataSet dataSet = new LineDataSet(entries, "Doanh thu (Triệu VNĐ)");
         dataSet.setColor(colorBlue);
         dataSet.setLineWidth(2.5f);
@@ -283,11 +322,8 @@ public class StatisticsFragment extends Fragment {
         dataSet.setMode(LineDataSet.Mode.CUBIC_BEZIER);
         dataSet.setDrawFilled(true);
         dataSet.setFillDrawable(ContextCompat.getDrawable(requireContext(), R.drawable.fade_blue));
-
         LineData lineData = new LineData(dataSet);
         chart.setData(lineData);
-
-        // Styling
         chart.getDescription().setEnabled(false);
         chart.getLegend().setEnabled(false);
         chart.getAxisRight().setEnabled(false);
@@ -295,45 +331,33 @@ public class StatisticsFragment extends Fragment {
         chart.getXAxis().setDrawGridLines(false);
         chart.getAxisLeft().setDrawGridLines(true);
         chart.getAxisLeft().setGridColor(Color.parseColor("#E0E0E0"));
-
-        // Thiết lập nhãn X-Axis từ dữ liệu API
         chart.getXAxis().setValueFormatter(new IndexAxisValueFormatter(labels));
-        chart.getXAxis().setLabelCount(labels.size(), true); // Bắt buộc hiện hết nhãn
+        chart.getXAxis().setLabelCount(labels.size(), true);
         chart.getXAxis().setTextColor(colorGrayText);
-
         chart.animateY(1000);
         chart.invalidate();
     }
 
-    private void updateOrderStatusChart(PieChart chart, StatsOrderStatus stats) {
+    private void setupPieChart(PieChart chart, List<StatsOrder.PieDataEntry> pieDataList) {
         if (chart == null) return;
-
+        if (pieDataList == null || pieDataList.isEmpty()) { chart.clear(); chart.setCenterText("Chưa có\ndữ liệu"); chart.invalidate(); return; }
         List<PieEntry> entries = new ArrayList<>();
-        int completed = stats.getCompleted();
-        int processing = stats.getPending() + stats.getProcessing() + stats.getShipping();
-        int cancelled = stats.getCancelled();
-
-        if (completed > 0) entries.add(new PieEntry(completed, "Hoàn thành"));
-        if (processing > 0) entries.add(new PieEntry(processing, "Đang xử lý"));
-        if (cancelled > 0) entries.add(new PieEntry(cancelled, "Đã hủy"));
-
-        if (entries.isEmpty()) {
-            chart.clear();
-            chart.setCenterText("Chưa có\ndữ liệu");
-            return;
+        List<Integer> colors = new ArrayList<>();
+        int totalOrders = 0;
+        for (StatsOrder.PieDataEntry item : pieDataList) {
+            if (item.getValue() > 0) {
+                String label = item.getLabel();
+                entries.add(new PieEntry(item.getValue(), label));
+                colors.add(getColorForStatus(label));
+                totalOrders += item.getValue();
+            }
         }
-
+        if (entries.isEmpty()) { chart.clear(); return; }
         PieDataSet dataSet = new PieDataSet(entries, "");
-        ArrayList<Integer> colors = new ArrayList<>();
-        if (completed > 0) colors.add(colorBlue);
-        if (processing > 0) colors.add(colorGray);
-        if (cancelled > 0) colors.add(colorRed);
         dataSet.setColors(colors);
-
         dataSet.setValueTextColor(Color.WHITE);
         dataSet.setValueTextSize(12f);
         dataSet.setValueFormatter(new PercentFormatter(chart));
-
         PieData pieData = new PieData(dataSet);
         chart.setData(pieData);
         chart.setUsePercentValues(true);
@@ -342,27 +366,30 @@ public class StatisticsFragment extends Fragment {
         chart.setHoleColor(Color.WHITE);
         chart.setTransparentCircleRadius(0f);
         chart.setHoleRadius(50f);
-
-        int total = completed + processing + cancelled;
-        chart.setCenterText("Tổng đơn\n" + total);
+        chart.setCenterText("Tổng đơn\n" + totalOrders);
         chart.setCenterTextSize(16f);
         chart.setCenterTextColor(colorGrayText);
-        chart.getLegend().setTextColor(colorGrayText);
         chart.getLegend().setEnabled(true);
-        chart.setEntryLabelColor(Color.WHITE);
+        chart.getLegend().setTextColor(colorGrayText);
         chart.setEntryLabelTextSize(0f);
-
         chart.animateY(1000);
         chart.invalidate();
     }
 
+    private int getColorForStatus(String label) {
+        if (label == null) return colorDefault;
+        String status = label.toLowerCase();
+        if (status.contains("hoàn thành") || status.contains("completed") || status.contains("success") || status.contains("delivered")) return colorCompleted;
+        if (status.contains("đang giao") || status.contains("shipping") || status.contains("on the way")) return colorShipping;
+        if (status.contains("đang xử lý") || status.contains("processing") || status.contains("packed")) return colorProcessing;
+        if (status.contains("chờ") || status.contains("pending") || status.contains("wait")) return colorPending;
+        if (status.contains("hủy") || status.contains("cancel") || status.contains("fail") || status.contains("return")) return colorCancelled;
+        return colorDefault;
+    }
+
     private String formatCurrency(long amount) {
-        if (amount >= 1000000000) {
-            return String.format("%.1fB", amount / 1000000000.0);
-        } else if (amount >= 1000000) {
-            return String.format("%.1fTr", amount / 1000000.0);
-        } else {
-            return new DecimalFormat("###,###").format(amount) + "đ";
-        }
+        if (amount >= 1000000000) return String.format("%.1fB", amount / 1000000000.0);
+        else if (amount >= 1000000) return String.format("%.1fTr", amount / 1000000.0);
+        else return new DecimalFormat("###,###").format(amount) + "đ";
     }
 }

@@ -289,11 +289,12 @@ public class CheckoutFragment extends Fragment {
                 // --- THÀNH CÔNG ---
 
                 // Quan trọng: Làm mới giỏ hàng để số lượng về 0 (Badge update)
-                cartViewModel.refreshCart();
+
 
                 // Lấy OrderId hiển thị
                 String orderId = (response.getData() != null) ? response.getData().getOrderId() : "Mới";
                 showSuccessCheckoutDialog(orderId);
+
 
             } else {
                 // --- THẤT BẠI ---

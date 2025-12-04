@@ -34,7 +34,7 @@ public class CartViewModel extends AndroidViewModel {
         super(application);
         repository = new CartRepository(application);
         // Tự động tải giỏ hàng khi khởi tạo ViewModel
-        refreshCart();
+//        refreshCart();
     }
 
     // --- Getters cho UI observe ---

@@ -22,11 +22,13 @@ import com.example.fa25_duan1.adapter.CategoryProductAdapter;
 import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
+import com.google.android.material.slider.RangeSlider;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
 import org.angmarch.views.NiceSpinner;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -43,7 +45,7 @@ public class ProductFilterFragment extends Fragment {
     private ImageView ivClose;
     private NiceSpinner spSort;
 
-    // Toggle controls (để bấm vào mở filter)
+    // Toggle controls
     private TextView tvFilterLabel;
     private ImageView ivFilterIcon;
 
@@ -53,13 +55,18 @@ public class ProductFilterFragment extends Fragment {
     // CheckBox Trạng thái
     private CheckBox cbSelling, cbNotSelling;
 
-    // CheckBox Giá
-    private CheckBox cbPrice0, cbPrice150, cbPrice3, cbPrice4;
+    // CheckBox Tồn kho (MỚI)
+    private CheckBox cbLowStock;
+
+    // Range Slider
+    private RangeSlider rsPrice;
+    private TextView tvMinPrice, tvMaxPrice;
 
     // ViewModels & Adapter
     private ProductViewModel viewModel;
     private CategoryViewModel categoryViewModel;
     private CategoryProductAdapter categoryAdapter;
+    private boolean pendingLowStockFilter = false;
 
     // Quản lý đa chọn Category
     private final Set<String> selectedCategoryIds = new HashSet<>();
@@ -68,7 +75,6 @@ public class ProductFilterFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Đảm bảo file layout của bạn tên là fragment_productfilter (hoặc tên file XML bạn đã gộp)
         view = inflater.inflate(R.layout.fragment_productfilter, container, false);
         return view;
     }
@@ -78,14 +84,32 @@ public class ProductFilterFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         initViews(view);
-        initViewModels();
+        initViewModels(); // Observer nằm trong này
         setupCategoryRecyclerView();
         setupSpinner();
         setupEvents();
+
+
+// 2. KIỂM TRA INTENT VÀ BẬT CỜ
+        if (getActivity() != null && getActivity().getIntent() != null) {
+            boolean isFilterRequest = getActivity().getIntent().getBooleanExtra("FILTER_LOW_STOCK", false);
+
+            if (isFilterRequest) {
+                pendingLowStockFilter = true; // Đánh dấu: Cần lọc ngay khi data về
+
+                // Tích sẵn vào checkbox (nhưng chưa lọc được vì data chưa về)
+                if (cbLowStock != null) cbLowStock.setChecked(true);
+
+                // Xóa extra để không bị lọc lại khi xoay màn hình
+                getActivity().getIntent().removeExtra("FILTER_LOW_STOCK");
+            }
+        }
+
+        // 3. LUÔN GỌI REFRESH DATA (Để lấy dữ liệu gốc về trước)
+        viewModel.refreshData();
     }
 
     private void initViews(View view) {
-        // Header & Layout
         clFilter = view.findViewById(R.id.clFilter);
         expandableLayout = view.findViewById(R.id.expandable_layout);
         ivClose = view.findViewById(R.id.ivClose);
@@ -93,57 +117,60 @@ public class ProductFilterFragment extends Fragment {
         tvFilterLabel = view.findViewById(R.id.tv_filter);
         ivFilterIcon = view.findViewById(R.id.ivFilter);
 
-        // RecyclerView Category
         rvCategories = view.findViewById(R.id.rvCategories);
 
-        // CheckBox Trạng thái
         cbSelling = view.findViewById(R.id.cbSelling);
         cbNotSelling = view.findViewById(R.id.cbNotSelling);
 
-        // CheckBox Giá
-        cbPrice0 = view.findViewById(R.id.cbPrice0);
-        cbPrice150 = view.findViewById(R.id.cbPrice150);
-        cbPrice3 = view.findViewById(R.id.cbPrice3);
-        cbPrice4 = view.findViewById(R.id.cbPrice4);
+        // Map checkbox Tồn kho
+        cbLowStock = view.findViewById(R.id.cbLowStock);
 
-        // Mặc định chọn hiển thị sản phẩm "Đang bán"
-        cbSelling.setChecked(true);
-        // Tùy logic: ban đầu có muốn hiện hàng ngừng bán ko? Nếu có thì set true
-        cbNotSelling.setChecked(false);
+        rsPrice = view.findViewById(R.id.rsPrice);
+        tvMinPrice = view.findViewById(R.id.tvMinPrice);
+        tvMaxPrice = view.findViewById(R.id.tvMaxPrice);
+
+        if (cbSelling != null) cbSelling.setChecked(true);
+        if (cbNotSelling != null) cbNotSelling.setChecked(false);
     }
 
     private void initViewModels() {
         viewModel = new ViewModelProvider(requireActivity()).get(ProductViewModel.class);
         categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
+
+        // 4. LẮNG NGHE DỮ LIỆU VỀ
+        viewModel.getDisplayedProducts().observe(getViewLifecycleOwner(), products -> {
+            // Khi có dữ liệu mới về và danh sách không rỗng
+            if (products != null && !products.isEmpty()) {
+
+                // Kiểm tra xem có cờ "Chờ lọc" không
+                if (pendingLowStockFilter) {
+                    applyFilters();
+                    pendingLowStockFilter = false;
+                }
+            }
+        });
     }
 
     private void setupCategoryRecyclerView() {
-        // Init Adapter với callback xử lý click
         categoryAdapter = new CategoryProductAdapter(requireContext(), new ArrayList<>(), (category, position) -> {
             handleCategoryClick(category);
         });
 
-        // Setup LayoutManager (Ngang)
         LinearLayoutManager layoutManager = new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false);
         rvCategories.setLayoutManager(layoutManager);
         rvCategories.setAdapter(categoryAdapter);
 
-        // Observe Data từ ViewModel
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 mCategoryList.clear();
-
-                // 1. Tạo mục "Tất cả"
                 Category allCategory = new Category("Tất cả", true);
-                allCategory.setCreateAt("ALL"); // ID định danh cho mục Tất cả
+                allCategory.setCateID("ALL");
                 mCategoryList.add(allCategory);
 
-                // 2. Thêm danh sách từ API
                 for (Category c : categories) {
-                    c.setSelected(false); // Reset trạng thái chọn
+                    c.setSelected(false);
                     mCategoryList.add(c);
                 }
-
                 categoryAdapter.setCategoryList(mCategoryList);
             }
         });
@@ -151,10 +178,8 @@ public class ProductFilterFragment extends Fragment {
 
     private void handleCategoryClick(Category clickedCategory) {
         String cateId = clickedCategory.get_id();
-
-        // Logic chọn/bỏ chọn
         if (cateId == null || cateId.equals("ALL")) {
-            selectedCategoryIds.clear(); // Chọn tất cả -> Xóa các filter con
+            selectedCategoryIds.clear();
         } else {
             if (selectedCategoryIds.contains(cateId)) {
                 selectedCategoryIds.remove(cateId);
@@ -162,17 +187,12 @@ public class ProductFilterFragment extends Fragment {
                 selectedCategoryIds.add(cateId);
             }
         }
-
-        // Cập nhật UI (Highlight item được chọn)
         updateCategorySelectionUI();
-
-        // Gọi hàm lọc
         applyFilters();
     }
 
     private void updateCategorySelectionUI() {
         boolean isAllSelected = selectedCategoryIds.isEmpty();
-
         for (Category c : mCategoryList) {
             String id = c.get_id();
             if (id == null || id.equals("ALL")) {
@@ -186,13 +206,9 @@ public class ProductFilterFragment extends Fragment {
 
     private void setupSpinner() {
         LinkedList<String> data = new LinkedList<>(Arrays.asList(
-                "Mới nhất",       // 0
-                "Cũ nhất",        // 1
-                "Giá tăng dần",   // 2
-                "Giá giảm dần"    // 3
+                "Mới nhất", "Cũ nhất", "Giá tăng dần", "Giá giảm dần"
         ));
         spSort.attachDataSource(data);
-
         spSort.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
             switch (position) {
                 case 0: viewModel.sortProducts(ProductViewModel.SORT_DATE_NEWEST); break;
@@ -204,53 +220,54 @@ public class ProductFilterFragment extends Fragment {
     }
 
     private void setupEvents() {
-        // Toggle Filter: Click vào chữ hoặc icon đều mở
         View.OnClickListener toggleListener = v -> toggleFilter();
         tvFilterLabel.setOnClickListener(toggleListener);
         ivFilterIcon.setOnClickListener(toggleListener);
-
-        // Nút đóng
         ivClose.setOnClickListener(v -> expandableLayout.collapse());
 
-        // Lắng nghe sự kiện checkbox thay đổi -> Lọc ngay lập tức
         CompoundButton.OnCheckedChangeListener filterListener = (buttonView, isChecked) -> applyFilters();
+        if (cbSelling != null) cbSelling.setOnCheckedChangeListener(filterListener);
+        if (cbNotSelling != null) cbNotSelling.setOnCheckedChangeListener(filterListener);
 
-        cbSelling.setOnCheckedChangeListener(filterListener);
-        cbNotSelling.setOnCheckedChangeListener(filterListener);
+        // Lắng nghe sự kiện checkbox Tồn kho
+        if (cbLowStock != null) cbLowStock.setOnCheckedChangeListener(filterListener);
 
-        cbPrice0.setOnCheckedChangeListener(filterListener);
-        cbPrice150.setOnCheckedChangeListener(filterListener);
-        cbPrice3.setOnCheckedChangeListener(filterListener);
-        cbPrice4.setOnCheckedChangeListener(filterListener);
+        rsPrice.setValues(20000f, 500000f);
+        rsPrice.addOnChangeListener((slider, value, fromUser) -> {
+            List<Float> values = slider.getValues();
+            tvMinPrice.setText(formatCurrency(values.get(0)));
+            tvMaxPrice.setText(formatCurrency(values.get(1)));
+            applyFilters();
+        });
     }
 
     private void toggleFilter() {
-        if (expandableLayout.isExpanded()) {
-            expandableLayout.collapse();
-        } else {
-            expandableLayout.expand();
-        }
+        if (expandableLayout.isExpanded()) expandableLayout.collapse();
+        else expandableLayout.expand();
     }
 
-    /**
-     * Thu thập toàn bộ điều kiện từ UI và gửi cho ViewModel
-     */
     private void applyFilters() {
-        // 1. Lấy Trạng thái
-        boolean showSelling = cbSelling.isChecked();
-        boolean showStopped = cbNotSelling.isChecked();
+        boolean showSelling = (cbSelling != null) && cbSelling.isChecked();
+        boolean showStopped = (cbNotSelling != null) && cbNotSelling.isChecked();
+        if (!showSelling && !showStopped) { showSelling = true; showStopped = true; }
 
-        // 2. Lấy Khoảng giá
-        List<Integer> priceRanges = new ArrayList<>();
-        if (cbPrice0.isChecked()) priceRanges.add(0);
-        if (cbPrice150.isChecked()) priceRanges.add(1);
-        if (cbPrice3.isChecked()) priceRanges.add(2);
-        if (cbPrice4.isChecked()) priceRanges.add(3);
+        // Lấy giá trị checkbox Tồn kho
+        boolean showLowStock = (cbLowStock != null) && cbLowStock.isChecked();
 
-        // 3. Lấy Danh mục (Chuyển Set -> List)
+        List<Float> values = rsPrice.getValues();
+        float minPrice = values.get(0);
+        float maxPrice = values.get(1);
+
         List<String> categoriesToFilter = new ArrayList<>(selectedCategoryIds);
 
-        // 4. Gửi yêu cầu lọc
-        viewModel.filterProducts(showSelling, showStopped, priceRanges, categoriesToFilter);
+        // Gọi ViewModel với tham số mới
+        // showLowStock: true/false
+        // filterByOriginalPrice: true (Admin luôn lọc theo giá gốc)
+        viewModel.filterProducts(showSelling, showStopped, showLowStock, minPrice, maxPrice, true, categoriesToFilter);
+    }
+
+    private String formatCurrency(float amount) {
+        DecimalFormat formatter = new DecimalFormat("###,###");
+        return formatter.format(amount) + "đ";
     }
 }

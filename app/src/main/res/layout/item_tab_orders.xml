@@ -188,46 +188,50 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Phương thức thanh toán"
+                    android:text="Chỉ số bán hàng"
                     android:fontFamily="@font/robotoserif_bold"
                     android:textSize="14sp"
                     android:textColor="@color/black"
-                    android:layout_marginBottom="12dp"/>
+                    android:layout_marginBottom="16dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="12dp">
 
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_money"
+                        app:tint="@color/blue"
+                        android:contentDescription="icon_money"/>
                     <TextView
-                        android:layout_width="120dp"
-                        android:layout_height="wrap_content"
-                        android:text="Tiền mặt (COD)"
-                        android:textSize="12sp"
-                        android:textColor="@color/gray_text"/>
-
-                    <ProgressBar
-                        android:id="@+id/progressCOD"
                         android:layout_width="0dp"
-                        android:layout_height="6dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:progress="70"
-                        android:progressTint="@color/blue"
-                        android:layout_marginEnd="8dp"/>
+                        android:text="Giá trị đơn trung bình"
+                        android:textSize="13sp"
+                        android:layout_marginStart="12dp"
+                        android:textColor="@color/gray_text"
+                        android:fontFamily="@font/robotoserif_regular"/>
 
                     <TextView
-                        android:id="@+id/tvPercentCOD"
-                        android:layout_width="40dp"
+                        android:id="@+id/tvAvgOrderValue"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="70%"
-                        android:gravity="end"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        android:textColor="@color/black"/>
+                        android:text="450.000đ"
+                        android:textSize="14sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/robotoserif_bold"/>
                 </LinearLayout>
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#F0F0F0"
+                    android:layout_marginBottom="12dp"/>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -235,32 +239,30 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical">
 
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:src="@drawable/ic_statistic"
+                        app:tint="@color/blue"
+                        android:contentDescription="icon_trending"/>
                     <TextView
-                        android:layout_width="120dp"
-                        android:layout_height="wrap_content"
-                        android:text="Chuyển khoản"
-                        android:textSize="12sp"
-                        android:textColor="@color/gray_text"/>
-
-                    <ProgressBar
-                        android:id="@+id/progressBanking"
                         android:layout_width="0dp"
-                        android:layout_height="6dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        style="?android:attr/progressBarStyleHorizontal"
-                        android:progress="30"
-                        android:progressTint="#4CAF50"
-                        android:layout_marginEnd="8dp"/>
+                        android:text="Đơn hàng cao nhất"
+                        android:textSize="13sp"
+                        android:layout_marginStart="12dp"
+                        android:textColor="@color/gray_text"
+                        android:fontFamily="@font/robotoserif_regular"/>
 
                     <TextView
-                        android:id="@+id/tvPercentBanking"
-                        android:layout_width="40dp"
+                        android:id="@+id/tvMaxOrderValue"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="30%"
-                        android:gravity="end"
-                        android:textStyle="bold"
-                        android:textSize="12sp"
-                        android:textColor="@color/black"/>
+                        android:text="2.100.000đ"
+                        android:textSize="14sp"
+                        android:textColor="@color/black"
+                        android:fontFamily="@font/robotoserif_bold"/>
                 </LinearLayout>
 
             </LinearLayout>
