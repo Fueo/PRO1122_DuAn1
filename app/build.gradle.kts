@@ -18,8 +18,7 @@ android {
     buildTypes {
         getByName("debug") {
             isMinifyEnabled = false
-            buildConfigField("String", "BASE_URL_ATHOME", "\"http://192.168.1.4:3002/\"")
-            buildConfigField("String", "BASE_URL_ATSCHOOL", "\"http://172.16.104.27:3002/\"")
+            buildConfigField("String", "BASE_URL", "\"https://unfitting-cyclicly-dell.ngrok-free.dev/\"")
         }
 
         getByName("release") {
@@ -69,10 +68,8 @@ dependencies {
     implementation ("com.github.arcadefire:nice-spinner:1.4.4")
     implementation ("com.google.android.material:material:1.13.0")
     implementation ("com.github.CuteLibs:CuteDialog:2.1")
-    implementation ("com.airbnb.android:lottie:3.3.6")
     implementation ("io.github.shashank02051997:FancyToast:2.0.2")
     implementation ("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
-    // Thư viện momo
-    implementation ("com.github.momo-wallet:mobile-sdk:1.0.7")
+
 }

@@ -45,7 +45,7 @@
                     android:background="?attr/selectableItemBackground"
                     android:fontFamily="@font/robotoserif_bold"
                     android:padding="4dp"
-                    android:text="@string/thay_doi_checkout"
+                    android:text="Thay đổi"
                     android:textColor="@color/blue"
                     android:textSize="14sp" />
             </RelativeLayout>
@@ -156,24 +156,23 @@
                     android:textSize="15sp" />
 
                 <RadioButton
-                    android:id="@+id/rb_momo"
+                    android:id="@+id/rb_qr_payment"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:fontFamily="@font/robotoserif_regular"
                     android:paddingStart="8dp"
                     android:buttonTint="@color/blue"
-                    android:text="Chuyển khoản qua Momo"
+                    android:text="Chuyển khoản ngân hàng (VietQR)"
                     android:textColor="@color/black"
                     android:textSize="15sp" />
             </RadioGroup>
 
             <net.cachapa.expandablelayout.ExpandableLayout
-                android:id="@+id/expandable_momo"
+                android:id="@+id/expandable_qr"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:layout_marginStart="32dp"
                 app:el_duration="300"
                 app:el_expanded="false">
 
@@ -182,53 +181,47 @@
                     android:layout_height="wrap_content"
                     android:background="@drawable/rounded_border_background"
                     android:orientation="vertical"
-                    android:padding="12dp">
+                    android:padding="16dp">
 
-                    <LinearLayout
+                    <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <ImageView
-                            android:layout_width="30dp"
-                            android:layout_height="30dp"
-                            android:src="@drawable/ic_momo_logo" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:fontFamily="@font/robotoserif_bold"
-                            android:text="Thông tin chuyển khoản"
-                            android:textColor="#A50064"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
                         android:fontFamily="@font/robotoserif_regular"
-                        android:text="Chủ TK: NGUYEN VAN A"
-                        android:textColor="@color/black" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:fontFamily="@font/robotoserif_regular"
-                        android:text="SĐT: 0912 345 678"
-                        android:textColor="@color/black" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:fontFamily="@font/robotoserif_regular"
-                        android:text="Nội dung: [Tên] + [SĐT]"
+                        android:gravity="center"
+                        android:text="Quét mã để thanh toán"
                         android:textColor="@color/gray_text"
-                        android:textSize="12sp" />
+                        android:textSize="14sp" />
+
+                    <ImageView
+                        android:id="@+id/img_qr_code"
+                        android:layout_width="200dp"
+                        android:layout_height="200dp"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="12dp"
+                        android:scaleType="fitCenter"
+                        android:src="@color/white"/>
+                    <TextView
+                        android:id="@+id/tv_bank_info"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:fontFamily="@font/robotoserif_bold"
+                        android:gravity="center"
+                        android:text="MB Bank - 0987654321"
+                        android:textColor="@color/blue"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:gravity="center"
+                        android:text="Nội dung sẽ được điền tự động"
+                        android:textColor="@color/gray_text"
+                        android:textSize="12sp"
+                        android:textStyle="italic" />
+
                 </LinearLayout>
             </net.cachapa.expandablelayout.ExpandableLayout>
 

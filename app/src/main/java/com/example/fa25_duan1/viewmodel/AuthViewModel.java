@@ -69,4 +69,13 @@ public class AuthViewModel extends AndroidViewModel {
     public LiveData<String> checkOtpForgot(String email, String otp) {
         return repository.checkOtpForgot(email, otp);
     }
+
+    public LiveData<String> sendUpdateProfileOtp() {
+        return repository.sendUpdateProfileOtp();
+    }
+
+    // --- [MỚI] Kiểm tra OTP hợp lệ ---
+    public LiveData<String> checkOtpValid(String otp) {
+        return repository.checkOtpValid(otp);
+    }
 }

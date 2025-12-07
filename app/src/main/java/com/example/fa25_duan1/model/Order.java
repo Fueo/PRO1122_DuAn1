@@ -25,18 +25,30 @@ public class Order implements Serializable {
     private String paymentMethod;
 
     @SerializedName("total")
-    private double total; // Backend trả về số (Number), nên dùng double hoặc long
+    private double total;
 
     @SerializedName("status")
     private String status;
 
     @SerializedName(value = "createAt", alternate = {"createdAt", "date"})
     private String date;
-    // Đây là phần quan trọng nhất: Danh sách chi tiết được lồng bên trong
+
+    // --- CÁC THUỘC TÍNH MỚI CẬP NHẬT ---
+
+    // 1. Mã giao dịch (Quan trọng cho QR Code)
+    @SerializedName("transactionCode")
+    private String transactionCode;
+
+    // 2. Trạng thái đã thanh toán hay chưa (Quan trọng cho Polling)
+    @SerializedName("isPaid")
+    private boolean isPaid;
+
+    // -------------------------------------
+
     @SerializedName("orderDetails")
     private List<OrderDetail> orderDetails;
 
-    // Biến này dùng cho UI (xổ ra/thu vào), không gửi lên server
+    // Biến UI (không map từ server)
     private boolean expanded = false;
 
     public Order() {
@@ -53,6 +65,11 @@ public class Order implements Serializable {
     public double getTotal() { return total; }
     public String getStatus() { return status; }
     public String getDate() { return date; }
+
+    // Getter cho thuộc tính mới
+    public String getTransactionCode() { return transactionCode; }
+    public boolean isPaid() { return isPaid; }
+
     public List<OrderDetail> getOrderDetails() { return orderDetails; }
 
     public boolean isExpanded() { return expanded; }

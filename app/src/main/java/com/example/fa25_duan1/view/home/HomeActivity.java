@@ -6,7 +6,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View; // Import View
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.User;
+import com.example.fa25_duan1.view.detail.DetailActivity; // Import DetailActivity
 import com.example.fa25_duan1.view.home.ProductFragment;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
@@ -24,7 +25,7 @@ public class HomeActivity extends AppCompatActivity {
 
     private BottomNavigationView bottomNavigationView;
     private AuthViewModel authViewModel;
-    private View layoutLoading; // Khai báo biến Layout Loading
+    private View layoutLoading;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,14 +34,14 @@ public class HomeActivity extends AppCompatActivity {
         setContentView(R.layout.activity_home);
 
         bottomNavigationView = findViewById(R.id.bottom_navigation);
-        layoutLoading = findViewById(R.id.layout_loading); // Ánh xạ Layout Loading
+        layoutLoading = findViewById(R.id.layout_loading);
 
         // 1. Nạp Header
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_header, new HeaderHomeFragment())
                 .commit();
 
-        // 2. Xử lý Intent
+        // 2. Xử lý Intent (Quan trọng)
         handleIntent(getIntent());
 
         // 3. Setup ViewModel
@@ -50,7 +51,6 @@ public class HomeActivity extends AppCompatActivity {
         // 4. Click Menu
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            // Logic chọn Fragment
             Fragment selectedFragment = null;
             if (id == R.id.nav_home) {
                 selectedFragment = new HomeFragment();
@@ -77,17 +77,46 @@ public class HomeActivity extends AppCompatActivity {
     }
 
     private void handleIntent(Intent intent) {
-        if (intent != null && "product".equals(intent.getStringExtra("target_fragment"))) {
+        if (intent == null) return;
+
+        String target = intent.getStringExtra("target_fragment");
+
+        if ("product".equals(target)) {
+            // Case 1: Mở màn hình tìm kiếm sản phẩm
             String query = intent.getStringExtra("search_query");
             ProductFragment productFragment = new ProductFragment();
             Bundle args = new Bundle();
             args.putString("search_query", query);
             productFragment.setArguments(args);
             loadFragment(productFragment, true);
+
+        } else if ("payment_qr".equals(target)) {
+            // Case 2: [MỚI] Mở màn hình thanh toán QR từ Checkout
+            String orderId = intent.getStringExtra("ORDER_ID");
+            long totalAmount = intent.getLongExtra("TOTAL_AMOUNT", 0);
+            String transCode = intent.getStringExtra("TRANS_CODE");
+
+            // Mở DetailActivity chứa PaymentFragment đè lên trên Home
+            Intent paymentIntent = new Intent(this, DetailActivity.class);
+            paymentIntent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thanh toán QR");
+            paymentIntent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "payment");
+            paymentIntent.putExtra("ORDER_ID", orderId);
+            paymentIntent.putExtra("TOTAL_AMOUNT", totalAmount);
+            paymentIntent.putExtra("TRANS_CODE", transCode);
+
+            startActivity(paymentIntent);
+
+            // Lưu ý: KHÔNG loadFragment gì cả ở Home, để Home giữ nguyên trạng thái cũ (hoặc load HomeFragment mặc định)
+            // Nếu bạn muốn Home ở dưới load lại trang chủ cho mới thì:
+            loadFragment(new HomeFragment(), true);
+
         } else {
+            // Mặc định load Home
             loadFragment(new HomeFragment(), true);
         }
     }
+
+    // ... (Rest of the class methods: checkUserRole, loadFragment, showLoading, hideLoading... remain unchanged) ...
 
     private void checkUserRole() {
         authViewModel.getMyInfo().observe(this, response -> {
@@ -102,37 +131,21 @@ public class HomeActivity extends AppCompatActivity {
         });
     }
 
-    // --- CẬP NHẬT HÀM LOAD FRAGMENT ---
     public void loadFragment(@NonNull Fragment fragment, boolean showBottomNav) {
-        // 1. Hiện Loading ngay lập tức
         showLoading();
-
-        // 2. Thực hiện chuyển Fragment
         getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_content, fragment)
                 .addToBackStack(null)
                 .commit();
-
         bottomNavigationView.setVisibility(showBottomNav ? BottomNavigationView.VISIBLE : BottomNavigationView.GONE);
-
-        // 3. Ẩn Loading sau 1 khoảng thời gian (Ví dụ 800ms) để tạo hiệu ứng mượt
-        // Đây là cách đơn giản nhất: Giả lập thời gian load
-        new Handler(Looper.getMainLooper()).postDelayed(() -> {
-            hideLoading();
-        }, 800);
+        new Handler(Looper.getMainLooper()).postDelayed(this::hideLoading, 800);
     }
 
-    // Hàm hiển thị Loading (Public để Fragment có thể gọi nếu cần)
     public void showLoading() {
-        if (layoutLoading != null) {
-            layoutLoading.setVisibility(View.VISIBLE);
-        }
+        if (layoutLoading != null) layoutLoading.setVisibility(View.VISIBLE);
     }
 
-    // Hàm ẩn Loading (Public để Fragment gọi khi data thật đã về)
     public void hideLoading() {
-        if (layoutLoading != null) {
-            layoutLoading.setVisibility(View.GONE);
-        }
+        if (layoutLoading != null) layoutLoading.setVisibility(View.GONE);
     }
 }

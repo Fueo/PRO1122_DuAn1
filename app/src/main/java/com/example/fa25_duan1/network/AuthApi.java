@@ -82,4 +82,12 @@ public interface AuthApi {
             @Field("username") String username,
             @Field("email") String email
     );
+
+    @POST("auth/send-update-profile-otp")
+    Call<ApiResponse<Object>> sendUpdateProfileOtp();
+
+    // --- [MỚI] Kiểm tra OTP xem đúng không (Pre-check) ---
+    @FormUrlEncoded
+    @POST("auth/check-otp-valid")
+    Call<ApiResponse<Object>> checkOtpValid(@Field("otp") String otp);
 }

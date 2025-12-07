@@ -57,6 +57,7 @@ public class OrderViewModel extends AndroidViewModel {
 
     public LiveData<ApiResponse<CheckoutResponse>> checkout(String fullname, String address, String phone, String note, String paymentMethod) {
         CheckoutRequest request = new CheckoutRequest(fullname, address, phone, note, paymentMethod);
+
         return repository.checkout(request);
     }
 

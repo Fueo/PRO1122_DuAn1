@@ -58,9 +58,9 @@ public class OrderHistoryFragment extends Fragment {
 
         // Khởi tạo ViewModel
         orderViewModel = new ViewModelProvider(this).get(OrderViewModel.class);
-        // Dùng requireActivity để CartViewModel sống chung với Activity (giữ data giỏ hàng toàn cục)
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
 
+        // Khởi tạo Adapter với đầy đủ Callback
         orderAdapter = new OrderAdapter(getContext(), orderList, new OrderAdapter.OnOrderActionListener() {
             @Override
             public void onCancelOrder(String orderId) {
@@ -75,6 +75,12 @@ public class OrderHistoryFragment extends Fragment {
             @Override
             public void onViewDetail(Order order) {
                 openViewActivity(order);
+            }
+
+            @Override
+            public void onPayNowClick(Order order) {
+                // [MỚI] Xử lý sự kiện bấm nút Thanh toán
+                handlePayNow(order);
             }
         });
         rvOrders.setAdapter(orderAdapter);
@@ -102,13 +108,32 @@ public class OrderHistoryFragment extends Fragment {
     }
 
     // =========================================================================
-    // LOGIC ĐẶT LẠI ĐƠN HÀNG (REPURCHASE)
+    // [MỚI] LOGIC THANH TOÁN (PAY NOW)
+    // =========================================================================
+
+    private void handlePayNow(Order order) {
+        if (order == null) return;
+
+        // Chuẩn bị Intent sang màn hình Payment (DetailActivity chứa PaymentFragment)
+        Intent intent = new Intent(getContext(), DetailActivity.class);
+        intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thanh toán QR");
+        intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "payment");
+
+        // Truyền dữ liệu cần thiết cho PaymentFragment
+        // Các Key này phải KHỚP CHÍNH XÁC với bên PaymentFragment.java
+        intent.putExtra("ORDER_ID", order.getId());
+        intent.putExtra("TOTAL_AMOUNT", (long) order.getTotal()); // Cast về long cho chắc
+        intent.putExtra("TRANS_CODE", order.getTransactionCode()); // Mã giao dịch (VD: CB12345)
+
+        startActivity(intent);
+    }
+
+    // =========================================================================
+    // LOGIC ĐẶT LẠI ĐƠN HÀNG (REPURCHASE) - (Giữ nguyên)
     // =========================================================================
 
     private void handleRepurchaseOrder(Order order) {
         FancyToast.makeText(getContext(), "Đang xử lý đặt lại đơn...", FancyToast.LENGTH_SHORT, FancyToast.INFO, false).show();
-
-        // Bước 1: Xóa giỏ hàng hiện tại (Bất kể thành công hay thất bại)
         observeOnce(cartViewModel.clearCart(), isCleared -> {
             prepareAndAddItems(order);
         });
@@ -120,7 +145,6 @@ public class OrderHistoryFragment extends Fragment {
             return;
         }
 
-        // Lọc ra các sản phẩm hợp lệ
         List<OrderDetail> itemsToAdd = new ArrayList<>();
         for (OrderDetail item : order.getOrderDetails()) {
             if (item.getProduct() != null && item.getProduct().getId() != null) {
@@ -133,15 +157,10 @@ public class OrderHistoryFragment extends Fragment {
             return;
         }
 
-        // Bước 2: Bắt đầu thêm từng sản phẩm (Đệ quy)
         addSingleItemRecursive(itemsToAdd, 0);
     }
 
-    /**
-     * Hàm đệ quy thêm từng sản phẩm vào giỏ để đảm bảo đồng bộ và bắt lỗi chính xác
-     */
     private void addSingleItemRecursive(List<OrderDetail> items, int index) {
-        // ĐIỀU KIỆN DỪNG: Đã thêm hết danh sách
         if (index >= items.size()) {
             onRepurchaseSuccess();
             return;
@@ -151,15 +170,10 @@ public class OrderHistoryFragment extends Fragment {
         String productId = String.valueOf(currentItem.getProduct().getId());
         int quantity = currentItem.getQuantity();
 
-        // Gọi ViewModel thêm sản phẩm
-        // (Lưu ý: CartViewModel cần có hàm addToCart(id, qty) trả về LiveData<ApiResponse>)
         observeOnce(cartViewModel.addToCart(productId, quantity), response -> {
-            // Kiểm tra kết quả từ Backend
             if (response != null && response.isStatus()) {
-                // Thành công -> Tiếp tục thêm sản phẩm tiếp theo
                 addSingleItemRecursive(items, index + 1);
             } else {
-                // Thất bại (VD: Hết hàng) -> Dừng lại và báo lỗi ngay
                 String errorMsg = (response != null && response.getMessage() != null)
                         ? response.getMessage()
                         : "Lỗi khi thêm sản phẩm: " + currentItem.getProduct().getName();
@@ -169,25 +183,21 @@ public class OrderHistoryFragment extends Fragment {
     }
 
     private void onRepurchaseSuccess() {
-        // Refresh để cập nhật lại badge/số lượng
         cartViewModel.refreshCart();
-
         FancyToast.makeText(getContext(), "Đã thêm đơn hàng vào giỏ!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
 
-        // Chuyển sang màn hình Giỏ hàng
         Intent intent = new Intent(getContext(), DetailActivity.class);
         intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
         intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
         startActivity(intent);
-        // requireActivity().finish(); // Tùy chọn nếu muốn đóng màn hình hiện tại
     }
 
     private void showErrorDialog(String message) {
         new CuteDialog.withIcon(requireActivity())
-                .setIcon(R.drawable.ic_dialog_error) // Đảm bảo có icon này
+                .setIcon(R.drawable.ic_dialog_error)
                 .setTitle("Không thể thêm vào giỏ")
                 .setDescription(message)
-                .setPrimaryColor(R.color.red) // Đảm bảo có màu red
+                .setPrimaryColor(R.color.red)
                 .setPositiveButtonColor(R.color.red)
                 .setPositiveButtonText("Đóng", v -> {})
                 .hideNegativeButton(true)
@@ -195,7 +205,7 @@ public class OrderHistoryFragment extends Fragment {
     }
 
     // =========================================================================
-    // LOGIC HỦY ĐƠN & XEM CHI TIẾT
+    // LOGIC HỦY ĐƠN & XEM CHI TIẾT - (Giữ nguyên)
     // =========================================================================
 
     private void showConfirmCancelDialog(String orderId) {
@@ -232,7 +242,6 @@ public class OrderHistoryFragment extends Fragment {
         startActivity(intent);
     }
 
-    // Helper: Observer dùng 1 lần rồi tự hủy
     private <T> void observeOnce(LiveData<T> liveData, Observer<T> observer) {
         liveData.observe(getViewLifecycleOwner(), new Observer<T>() {
             @Override

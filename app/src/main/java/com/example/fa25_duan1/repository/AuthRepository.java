@@ -262,4 +262,45 @@ public class AuthRepository {
         });
         return msg;
     }
+
+    public LiveData<String> sendUpdateProfileOtp() {
+        MutableLiveData<String> msg = new MutableLiveData<>();
+        authApi.sendUpdateProfileOtp().enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    if (response.body().isStatus()) msg.setValue("OK");
+                    else msg.setValue(response.body().getMessage());
+                } else {
+                    msg.setValue("Lỗi Server: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                msg.setValue("Lỗi mạng: " + t.getMessage());
+            }
+        });
+        return msg;
+    }
+
+    // --- [MỚI] Kiểm tra OTP hợp lệ ---
+    public LiveData<String> checkOtpValid(String otp) {
+        MutableLiveData<String> msg = new MutableLiveData<>();
+        authApi.checkOtpValid(otp).enqueue(new Callback<ApiResponse<Object>>() {
+            @Override
+            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    if (response.body().isStatus()) msg.setValue("OK");
+                    else msg.setValue(response.body().getMessage());
+                } else {
+                    msg.setValue("Lỗi Server: " + response.code());
+                }
+            }
+            @Override
+            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
+                msg.setValue("Lỗi mạng: " + t.getMessage());
+            }
+        });
+        return msg;
+    }
 }

@@ -9,6 +9,7 @@ import androidx.fragment.app.Fragment;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.view.cart.CartFragment;
 import com.example.fa25_duan1.view.cart.CheckoutFragment;
+import com.example.fa25_duan1.view.cart.PaymentFragment;
 import com.example.fa25_duan1.view.home.ProductFragment;
 import com.example.fa25_duan1.view.profile.AddressFragment;
 import com.example.fa25_duan1.view.profile.ChangeContactInforFragment;
@@ -70,6 +71,8 @@ public class DetailActivity extends AppCompatActivity {
             return new AddressFragment();
         }else if ("order".equals(fragmentName)) {
             return new OrderViewFragment();
+        }else if ("payment".equals(fragmentName)) {
+            return new PaymentFragment();
         }
 
         return null;

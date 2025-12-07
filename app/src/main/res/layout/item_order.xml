@@ -163,6 +163,20 @@
                             android:text="Đang xử lý"
                             android:textColor="#0486E9"
                             android:textSize="12sp" />
+
+                        <TextView
+                            android:id="@+id/tvPaymentStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:background="@drawable/bg_status_processing"
+                            android:fontFamily="@font/robotoserif_bold"
+                            android:paddingHorizontal="8dp"
+                            android:paddingVertical="2dp"
+                            android:text="Đã thanh toán"
+                            android:textColor="#2E7D32"
+                            android:textSize="10sp"
+                            android:visibility="gone" />
                     </LinearLayout>
                 </LinearLayout>
 
@@ -342,6 +356,20 @@
                         android:text="Hủy đơn"
                         android:textAllCaps="false"
                         android:textColor="#D32F2F"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/btnPayNow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="8dp"
+                        android:background="@drawable/bg_btn_outline_green"
+                        android:fontFamily="@font/robotoserif_regular"
+                        android:paddingHorizontal="12dp"
+                        android:text="Thanh toán"
+                        android:textAllCaps="false"
+                        android:textColor="#2E7D32"
                         android:textSize="13sp"
                         android:visibility="gone" />
 

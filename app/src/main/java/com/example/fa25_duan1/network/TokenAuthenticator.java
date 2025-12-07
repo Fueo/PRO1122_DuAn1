@@ -48,7 +48,7 @@ public class TokenAuthenticator implements Authenticator {
         }
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BuildConfig.BASE_URL_ATHOME)
+                .baseUrl(BuildConfig.BASE_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
