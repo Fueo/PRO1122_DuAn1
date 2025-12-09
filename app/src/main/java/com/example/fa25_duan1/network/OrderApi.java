@@ -20,7 +20,7 @@ public interface OrderApi {
     @POST("order/checkout")
     Call<ApiResponse<CheckoutResponse>> checkout(@Body CheckoutRequest request);
 
-    // 2. GET: Lịch sử đơn hàng (Backend đã gộp chi tiết vào đây)
+    // 2. GET: Lịch sử đơn hàng
     @GET("order")
     Call<ApiResponse<List<Order>>> getOrderHistory();
 
@@ -28,24 +28,29 @@ public interface OrderApi {
     @PUT("order/cancel/{orderId}")
     Call<ApiResponse<Void>> cancelOrder(@Path("orderId") String orderId);
 
-    // 4. Lấy tất cả đơn hàng (dành cho admin/nhân viên)
+    // 4. Lấy tất cả đơn hàng (Admin)
     @GET("order/all")
     Call<ApiResponse<List<Order>>> getAllOrders();
 
-    // 5. PUT: Cập nhật trạng thái đơn hàng (Dành cho Admin/Nhân viên)
-    // Body gửi lên dạng JSON: { "status": "Đang giao" }
+    // 5. PUT: Cập nhật trạng thái đơn hàng (Admin/Staff)
+    // [UPDATE] Sửa Map<String, String> thành Map<String, Object> để gửi được boolean isPaid
     @PUT("order/update-status/{orderId}")
-    Call<ApiResponse<Order>> updateOrderStatus(@Path("orderId") String orderId, @Body Map<String, String> body);
+    Call<ApiResponse<Order>> updateOrderStatus(@Path("orderId") String orderId, @Body Map<String, Object> body);
 
-    // 6. GET: Lấy chi tiết đơn hàng theo ID
-    // Endpoint này khớp với route backend: router.get("/detail/:orderId", ...)
+    // 6. GET: Chi tiết đơn hàng
     @GET("order/detail/{orderId}")
     Call<ApiResponse<Order>> getOrderById(@Path("orderId") String orderId);
 
+    // 7. Thống kê trạng thái
     @GET("order/stats/status-count")
     Call<ApiResponse<Map<String, Integer>>> getStatusCount();
 
-    // [MỚI 8] Lấy tổng số lượng đơn hàng
+    // 8. Tổng đơn hàng
     @GET("order/stats/total-orders")
     Call<ApiResponse<Integer>> getTotalOrders();
+
+    // [MỚI 9] User tự cập nhật Payment Method (Chỉ khi Pending)
+    // Body: { "paymentMethod": "QR" }
+    @PUT("order/user/update-payment/{orderId}")
+    Call<ApiResponse<Order>> updatePaymentMethod(@Path("orderId") String orderId, @Body Map<String, String> body);
 }

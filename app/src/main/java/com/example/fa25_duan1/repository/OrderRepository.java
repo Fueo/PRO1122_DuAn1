@@ -1,7 +1,6 @@
 package com.example.fa25_duan1.repository;
 
 import android.content.Context;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;
@@ -42,11 +41,9 @@ public class OrderRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     result.setValue(response.body());
                 } else {
-                    // Parse lỗi từ server
                     result.setValue(parseError(response));
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<ApiResponse<CheckoutResponse>> call, @NonNull Throwable t) {
                 result.setValue(null);
@@ -67,7 +64,6 @@ public class OrderRepository {
                     data.setValue(null);
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<ApiResponse<List<Order>>> call, @NonNull Throwable t) {
                 data.setValue(null);
@@ -88,7 +84,6 @@ public class OrderRepository {
                     result.setValue(parseErrorVoid(response));
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<ApiResponse<Void>> call, @NonNull Throwable t) {
                 result.setValue(null);
@@ -117,12 +112,15 @@ public class OrderRepository {
         return data;
     }
 
-    // --- 5. Update Order Status (CẬP NHẬT ĐỂ LẤY LỖI) ---
-    public LiveData<ApiResponse<Order>> updateOrderStatus(String orderId, String newStatus) {
+    // --- 5. Update Order Status (ADMIN - Cập nhật đầy đủ) ---
+    // status: Trạng thái đơn, paymentMethod: COD/QR..., isPaid: Đã thanh toán hay chưa
+    public LiveData<ApiResponse<Order>> updateOrderStatus(String orderId, String status, String paymentMethod, Boolean isPaid) {
         MutableLiveData<ApiResponse<Order>> result = new MutableLiveData<>();
 
-        Map<String, String> body = new HashMap<>();
-        body.put("status", newStatus);
+        Map<String, Object> body = new HashMap<>();
+        if (status != null) body.put("status", status);
+        if (paymentMethod != null) body.put("paymentMethod", paymentMethod);
+        if (isPaid != null) body.put("isPaid", isPaid);
 
         orderApi.updateOrderStatus(orderId, body).enqueue(new Callback<ApiResponse<Order>>() {
             @Override
@@ -130,14 +128,11 @@ public class OrderRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     result.setValue(response.body());
                 } else {
-                    // [QUAN TRỌNG] Thay vì trả về null, hãy parse lỗi từ server để lấy message
                     result.setValue(parseErrorOrder(response));
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<ApiResponse<Order>> call, @NonNull Throwable t) {
-                // Lỗi mạng thật sự thì mới trả về null (hoặc tạo object lỗi mạng)
                 result.setValue(null);
             }
         });
@@ -147,14 +142,70 @@ public class OrderRepository {
     // --- 6. Get Order By ID ---
     public LiveData<ApiResponse<Order>> getOrderById(String orderId) {
         MutableLiveData<ApiResponse<Order>> result = new MutableLiveData<>();
-
         orderApi.getOrderById(orderId).enqueue(new Callback<ApiResponse<Order>>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<Order>> call, @NonNull Response<ApiResponse<Order>> response) {
                 if (response.isSuccessful() && response.body() != null) {
                     result.setValue(response.body());
                 } else {
-                    // Parse lỗi nếu cần
+                    result.setValue(parseErrorOrder(response));
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Order>> call, @NonNull Throwable t) {
+                result.setValue(null);
+            }
+        });
+        return result;
+    }
+
+    // --- 7 & 8 Stats ---
+    public LiveData<ApiResponse<Map<String, Integer>>> getStatusCount() {
+        MutableLiveData<ApiResponse<Map<String, Integer>>> result = new MutableLiveData<>();
+        orderApi.getStatusCount().enqueue(new Callback<ApiResponse<Map<String, Integer>>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Map<String, Integer>>> call, @NonNull Response<ApiResponse<Map<String, Integer>>> response) {
+                if (response.isSuccessful() && response.body() != null) result.setValue(response.body());
+                else result.setValue(null);
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Map<String, Integer>>> call, @NonNull Throwable t) {
+                result.setValue(null);
+            }
+        });
+        return result;
+    }
+
+    public LiveData<ApiResponse<Integer>> getTotalOrders() {
+        MutableLiveData<ApiResponse<Integer>> result = new MutableLiveData<>();
+        orderApi.getTotalOrders().enqueue(new Callback<ApiResponse<Integer>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Integer>> call, @NonNull Response<ApiResponse<Integer>> response) {
+                if (response.isSuccessful() && response.body() != null) result.setValue(response.body());
+                else result.setValue(null);
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Integer>> call, @NonNull Throwable t) {
+                result.setValue(null);
+            }
+        });
+        return result;
+    }
+
+    // --- [MỚI 9] Update Payment Method (USER) ---
+    public LiveData<ApiResponse<Order>> updatePaymentMethod(String orderId, String newPaymentMethod) {
+        MutableLiveData<ApiResponse<Order>> result = new MutableLiveData<>();
+
+        Map<String, String> body = new HashMap<>();
+        body.put("paymentMethod", newPaymentMethod);
+
+        orderApi.updatePaymentMethod(orderId, body).enqueue(new Callback<ApiResponse<Order>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<Order>> call, @NonNull Response<ApiResponse<Order>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
+                } else {
+                    // Parse lỗi logic từ backend (VD: Không phải Pending, sai method...)
                     result.setValue(parseErrorOrder(response));
                 }
             }
@@ -164,56 +215,10 @@ public class OrderRepository {
                 result.setValue(null);
             }
         });
-
-        return result;
-    }
-
-    public LiveData<ApiResponse<Map<String, Integer>>> getStatusCount() {
-        MutableLiveData<ApiResponse<Map<String, Integer>>> result = new MutableLiveData<>();
-
-        orderApi.getStatusCount().enqueue(new Callback<ApiResponse<Map<String, Integer>>>() {
-            @Override
-            public void onResponse(@NonNull Call<ApiResponse<Map<String, Integer>>> call, @NonNull Response<ApiResponse<Map<String, Integer>>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    result.setValue(response.body());
-                } else {
-                    result.setValue(null);
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<ApiResponse<Map<String, Integer>>> call, @NonNull Throwable t) {
-                result.setValue(null);
-            }
-        });
-        return result;
-    }
-
-    // --- [MỚI] 8. Get Total Orders ---
-    public LiveData<ApiResponse<Integer>> getTotalOrders() {
-        MutableLiveData<ApiResponse<Integer>> result = new MutableLiveData<>();
-
-        orderApi.getTotalOrders().enqueue(new Callback<ApiResponse<Integer>>() {
-            @Override
-            public void onResponse(@NonNull Call<ApiResponse<Integer>> call, @NonNull Response<ApiResponse<Integer>> response) {
-                if (response.isSuccessful() && response.body() != null) {
-                    result.setValue(response.body());
-                } else {
-                    result.setValue(null);
-                }
-            }
-
-            @Override
-            public void onFailure(@NonNull Call<ApiResponse<Integer>> call, @NonNull Throwable t) {
-                result.setValue(null);
-            }
-        });
         return result;
     }
 
     // ================= HELPER PARSE ERROR =================
-
-    // Helper 1: Parse lỗi cho CheckoutResponse
     private ApiResponse<CheckoutResponse> parseError(Response<?> response) {
         try {
             if (response.errorBody() != null) {
@@ -222,10 +227,9 @@ public class OrderRepository {
                 return new Gson().fromJson(errorBody, type);
             }
         } catch (Exception e) { e.printStackTrace(); }
-        return new ApiResponse<>(false, "Lỗi không xác định: " + response.message(), null);
+        return new ApiResponse<>(false, "Lỗi: " + response.message(), null);
     }
 
-    // Helper 2: Parse lỗi cho Void
     private ApiResponse<Void> parseErrorVoid(Response<?> response) {
         try {
             if (response.errorBody() != null) {
@@ -234,23 +238,17 @@ public class OrderRepository {
                 return new Gson().fromJson(errorBody, type);
             }
         } catch (Exception e) { e.printStackTrace(); }
-        return new ApiResponse<>(false, "Lỗi không xác định: " + response.message(), null);
+        return new ApiResponse<>(false, "Lỗi: " + response.message(), null);
     }
 
-    // [MỚI] Helper 3: Parse lỗi cho Order (Dùng cho UpdateStatus và GetById)
     private ApiResponse<Order> parseErrorOrder(Response<?> response) {
         try {
             if (response.errorBody() != null) {
-                // Đọc chuỗi JSON lỗi từ Backend (VD: { "status": false, "message": "Không đủ tồn kho" })
                 String errorBody = response.errorBody().string();
                 Type type = new TypeToken<ApiResponse<Order>>(){}.getType();
                 return new Gson().fromJson(errorBody, type);
             }
         } catch (Exception e) { e.printStackTrace(); }
-
-        // Trả về object lỗi mặc định để UI không bị NullPointerException
         return new ApiResponse<>(false, "Lỗi server: " + response.code(), null);
     }
-
-
 }

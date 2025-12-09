@@ -79,14 +79,23 @@ public class OrderHistoryFragment extends Fragment {
 
             @Override
             public void onPayNowClick(Order order) {
-                // [MỚI] Xử lý sự kiện bấm nút Thanh toán
                 handlePayNow(order);
             }
         });
         rvOrders.setAdapter(orderAdapter);
 
         setupObservers();
-        orderViewModel.fetchOrderHistory();
+
+        // [ĐÃ CHUYỂN] Không gọi fetchOrderHistory() ở đây nữa để tránh gọi thừa
+    }
+
+    // [MỚI] Gọi API lấy danh sách đơn hàng mỗi khi màn hình hiển thị lại
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (orderViewModel != null) {
+            orderViewModel.fetchOrderHistory();
+        }
     }
 
     private void setupObservers() {
@@ -108,28 +117,45 @@ public class OrderHistoryFragment extends Fragment {
     }
 
     // =========================================================================
-    // [MỚI] LOGIC THANH TOÁN (PAY NOW)
+    // LOGIC THANH TOÁN (PAY NOW)
     // =========================================================================
 
     private void handlePayNow(Order order) {
         if (order == null) return;
 
-        // Chuẩn bị Intent sang màn hình Payment (DetailActivity chứa PaymentFragment)
-        Intent intent = new Intent(getContext(), DetailActivity.class);
-        intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thanh toán QR");
-        intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "payment");
+        String paymentMethod = order.getPaymentMethod();
+        if (paymentMethod == null) paymentMethod = "";
 
-        // Truyền dữ liệu cần thiết cho PaymentFragment
-        // Các Key này phải KHỚP CHÍNH XÁC với bên PaymentFragment.java
-        intent.putExtra("ORDER_ID", order.getId());
-        intent.putExtra("TOTAL_AMOUNT", (long) order.getTotal()); // Cast về long cho chắc
-        intent.putExtra("TRANS_CODE", order.getTransactionCode()); // Mã giao dịch (VD: CB12345)
+        // CASE 1: Nếu là COD
+        if (paymentMethod.equalsIgnoreCase("cod")) {
+            FancyToast.makeText(getContext(), "Đơn hàng này thanh toán khi nhận hàng (COD). Bạn không cần thanh toán online!",
+                    FancyToast.LENGTH_LONG, FancyToast.INFO, false).show();
+        }
 
-        startActivity(intent);
+        // CASE 2: Nếu là Online (QR hoặc Zalopay)
+        else if (paymentMethod.equalsIgnoreCase("qr") || paymentMethod.equalsIgnoreCase("zalopay")){
+            Intent intent = new Intent(getContext(), DetailActivity.class);
+            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thanh toán Online");
+            intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "payment");
+
+            intent.putExtra("ORDER_ID", order.getId());
+            intent.putExtra("TOTAL_AMOUNT", (long) order.getTotal());
+
+            String transCode = (order.getTransactionCode() != null) ? order.getTransactionCode() : order.getId();
+            intent.putExtra("TRANS_CODE", transCode);
+
+            startActivity(intent);
+        }
+
+        // CASE 3: Khác
+        else {
+            FancyToast.makeText(getContext(), "Phương thức thanh toán không hỗ trợ thanh toán ngay!",
+                    FancyToast.LENGTH_SHORT, FancyToast.WARNING, false).show();
+        }
     }
 
     // =========================================================================
-    // LOGIC ĐẶT LẠI ĐƠN HÀNG (REPURCHASE) - (Giữ nguyên)
+    // LOGIC ĐẶT LẠI ĐƠN HÀNG (REPURCHASE)
     // =========================================================================
 
     private void handleRepurchaseOrder(Order order) {
@@ -205,7 +231,7 @@ public class OrderHistoryFragment extends Fragment {
     }
 
     // =========================================================================
-    // LOGIC HỦY ĐƠN & XEM CHI TIẾT - (Giữ nguyên)
+    // LOGIC HỦY ĐƠN & XEM CHI TIẾT
     // =========================================================================
 
     private void showConfirmCancelDialog(String orderId) {

@@ -166,6 +166,18 @@
                     android:text="Chuyển khoản ngân hàng (VietQR)"
                     android:textColor="@color/black"
                     android:textSize="15sp" />
+
+                <RadioButton
+                    android:id="@+id/rb_zalopay"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:fontFamily="@font/robotoserif_regular"
+                    android:paddingStart="8dp"
+                    android:buttonTint="@color/blue"
+                    android:text="Ví điện tử ZaloPay"
+                    android:textColor="@color/black"
+                    android:textSize="15sp" />
             </RadioGroup>
 
             <net.cachapa.expandablelayout.ExpandableLayout

@@ -5,12 +5,13 @@ import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.widget.AppCompatButton; // Dùng AppCompatButton cho đồng bộ
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,11 +21,11 @@ import com.example.fa25_duan1.model.Order;
 import net.cachapa.expandablelayout.ExpandableLayout;
 
 import java.text.DecimalFormat;
-import java.text.SimpleDateFormat; // Import Date parsing
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.TimeZone; // Import TimeZone
+import java.util.TimeZone;
 
 public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.OrderViewHolder> {
 
@@ -61,19 +62,34 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
 
         DecimalFormat formatter = new DecimalFormat("###,###,###");
 
+        // ========= 1. XỬ LÝ TÊN PHƯƠNG THỨC THANH TOÁN =========
+        String rawPaymentMethod = order.getPaymentMethod();
+        String displayPaymentMethod = rawPaymentMethod;
+
+        if (rawPaymentMethod != null) {
+            if (rawPaymentMethod.equalsIgnoreCase("QR")) {
+                displayPaymentMethod = "Chuyển khoản ngân hàng";
+            } else if (rawPaymentMethod.equalsIgnoreCase("COD")) {
+                displayPaymentMethod = "Thanh toán khi nhận hàng (COD)";
+            } else if (rawPaymentMethod.equalsIgnoreCase("Zalopay")) {
+                displayPaymentMethod = "Ví điện tử ZaloPay";
+            }
+        }
+
         // ========= HEADER ==========
         holder.tvOrderCode.setText(order.getId());
         holder.tvReceiverName.setText(order.getFullname());
-        holder.tvPaymentMethod.setText(order.getPaymentMethod());
+        holder.tvPaymentMethod.setText(displayPaymentMethod); // Hiển thị tên tiếng Việt
         holder.tvTotal.setText(formatter.format(order.getTotal()) + " đ");
 
-        // [SỬA ĐỔI QUAN TRỌNG]: Xử lý ngày giờ từ UTC sang Local (UTC+7)
+        // Xử lý ngày giờ từ UTC sang Local (UTC+7)
         holder.tvDate.setText(convertUtcToLocal(order.getDate()));
 
         holder.tvAddress.setText(order.getAddress());
         holder.tvPhone.setText(order.getPhone());
         holder.btnDetail.setText("Cập nhật đơn");
-        // ========= STATUS UI ==========
+
+        // ========= STATUS UI (TRẠNG THÁI ĐƠN HÀNG) ==========
         String status = order.getStatus() != null ? order.getStatus().toLowerCase().trim() : "";
 
         switch (status) {
@@ -94,6 +110,7 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
             case "shipping":
             case "shipped":
             case "đang giao hàng":
+            case "đang giao":
                 holder.tvStatus.setText("Đang giao");
                 holder.tvStatus.setBackgroundResource(R.drawable.bg_status_processing);
                 holder.tvStatus.setTextColor(Color.parseColor("#FF8C00"));
@@ -119,9 +136,37 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
                 break;
         }
 
-        // ========= BUTTON VISIBILITY ==========
+        // ========= [MỚI] TRẠNG THÁI THANH TOÁN (Chỉ hiện Badge, ẩn Nút) =========
+        boolean isPaid = order.isPaid();
+        // Kiểm tra xem có phải thanh toán online không
+        boolean isOnlinePayment = rawPaymentMethod != null &&
+                (rawPaymentMethod.equalsIgnoreCase("QR") ||
+                        rawPaymentMethod.equalsIgnoreCase("Zalopay") ||
+                        rawPaymentMethod.equalsIgnoreCase("Chuyển khoản ngân hàng"));
+
+        if (isPaid) {
+            // Đã thanh toán -> Hiện Badge Xanh
+            holder.tvPaymentStatus.setVisibility(View.VISIBLE);
+            holder.tvPaymentStatus.setText("Đã thanh toán");
+            holder.tvPaymentStatus.setTextColor(Color.parseColor("#2E7D32"));
+        } else {
+            // Chưa thanh toán
+            if (isOnlinePayment) {
+                // Nếu là QR/Zalo mà chưa trả -> Hiện cảnh báo Badge Cam
+                holder.tvPaymentStatus.setVisibility(View.VISIBLE);
+                holder.tvPaymentStatus.setText("Chờ thanh toán");
+                holder.tvPaymentStatus.setTextColor(Color.parseColor("#EF6C00"));
+            } else {
+                // COD -> Ẩn
+                holder.tvPaymentStatus.setVisibility(View.GONE);
+            }
+        }
+
+        // ========= BUTTON VISIBILITY (ADMIN) ==========
         holder.btnCancel.setVisibility(View.GONE);
         holder.btnBuyAgain.setVisibility(View.GONE);
+        holder.btnPayNow.setVisibility(View.GONE); // Luôn ẩn nút thanh toán ở trang Admin
+
         holder.btnDetail.setVisibility(View.VISIBLE);
 
         holder.btnDetail.setOnClickListener(v -> {
@@ -152,37 +197,27 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
         holder.imgToggleDetail.setOnClickListener(expandListener);
     }
 
-    /**
-     * Hàm chuyển đổi thời gian UTC từ Server sang giờ địa phương (Việt Nam)
-     */
     private String convertUtcToLocal(String utcDateString) {
         if (utcDateString == null || utcDateString.isEmpty()) return "";
 
         try {
-            // 1. Định dạng đầu vào (Input): UTC
-            // Chuỗi server thường dạng: "2025-11-20T14:30:00.000Z"
             SimpleDateFormat inputFormat;
             if (utcDateString.contains(".")) {
                 inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault());
             } else {
                 inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
             }
-            // QUAN TRỌNG: Phải set TimeZone input là UTC để máy hiểu đây là giờ quốc tế
             inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
 
             Date date = inputFormat.parse(utcDateString);
 
-            // 2. Định dạng đầu ra (Output): Giờ địa phương
-            // Không setTimeZone cho outputFormat -> Nó sẽ tự lấy giờ trên máy (UTC+7)
             SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault());
-
             return outputFormat.format(date);
 
         } catch (Exception e) {
-            // Nếu lỗi parse (do server trả về format lạ), fallback về cắt chuỗi đơn giản
             e.printStackTrace();
             if (utcDateString.contains("T")) {
-                return utcDateString.replace("T", " ").substring(0, 16);
+                return utcDateString.replace("T", " ").split("\\.")[0];
             }
             return utcDateString;
         }
@@ -206,15 +241,21 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
     static class OrderViewHolder extends RecyclerView.ViewHolder {
         LinearLayout layoutHeader;
         ExpandableLayout layoutDetail;
+
         TextView tvOrderCode, tvPaymentMethod, tvTotal, tvStatus, tvDate, tvAddress, tvPhone, tvReceiverName;
+        TextView tvPaymentStatus; // Badge thanh toán
+
         ImageView imgToggleHeader, imgToggleDetail;
         RecyclerView rvOrderItems;
-        Button btnCancel, btnBuyAgain, btnDetail;
+
+        // Dùng AppCompatButton để khớp với layout
+        AppCompatButton btnCancel, btnBuyAgain, btnDetail, btnPayNow;
 
         public OrderViewHolder(@NonNull View itemView) {
             super(itemView);
             layoutHeader = itemView.findViewById(R.id.layoutHeader);
             layoutDetail = itemView.findViewById(R.id.layoutDetail);
+
             tvOrderCode = itemView.findViewById(R.id.tvOrderCode);
             tvReceiverName = itemView.findViewById(R.id.tvReceiverName);
             tvPaymentMethod = itemView.findViewById(R.id.tvPaymentMethod);
@@ -223,13 +264,22 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
             tvDate = itemView.findViewById(R.id.tvDate);
             tvAddress = itemView.findViewById(R.id.tvAddress);
             tvPhone = itemView.findViewById(R.id.tvPhone);
+
+            // Ánh xạ thêm badge thanh toán
+            tvPaymentStatus = itemView.findViewById(R.id.tvPaymentStatus);
+
             imgToggleHeader = itemView.findViewById(R.id.imgToggleHeader);
             imgToggleDetail = itemView.findViewById(R.id.imgToggleDetail);
+
             rvOrderItems = itemView.findViewById(R.id.rvOrderItems);
             rvOrderItems.setLayoutManager(new LinearLayoutManager(itemView.getContext()));
+
             btnCancel = itemView.findViewById(R.id.btnCancel);
             btnBuyAgain = itemView.findViewById(R.id.btnBuyAgain);
             btnDetail = itemView.findViewById(R.id.btnDetail);
+
+            // Ánh xạ nút PayNow để ẩn đi
+            btnPayNow = itemView.findViewById(R.id.btnPayNow);
         }
     }
 }

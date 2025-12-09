@@ -105,7 +105,6 @@ public class WelcomeFragment extends Fragment {
         // Các nút của Màn 3
         Button btnRegister = view.findViewById(R.id.btn_register);
         TextView btnLogin = view.findViewById(R.id.btn_login);
-        TextView btnGuest = view.findViewById(R.id.btn_guest);
 
         // Gán listener (chỉ gán nếu nút đó tồn tại)
         if (btnSkip != null) {
@@ -136,14 +135,6 @@ public class WelcomeFragment extends Fragment {
             btnLogin.setOnClickListener(v -> {
                 if (listener != null) {
                     listener.onLoginClicked();
-                }
-            });
-        }
-
-        if (btnGuest != null) {
-            btnGuest.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onGuestClicked();
                 }
             });
         }
