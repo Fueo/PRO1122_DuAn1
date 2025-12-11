@@ -88,7 +88,9 @@ public class WelcomeActivity extends AppCompatActivity implements WelcomeFragmen
 
     @Override
     public void onGuestClicked() {
-        startAuthActivity(1);
+        Intent intent = new Intent(WelcomeActivity.this, HomeActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private void startAuthActivity(int tab) {

@@ -19,14 +19,11 @@ import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputLayout;
 
-// IMPORT THƯ VIỆN MỚI
 import com.shashank.sony.fancytoastlib.FancyToast;
-// Lưu ý: Package name có thể khác tùy version, hãy để IDE tự gợi ý import (Alt+Enter)
 import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class RegisterFragment extends Fragment {
 
-    // ... (Khai báo biến giữ nguyên) ...
     TextInputLayout tilUsername, tilPassword, tilConfirmPassword;
     EditText edtUsername, edtName, edtEmail, edtPassword, edtConfirmPassword;
     MaterialButton btnRegister;
@@ -42,7 +39,19 @@ public class RegisterFragment extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // ... (Ánh xạ view giữ nguyên) ...
+
+        initViews(view);
+        authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
+
+        btnRegister.setOnClickListener(v -> handleRegister());
+
+        tvLogin.setOnClickListener(v -> {
+            ViewPager2 viewPager = requireActivity().findViewById(R.id.view_pager_auth);
+            if (viewPager != null) viewPager.setCurrentItem(0);
+        });
+    }
+
+    private void initViews(View view) {
         tilUsername = view.findViewById(R.id.tilUsername);
         tilPassword = view.findViewById(R.id.tilPassword);
         tilConfirmPassword = view.findViewById(R.id.tilConfirmPassword);
@@ -53,15 +62,6 @@ public class RegisterFragment extends Fragment {
         edtConfirmPassword = view.findViewById(R.id.edtConfirmPassword);
         btnRegister = view.findViewById(R.id.btnRegister);
         tvLogin = view.findViewById(R.id.tvLogin);
-
-        authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
-
-        btnRegister.setOnClickListener(v -> handleRegister());
-
-        tvLogin.setOnClickListener(v -> {
-            ViewPager2 viewPager = requireActivity().findViewById(R.id.view_pager_auth);
-            if (viewPager != null) viewPager.setCurrentItem(0);
-        });
     }
 
     private void handleRegister() {
@@ -75,71 +75,136 @@ public class RegisterFragment extends Fragment {
             return;
         }
 
-        // --- SỬ DỤNG CUTEDIALOG (XÁC NHẬN) ---
+        // --- HỎI XÁC NHẬN TRƯỚC KHI GỬI ---
         new CuteDialog.withIcon(requireActivity())
-                .setIcon(R.drawable.ic_dialog_confirm)
+                .setIcon(R.drawable.ic_dialog_confirm) // Đảm bảo bạn có icon này hoặc thay bằng icon khác
                 .setTitle("Xác nhận đăng ký")
-                .setDescription("Bạn có chắc chắn muốn đăng ký tài khoản này?")
-                .setPrimaryColor(R.color.blue)
-                .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
-
+                .setDescription("Bạn có chắc chắn muốn tạo tài khoản này?")
                 .setPositiveButtonText("Đăng ký", v -> {
                     performRegistration(username, password, name, email);
                 })
-                .setNegativeButtonText("Hủy", v -> {
-                    // Tự động đóng
-                })
+                .setNegativeButtonText("Hủy", v -> {})
                 .show();
     }
 
     private void performRegistration(String username, String password, String name, String email) {
-        authViewModel.register(username, password, name, email).observe(getViewLifecycleOwner(), response -> {
-            if (response != null) {
-                if (response.getMessage() != null) {
-                    showSuccessDialog();
-                } else {
-                    showErrorToast("Đăng ký thất bại: Phản hồi không xác định.");
-                }
+        // Hiện Loading
+        CuteDialog.withIcon loadingDialog = showLoadingDialog();
+
+        // Quan sát ApiResponse
+        authViewModel.register(username, password, name, email).observe(getViewLifecycleOwner(), apiResponse -> {
+            loadingDialog.dismiss(); // Tắt loading
+
+            if (apiResponse == null) {
+                showErrorDialog("Lỗi kết nối hoặc phản hồi không hợp lệ.");
+                return;
+            }
+
+            if (apiResponse.isStatus()) {
+                // === THÀNH CÔNG ===
+                showSuccessDialog();
             } else {
-                showErrorToast("Lỗi kết nối hoặc phản hồi không hợp lệ từ server.");
+                // === THẤT BẠI ===
+                // Lấy message từ Backend (vd: "Username đã tồn tại")
+                showErrorDialog(apiResponse.getMessage());
             }
         });
     }
 
+    // =================================================================================
+    // CÁC DIALOG HIỂN THỊ
+    // =================================================================================
+
+    private CuteDialog.withIcon showLoadingDialog() {
+        CuteDialog.withIcon dialog = new CuteDialog.withIcon(requireActivity())
+                .setTitle("Đang xử lý...")
+                .setDescription("Vui lòng đợi trong giây lát")
+                .hidePositiveButton(true)
+                .hideNegativeButton(true);
+        dialog.show();
+        return dialog;
+    }
+
     private void showSuccessDialog() {
-        // --- SỬ DỤNG CUTEDIALOG (THÀNH CÔNG) ---
         new CuteDialog.withIcon(requireActivity())
-                .setIcon(R.drawable.ic_dialog_success)
-                .setTitle("Thành công")
-                .setDescription("Bạn đã đăng ký thành công! Vui lòng đăng nhập để tiếp tục.")
-                .setPositiveButtonText("Đăng nhập", v -> {
+                .setIcon(R.drawable.ic_dialog_success) // Đảm bảo có icon success
+                .setTitle("Đăng ký thành công!")
+                .setDescription("Tài khoản đã được tạo. Vui lòng đăng nhập để tiếp tục.")
+                .setPositiveButtonText("Đăng nhập ngay", v -> {
+                    // Chuyển sang Tab Login (Tab 0)
                     ViewPager2 viewPager = requireActivity().findViewById(R.id.view_pager_auth);
                     if (viewPager != null) {
                         viewPager.setCurrentItem(0);
                     }
+                    // Reset form (tuỳ chọn)
+                    clearForm();
                 })
-                .setPrimaryColor(R.color.blue)
-                .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
                 .hideNegativeButton(true)
                 .show();
     }
-    private void showErrorToast(String message) {
-        FancyToast.makeText(
-                requireContext(),
-                message,
-                FancyToast.LENGTH_LONG,
-                FancyToast.ERROR,
-                true
-        ).show();
+
+    private void showErrorDialog(String message) {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_error) // Đảm bảo có icon error
+                .setTitle("Đăng ký thất bại")
+                .setDescription(message) // Hiển thị lỗi backend tại đây
+                .setPositiveButtonText("Thử lại", v -> {})
+                .show();
     }
 
-    // ... (Hàm validateInput giữ nguyên) ...
+    private void clearForm() {
+        edtUsername.setText("");
+        edtName.setText("");
+        edtEmail.setText("");
+        edtPassword.setText("");
+        edtConfirmPassword.setText("");
+        edtUsername.requestFocus();
+    }
+
+    // =================================================================================
+    // VALIDATION
+    // =================================================================================
+
     private boolean validateInput(String username, String name, String email, String password, String confirmPassword) {
-        // ... Code validate cũ của bạn ...
-        return true; // (Ví dụ)
+        if (username.isEmpty()) {
+            tilUsername.setError("Vui lòng nhập Username");
+            return false;
+        } else {
+            tilUsername.setError(null);
+        }
+
+        if (name.isEmpty()) {
+            FancyToast.makeText(requireContext(), "Vui lòng nhập Họ tên", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+            return false;
+        }
+
+        if (email.isEmpty()) {
+            FancyToast.makeText(requireContext(), "Vui lòng nhập Email", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+            return false;
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            FancyToast.makeText(requireContext(), "Email không hợp lệ", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+            return false;
+        }
+
+        if (password.isEmpty()) {
+            tilPassword.setError("Nhập mật khẩu");
+            return false;
+        }
+        if (password.length() < 6) {
+            tilPassword.setError("Mật khẩu phải từ 6 ký tự");
+            return false;
+        } else {
+            tilPassword.setError(null);
+        }
+
+        if (!password.equals(confirmPassword)) {
+            tilConfirmPassword.setError("Mật khẩu không khớp");
+            return false;
+        } else {
+            tilConfirmPassword.setError(null);
+        }
+
+        return true;
     }
 }

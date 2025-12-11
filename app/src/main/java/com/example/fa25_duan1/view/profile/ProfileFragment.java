@@ -10,7 +10,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -24,14 +23,16 @@ import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.shashank.sony.fancytoastlib.FancyToast;
 
+import io.github.cutelibs.cutedialog.CuteDialog;
+
 public class ProfileFragment extends Fragment {
     TextView tvName, tvRole, tvEmail, tvAddress, tvChangePassword;
     ImageView ivProfile, btnEdit;
 
     AuthViewModel authViewModel;
-    User currentUser; // Lưu user hiện tại để check trạng thái verify
+    User currentUser;
 
-    // Lưu lại hành động người dùng muốn làm để thực hiện sau khi OTP đúng
+    // Lưu lại hành động chờ (Pending Action)
     private String pendingHeaderTitle = "";
     private String pendingContentFragment = "";
 
@@ -48,19 +49,13 @@ public class ProfileFragment extends Fragment {
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
 
         // 1. Sửa thông tin cá nhân
-        btnEdit.setOnClickListener(v -> {
-            handleSecureAction("Thông tin cá nhân", "updateinfo");
-        });
+        btnEdit.setOnClickListener(v -> handleSecureAction("Thông tin cá nhân", "updateinfo"));
 
         // 2. Đổi mật khẩu
-        tvChangePassword.setOnClickListener(v -> {
-            handleSecureAction("Thay đổi mật khẩu", "changepassword");
-        });
+        tvChangePassword.setOnClickListener(v -> handleSecureAction("Thay đổi mật khẩu", "changepassword"));
 
-        // 3. Sổ địa chỉ (Thường không cần bảo mật gắt gao, cho qua luôn)
-        tvAddress.setOnClickListener(v -> {
-            openActivity("Sổ địa chỉ", "address");
-        });
+        // 3. Sổ địa chỉ (Không cần OTP)
+        tvAddress.setOnClickListener(v -> openActivity("Sổ địa chỉ", "address"));
     }
 
     @Override
@@ -69,15 +64,19 @@ public class ProfileFragment extends Fragment {
         loadUserProfile();
     }
 
+    // [CẬP NHẬT] Load profile với ApiResponse
     private void loadUserProfile() {
-        if (authViewModel.getMyInfo() != null) {
-            authViewModel.getMyInfo().removeObservers(getViewLifecycleOwner());
-        }
+        // Xóa observer cũ để tránh duplicate nếu gọi nhiều lần trong onResume
+        authViewModel.getMyInfo().removeObservers(getViewLifecycleOwner());
 
-        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
-            if (response != null && response.getData() != null) {
-                currentUser = response.getData(); // Lưu lại user
-                updateUI(currentUser);
+        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                currentUser = apiResponse.getData();
+                if (currentUser != null) {
+                    updateUI(currentUser);
+                }
+            } else {
+                // Có thể xử lý lỗi load profile ở đây nếu cần
             }
         });
     }
@@ -104,67 +103,53 @@ public class ProfileFragment extends Fragment {
     // =========================================================================
 
     private void handleSecureAction(String header, String content) {
-        // Lưu lại đích đến
         this.pendingHeaderTitle = header;
         this.pendingContentFragment = content;
 
         if (currentUser != null && currentUser.isVerifiedEmail()) {
-            // Nếu đã xác thực -> Bắt buộc nhập OTP
+            // Đã xác thực -> Bắt buộc nhập OTP
             showConfirmSendOtpDialog();
         } else {
-            // Chưa xác thực -> Cho qua (hoặc chặn tùy logic của bạn)
-            // Ở đây mình cho qua để họ vào sửa email cho đúng
+            // Chưa xác thực -> Cho phép đi tiếp
             executePendingAction();
         }
     }
 
     private void executePendingAction() {
         openActivity(pendingHeaderTitle, pendingContentFragment);
-        // Reset
         pendingHeaderTitle = "";
         pendingContentFragment = "";
     }
 
     // Bước 1: Hỏi user có muốn nhận OTP không
     private void showConfirmSendOtpDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
-        LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.layout_dialog_confirm_send, null);
-        builder.setView(dialogView);
-
-        AlertDialog dialog = builder.create();
-        if (dialog.getWindow() != null) dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        dialog.show();
-
-        TextView tvContent = dialogView.findViewById(R.id.tvConfirmContent);
-        Button btnConfirm = dialogView.findViewById(R.id.btnConfirmSend);
-        Button btnCancel = dialogView.findViewById(R.id.btnCancelSend);
-
-        tvContent.setText("Vì lý do bảo mật, vui lòng xác thực OTP qua email:\n" + currentUser.getEmail() + "\nđể tiếp tục chỉnh sửa.");
-
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
-
-        btnConfirm.setOnClickListener(v -> {
-            dialog.dismiss();
-            sendOtpToEmail();
-        });
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_info)
+                .setTitle("Yêu cầu xác thực")
+                .setDescription("Vì lý do bảo mật, hệ thống sẽ gửi mã OTP đến email: " + currentUser.getEmail())
+                .setPositiveButtonText("Gửi mã", v -> sendOtpToEmail())
+                .setNegativeButtonText("Hủy", v -> {})
+                .show();
     }
 
-    // Bước 2: Gọi API gửi OTP (API mới: send-update-profile-otp)
+    // Bước 2: Gọi API gửi OTP (Cập nhật ApiResponse)
     private void sendOtpToEmail() {
-        FancyToast.makeText(requireContext(), "Đang gửi mã...", FancyToast.LENGTH_SHORT, FancyToast.INFO, false).show();
+        CuteDialog.withIcon loading = showLoadingDialog();
 
-        authViewModel.sendUpdateProfileOtp().observe(getViewLifecycleOwner(), msg -> {
-            if ("OK".equals(msg)) {
-                FancyToast.makeText(requireContext(), "Đã gửi mã OTP!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+        authViewModel.sendUpdateProfileOtp().observe(getViewLifecycleOwner(), apiResponse -> {
+            loading.dismiss();
+
+            if (apiResponse != null && apiResponse.isStatus()) {
+                FancyToast.makeText(requireContext(), "Đã gửi mã OTP!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
                 showInputOtpDialog();
             } else {
-                FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi gửi mã";
+                showErrorDialog(msg);
             }
         });
     }
 
-    // Bước 3: Hiện ô nhập OTP và kiểm tra
+    // Bước 3: Hiện ô nhập OTP và kiểm tra (Cập nhật ApiResponse)
     private void showInputOtpDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         LayoutInflater inflater = getLayoutInflater();
@@ -173,7 +158,7 @@ public class ProfileFragment extends Fragment {
 
         AlertDialog dialog = builder.create();
         if (dialog.getWindow() != null) dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-        dialog.setCancelable(false); // Bắt buộc nhập hoặc hủy
+        dialog.setCancelable(false);
         dialog.show();
 
         EditText etOtpInput = dialogView.findViewById(R.id.etOtpInput);
@@ -185,20 +170,22 @@ public class ProfileFragment extends Fragment {
         btnConfirm.setOnClickListener(v -> {
             String otp = etOtpInput.getText().toString().trim();
             if (otp.length() < 6) {
-                FancyToast.makeText(requireContext(), "Nhập đủ 6 số", FancyToast.LENGTH_SHORT, FancyToast.WARNING, false).show();
+                FancyToast.makeText(requireContext(), "Nhập đủ 6 số", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
                 return;
             }
 
-            // Gọi API Pre-check OTP (API mới: check-otp-valid)
-            authViewModel.checkOtpValid(otp).observe(getViewLifecycleOwner(), msg -> {
-                if ("OK".equals(msg)) {
+            // Gọi API kiểm tra OTP
+            authViewModel.checkOtpValid(otp).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     dialog.dismiss();
-                    FancyToast.makeText(requireContext(), "Xác thực thành công!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+                    FancyToast.makeText(requireContext(), "Xác thực thành công!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
 
-                    // QUAN TRỌNG: Mở màn hình đích
+                    // MỞ MÀN HÌNH ĐÍCH
                     executePendingAction();
                 } else {
-                    FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Mã OTP không đúng";
+                    FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                    etOtpInput.setText(""); // Xóa để nhập lại
                 }
             });
         });
@@ -207,6 +194,25 @@ public class ProfileFragment extends Fragment {
     // =========================================================================
     // HELPER METHODS
     // =========================================================================
+
+    private CuteDialog.withIcon showLoadingDialog() {
+        CuteDialog.withIcon dialog = new CuteDialog.withIcon(requireActivity())
+                .setTitle("Đang xử lý...")
+                .setDescription("Vui lòng đợi giây lát")
+                .hidePositiveButton(true)
+                .hideNegativeButton(true);
+        dialog.show();
+        return dialog;
+    }
+
+    private void showErrorDialog(String msg) {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_error)
+                .setTitle("Lỗi")
+                .setDescription(msg)
+                .setPositiveButtonText("Đóng", v -> {})
+                .show();
+    }
 
     private void initViews(View view) {
         tvName = view.findViewById(R.id.tvName);

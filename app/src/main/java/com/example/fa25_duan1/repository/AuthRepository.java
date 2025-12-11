@@ -16,6 +16,10 @@ import com.example.fa25_duan1.model.auth.RefreshTokenResponse;
 import com.example.fa25_duan1.model.auth.RegisterRequest;
 import com.example.fa25_duan1.network.AuthApi;
 import com.example.fa25_duan1.network.RetrofitClient;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import java.lang.reflect.Type;
 
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -26,281 +30,274 @@ import retrofit2.Response;
 public class AuthRepository {
 
     private final AuthApi authApi;
+    private final Gson gson;
 
     public AuthRepository(Context context) {
         authApi = RetrofitClient.getInstance(context).getAuthApi();
+        gson = new Gson();
     }
 
-    public LiveData<AuthResponse> login(String username, String password) {
-        MutableLiveData<AuthResponse> liveData = new MutableLiveData<>();
-        authApi.login(new LoginRequest(username, password)).enqueue(new Callback<AuthResponse>() {
+    // =========================================================================
+    // 1. LOGIN & REGISTER & LOGOUT
+    // =========================================================================
+
+    public LiveData<ApiResponse<AuthResponse>> login(String username, String password) {
+        MutableLiveData<ApiResponse<AuthResponse>> result = new MutableLiveData<>();
+        authApi.login(new LoginRequest(username, password)).enqueue(new Callback<ApiResponse<AuthResponse>>() {
             @Override
-            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
-                if (response.isSuccessful()) {
-                    liveData.setValue(response.body());
+            public void onResponse(@NonNull Call<ApiResponse<AuthResponse>> call, @NonNull Response<ApiResponse<AuthResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
                 } else {
-                    liveData.setValue(null);
+                    Type type = new TypeToken<ApiResponse<AuthResponse>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
-
             @Override
-            public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
-                liveData.setValue(null);
+            public void onFailure(@NonNull Call<ApiResponse<AuthResponse>> call, @NonNull Throwable t) {
+                result.setValue(new ApiResponse<>(false, "Lỗi kết nối: " + t.getMessage(), null));
             }
         });
-        return liveData;
+        return result;
     }
 
-    public LiveData<AuthResponse> register(String username, String password, String name, String email) {
-        MutableLiveData<AuthResponse> liveData = new MutableLiveData<>();
-        authApi.register(new RegisterRequest(username, password, name, email)).enqueue(new Callback<AuthResponse>() {
+    public LiveData<ApiResponse<AuthResponse>> loginGoogle(String idToken) {
+        MutableLiveData<ApiResponse<AuthResponse>> result = new MutableLiveData<>();
+        authApi.loginGoogle(idToken).enqueue(new Callback<ApiResponse<AuthResponse>>() {
             @Override
-            public void onResponse(@NonNull Call<AuthResponse> call, @NonNull Response<AuthResponse> response) {
-                if (response.isSuccessful()) {
-                    liveData.setValue(response.body());
+            public void onResponse(@NonNull Call<ApiResponse<AuthResponse>> call, @NonNull Response<ApiResponse<AuthResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
                 } else {
-                    liveData.setValue(null);
+                    Type type = new TypeToken<ApiResponse<AuthResponse>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
-
             @Override
-            public void onFailure(@NonNull Call<AuthResponse> call, @NonNull Throwable t) {
-                liveData.setValue(null);
+            public void onFailure(@NonNull Call<ApiResponse<AuthResponse>> call, @NonNull Throwable t) {
+                result.setValue(new ApiResponse<>(false, "Lỗi kết nối: " + t.getMessage(), null));
             }
         });
-        return liveData;
+        return result;
     }
 
-    public LiveData<RefreshTokenResponse> refreshToken(String refreshToken) {
-        MutableLiveData<RefreshTokenResponse> liveData = new MutableLiveData<>();
-        authApi.refreshToken(new RefreshTokenRequest(refreshToken)).enqueue(new Callback<RefreshTokenResponse>() {
+    public LiveData<ApiResponse<AuthResponse>> register(String username, String password, String name, String email) {
+        MutableLiveData<ApiResponse<AuthResponse>> result = new MutableLiveData<>();
+        authApi.register(new RegisterRequest(username, password, name, email)).enqueue(new Callback<ApiResponse<AuthResponse>>() {
             @Override
-            public void onResponse(@NonNull Call<RefreshTokenResponse> call, @NonNull Response<RefreshTokenResponse> response) {
-                if (response.isSuccessful()) {
-                    liveData.setValue(response.body());
+            public void onResponse(@NonNull Call<ApiResponse<AuthResponse>> call, @NonNull Response<ApiResponse<AuthResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
                 } else {
-                    liveData.setValue(null);
+                    Type type = new TypeToken<ApiResponse<AuthResponse>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
-
             @Override
-            public void onFailure(@NonNull Call<RefreshTokenResponse> call, @NonNull Throwable t) {
-                liveData.setValue(null);
+            public void onFailure(@NonNull Call<ApiResponse<AuthResponse>> call, @NonNull Throwable t) {
+                result.setValue(new ApiResponse<>(false, "Lỗi mạng: " + t.getMessage(), null));
             }
         });
-        return liveData;
+        return result;
+    }
+
+    public LiveData<ApiResponse<RefreshTokenResponse>> logout(String refreshToken) {
+        MutableLiveData<ApiResponse<RefreshTokenResponse>> result = new MutableLiveData<>();
+        authApi.logout(new RefreshTokenRequest(refreshToken)).enqueue(new Callback<ApiResponse<RefreshTokenResponse>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<RefreshTokenResponse>> call, @NonNull Response<ApiResponse<RefreshTokenResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
+                } else {
+                    Type type = new TypeToken<ApiResponse<RefreshTokenResponse>>(){}.getType();
+                    result.setValue(parseError(response, type));
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<RefreshTokenResponse>> call, @NonNull Throwable t) {
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
+            }
+        });
+        return result;
+    }
+
+    // =========================================================================
+    // 2. TOKEN & USER INFO
+    // =========================================================================
+
+    public LiveData<ApiResponse<RefreshTokenResponse>> refreshToken(String refreshToken) {
+        MutableLiveData<ApiResponse<RefreshTokenResponse>> result = new MutableLiveData<>();
+        authApi.refreshToken(new RefreshTokenRequest(refreshToken)).enqueue(new Callback<ApiResponse<RefreshTokenResponse>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<RefreshTokenResponse>> call, @NonNull Response<ApiResponse<RefreshTokenResponse>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
+                } else {
+                    Type type = new TypeToken<ApiResponse<RefreshTokenResponse>>(){}.getType();
+                    result.setValue(parseError(response, type));
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<RefreshTokenResponse>> call, @NonNull Throwable t) {
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
+            }
+        });
+        return result;
     }
 
     public LiveData<ApiResponse<User>> getMyInfo() {
-        MutableLiveData<ApiResponse<User>> liveData = new MutableLiveData<>();
-
+        MutableLiveData<ApiResponse<User>> result = new MutableLiveData<>();
         authApi.getMyInfo().enqueue(new Callback<ApiResponse<User>>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<User>> call, @NonNull Response<ApiResponse<User>> response) {
-                if (response.isSuccessful()) {
-                    liveData.setValue(response.body());
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
                 } else {
-                    liveData.setValue(null);
+                    Type type = new TypeToken<ApiResponse<User>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<ApiResponse<User>> call, @NonNull Throwable t) {
-                liveData.setValue(null);
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
             }
         });
-
-        return liveData;
+        return result;
     }
 
-    public LiveData<RefreshTokenResponse> logout(String refreshToken) {
-        MutableLiveData<RefreshTokenResponse> liveData = new MutableLiveData<>();
-        authApi.logout(new RefreshTokenRequest(refreshToken)).enqueue(new Callback<RefreshTokenResponse>() {
-            @Override
-            public void onResponse(@NonNull Call<RefreshTokenResponse> call, @NonNull Response<RefreshTokenResponse> response) {
-                if (response.isSuccessful()) {
-                    liveData.setValue(response.body());
-                } else {
-                    liveData.setValue(null);
-                }
-            }
+    // =========================================================================
+    // 3. PROFILE & PASSWORD
+    // =========================================================================
 
-            @Override
-            public void onFailure(@NonNull Call<RefreshTokenResponse> call, @NonNull Throwable t) {
-                liveData.setValue(null);
-            }
-        });
-        return liveData;
-    }
-
-    // --- ĐÃ CẬP NHẬT: Chỉ còn name, email, avatar ---
     public LiveData<ApiResponse<User>> updateProfile(RequestBody name, RequestBody email, MultipartBody.Part avatarPart) {
-        MutableLiveData<ApiResponse<User>> liveData = new MutableLiveData<>();
-
+        MutableLiveData<ApiResponse<User>> result = new MutableLiveData<>();
         authApi.updateProfile(name, email, avatarPart).enqueue(new Callback<ApiResponse<User>>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<User>> call, @NonNull Response<ApiResponse<User>> response) {
-                if (response.isSuccessful()) {
-                    liveData.setValue(response.body());
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
                 } else {
-                    liveData.setValue(null);
+                    Type type = new TypeToken<ApiResponse<User>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<ApiResponse<User>> call, @NonNull Throwable t) {
-                liveData.setValue(null);
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
             }
         });
-        return liveData;
+        return result;
     }
 
     public LiveData<ApiResponse<Void>> changePassword(String currentPassword, String newPassword) {
-        MutableLiveData<ApiResponse<Void>> liveData = new MutableLiveData<>();
-        ChangePasswordRequest request = new ChangePasswordRequest(currentPassword, newPassword);
-
-        authApi.changePassword(request).enqueue(new Callback<ApiResponse<Void>>() {
+        MutableLiveData<ApiResponse<Void>> result = new MutableLiveData<>();
+        authApi.changePassword(new ChangePasswordRequest(currentPassword, newPassword)).enqueue(new Callback<ApiResponse<Void>>() {
             @Override
             public void onResponse(@NonNull Call<ApiResponse<Void>> call, @NonNull Response<ApiResponse<Void>> response) {
-                if (response.isSuccessful()) {
-                    liveData.setValue(response.body());
+                if (response.isSuccessful() && response.body() != null) {
+                    result.setValue(response.body());
                 } else {
-                    liveData.setValue(null);
+                    Type type = new TypeToken<ApiResponse<Void>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
-
             @Override
             public void onFailure(@NonNull Call<ApiResponse<Void>> call, @NonNull Throwable t) {
-                liveData.setValue(null);
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
             }
         });
-        return liveData;
+        return result;
     }
 
-    // --- 3 HÀM MỚI ---
-    public LiveData<String> forgotPassword(String username, String email) {
-        MutableLiveData<String> msg = new MutableLiveData<>();
-        authApi.forgotPassword(username, email).enqueue(new Callback<ApiResponse<Object>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
-                if(response.isSuccessful() && response.body() != null) {
-                    if(response.body().isStatus()) msg.setValue("OK");
-                    else msg.setValue(response.body().getMessage());
-                } else msg.setValue("Lỗi kết nối.");
-            }
-            @Override
-            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) { msg.setValue("Lỗi mạng: " + t.getMessage()); }
-        });
-        return msg;
+    // =========================================================================
+    // 4. VERIFY EMAIL & OTP (Bổ sung đầy đủ)
+    // =========================================================================
+
+    // Gửi email verify
+    public LiveData<ApiResponse<Object>> sendVerifyEmail(String userId) {
+        return callApiObject(authApi.sendVerifyEmail(userId));
     }
 
-    public LiveData<String> sendVerifyEmail(String userId) {
-        MutableLiveData<String> msg = new MutableLiveData<>();
-        authApi.sendVerifyEmail(userId).enqueue(new Callback<ApiResponse<Object>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
-                if(response.isSuccessful() && response.body() != null) {
-                    if(response.body().isStatus()) msg.setValue("OK");
-                    else msg.setValue(response.body().getMessage());
-                } else msg.setValue("Lỗi server.");
-            }
-            @Override
-            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) { msg.setValue(t.getMessage()); }
-        });
-        return msg;
-    }
-
-    public LiveData<String> verifyEmailOTP(String userId, String otp) {
-        MutableLiveData<String> msg = new MutableLiveData<>();
+    // Xác nhận OTP email (trả về User)
+    public LiveData<ApiResponse<User>> verifyEmailOTP(String userId, String otp) {
+        MutableLiveData<ApiResponse<User>> result = new MutableLiveData<>();
         authApi.verifyEmailOTP(userId, otp).enqueue(new Callback<ApiResponse<User>>() {
             @Override
-            public void onResponse(Call<ApiResponse<User>> call, Response<ApiResponse<User>> response) {
-                if(response.isSuccessful() && response.body() != null) {
-                    if(response.body().isStatus()) msg.setValue("OK");
-                    else msg.setValue(response.body().getMessage());
-                } else msg.setValue("Mã không đúng.");
-            }
-            @Override
-            public void onFailure(Call<ApiResponse<User>> call, Throwable t) { msg.setValue(t.getMessage()); }
-        });
-        return msg;
-    }
-
-    public LiveData<String> resetPassword(String email, String otp, String newPassword) {
-        MutableLiveData<String> msg = new MutableLiveData<>();
-        authApi.resetPassword(email, otp, newPassword).enqueue(new Callback<ApiResponse<Object>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
-                if(response.isSuccessful() && response.body() != null) {
-                    if(response.body().isStatus()) msg.setValue("OK");
-                    else msg.setValue(response.body().getMessage());
-                } else msg.setValue("Lỗi kết nối.");
-            }
-            @Override
-            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) { msg.setValue(t.getMessage()); }
-        });
-        return msg;
-    }
-
-    public LiveData<String> checkOtpForgot(String email, String otp) {
-        MutableLiveData<String> msg = new MutableLiveData<>();
-        authApi.checkOtpForgot(email, otp).enqueue(new Callback<ApiResponse<Object>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
-                if(response.isSuccessful() && response.body() != null) {
-                    if(response.body().isStatus()) msg.setValue("OK");
-                    else msg.setValue(response.body().getMessage());
-                } else {
-                    // Sửa lại đoạn này để biết lỗi gì
-                    msg.setValue("Lỗi Server: " + response.code());
-                }
-            }
-            @Override
-            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
-                msg.setValue("Lỗi kết nối: " + t.getMessage());
-            }
-        });
-        return msg;
-    }
-
-    public LiveData<String> sendUpdateProfileOtp() {
-        MutableLiveData<String> msg = new MutableLiveData<>();
-        authApi.sendUpdateProfileOtp().enqueue(new Callback<ApiResponse<Object>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<User>> call, @NonNull Response<ApiResponse<User>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    if (response.body().isStatus()) msg.setValue("OK");
-                    else msg.setValue(response.body().getMessage());
+                    result.setValue(response.body());
                 } else {
-                    msg.setValue("Lỗi Server: " + response.code());
+                    Type type = new TypeToken<ApiResponse<User>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
             @Override
-            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
-                msg.setValue("Lỗi mạng: " + t.getMessage());
+            public void onFailure(@NonNull Call<ApiResponse<User>> call, @NonNull Throwable t) {
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
             }
         });
-        return msg;
+        return result;
     }
 
-    // --- [MỚI] Kiểm tra OTP hợp lệ ---
-    public LiveData<String> checkOtpValid(String otp) {
-        MutableLiveData<String> msg = new MutableLiveData<>();
-        authApi.checkOtpValid(otp).enqueue(new Callback<ApiResponse<Object>>() {
+    // =========================================================================
+    // 5. FORGOT PASSWORD & OTP ACTIONS
+    // =========================================================================
+
+    public LiveData<ApiResponse<Object>> forgotPassword(String username, String email) {
+        return callApiObject(authApi.forgotPassword(username, email));
+    }
+
+    public LiveData<ApiResponse<Object>> checkOtpForgot(String email, String otp) {
+        return callApiObject(authApi.checkOtpForgot(email, otp));
+    }
+
+    public LiveData<ApiResponse<Object>> resetPassword(String email, String otp, String newPassword) {
+        return callApiObject(authApi.resetPassword(email, otp, newPassword));
+    }
+
+    public LiveData<ApiResponse<Object>> sendUpdateProfileOtp() {
+        return callApiObject(authApi.sendUpdateProfileOtp());
+    }
+
+    public LiveData<ApiResponse<Object>> checkOtpValid(String otp) {
+        return callApiObject(authApi.checkOtpValid(otp));
+    }
+
+    // =========================================================================
+    // HELPER FUNCTIONS (GENERIC & REUSABLE)
+    // =========================================================================
+
+    // Hàm dùng chung cho các API trả về ApiResponse<Object> để tránh viết lặp lại code
+    private LiveData<ApiResponse<Object>> callApiObject(Call<ApiResponse<Object>> call) {
+        MutableLiveData<ApiResponse<Object>> result = new MutableLiveData<>();
+        call.enqueue(new Callback<ApiResponse<Object>>() {
             @Override
-            public void onResponse(Call<ApiResponse<Object>> call, Response<ApiResponse<Object>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<Object>> call, @NonNull Response<ApiResponse<Object>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    if (response.body().isStatus()) msg.setValue("OK");
-                    else msg.setValue(response.body().getMessage());
+                    result.setValue(response.body());
                 } else {
-                    msg.setValue("Lỗi Server: " + response.code());
+                    Type type = new TypeToken<ApiResponse<Object>>(){}.getType();
+                    result.setValue(parseError(response, type));
                 }
             }
             @Override
-            public void onFailure(Call<ApiResponse<Object>> call, Throwable t) {
-                msg.setValue("Lỗi mạng: " + t.getMessage());
+            public void onFailure(@NonNull Call<ApiResponse<Object>> call, @NonNull Throwable t) {
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
             }
         });
-        return msg;
+        return result;
+    }
+
+    // Hàm parseError Generic: Tự động parse JSON lỗi từ backend cho mọi loại data T
+    private <T> ApiResponse<T> parseError(Response<?> response, Type type) {
+        try {
+            if (response.errorBody() != null) {
+                String errorBody = response.errorBody().string();
+                return gson.fromJson(errorBody, type);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return new ApiResponse<>(false, "Lỗi Server: " + response.code(), null);
     }
 }

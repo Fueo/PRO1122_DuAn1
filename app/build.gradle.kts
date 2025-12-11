@@ -55,6 +55,8 @@ dependencies {
     implementation("de.hdodenhof:circleimageview:3.1.0")
     implementation ("androidx.constraintlayout:constraintlayout:2.2.1")
 
+    // Thư viện đăng nhập Google
+    implementation ("com.google.android.gms:play-services-auth:20.7.0")
     // Thư viện fetchAPI
     implementation ("com.squareup.retrofit2:retrofit:2.11.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.11.0")

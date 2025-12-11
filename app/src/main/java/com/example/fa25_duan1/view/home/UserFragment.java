@@ -26,8 +26,7 @@ import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.view.zalo.ZaloRedirectActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
-import com.example.fa25_duan1.viewmodel.OrderViewModel; // [MỚI] Import OrderViewModel
-import com.example.fa25_duan1.viewmodel.UserViewModel;
+import com.example.fa25_duan1.viewmodel.OrderViewModel;
 import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.util.Map;
@@ -38,14 +37,14 @@ public class UserFragment extends Fragment {
     LinearLayout rlProfile, rlHistory, lnEmailContainer;
     TextView tvName, tvRole, tvEmail, tvVerifyLabel;
 
-    // [MỚI] Các TextView thống kê đơn hàng
+    // Các TextView thống kê đơn hàng
     TextView tvOrderConfirm, tvOrderSuccess, tvOrderCancelled;
 
     ImageView ivProfile, ivVerifyStatus;
     Button btnLogout;
 
     AuthViewModel authViewModel;
-    OrderViewModel orderViewModel; // [MỚI] Khai báo
+    OrderViewModel orderViewModel;
     User currentUser;
 
     @Override
@@ -59,7 +58,6 @@ public class UserFragment extends Fragment {
         initViews(view);
 
         authViewModel = new ViewModelProvider(requireActivity()).get(AuthViewModel.class);
-        // [MỚI] Khởi tạo OrderViewModel (Dùng requireActivity để share data nếu cần)
         orderViewModel = new ViewModelProvider(requireActivity()).get(OrderViewModel.class);
 
         // Click menu profile
@@ -95,37 +93,45 @@ public class UserFragment extends Fragment {
     public void onResume() {
         super.onResume();
         loadUserData();
-        loadOrderStats(); // [MỚI] Gọi hàm tải thống kê khi màn hình hiện lên
+        loadOrderStats();
     }
 
-    // [MỚI] Hàm tải và hiển thị số lượng đơn hàng
+    // [CẬP NHẬT] Tải thống kê đơn hàng với ApiResponse
     private void loadOrderStats() {
-        orderViewModel.getStatusCount().observe(getViewLifecycleOwner(), response -> {
-            if (response != null && response.isStatus() && response.getData() != null) {
-                Map<String, Integer> stats = response.getData();
+        orderViewModel.getStatusCount().observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus() && apiResponse.getData() != null) {
+                Map<String, Integer> stats = apiResponse.getData();
 
-                // Lấy số liệu từ Map (Key phải khớp với Backend trả về: Pending, Completed, Cancelled)
-                // Dùng getOrDefault (hoặc check null) để tránh lỗi nếu key không tồn tại
-                int pendingCount = stats.get("Pending") != null ? stats.get("Pending") : 0;
-                // Nếu backend trả "Processing" thì cộng thêm vào mục Chờ xác nhận (tùy logic)
-                int processingCount = stats.get("Processing") != null ? stats.get("Processing") : 0;
+                // Dùng getOrDefault (Java 8+) hoặc check null thủ công
+                int pendingCount = stats.containsKey("Pending") ? stats.get("Pending") : 0;
+                int processingCount = stats.containsKey("Processing") ? stats.get("Processing") : 0;
+                int deliveredCount = stats.containsKey("Delivered") ? stats.get("Delivered") : 0;
+                int cancelledCount = stats.containsKey("Cancelled") ? stats.get("Cancelled") : 0;
 
-                int completedCount = stats.get("Delivered") != null ? stats.get("Delivered") : 0;
-                int cancelledCount = stats.get("Cancelled") != null ? stats.get("Cancelled") : 0;
+                // Pending + Processing = Chờ xác nhận/Đang xử lý
+                tvOrderConfirm.setText(String.valueOf(pendingCount + processingCount));
 
-                // Hiển thị lên UI
-                tvOrderConfirm.setText(String.valueOf(pendingCount + processingCount)); // Gom Pending + Processing
-                tvOrderSuccess.setText(String.valueOf(completedCount));
+                // Delivered = Thành công
+                tvOrderSuccess.setText(String.valueOf(deliveredCount));
+
+                // Cancelled = Đã hủy
                 tvOrderCancelled.setText(String.valueOf(cancelledCount));
             }
         });
     }
 
+    // [CẬP NHẬT] Tải thông tin user với ApiResponse
     private void loadUserData() {
-        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), response -> {
-            if (response != null && response.getData() != null) {
-                currentUser = response.getData();
-                updateUI(currentUser);
+        authViewModel.getMyInfo().observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                currentUser = apiResponse.getData();
+                if (currentUser != null) {
+                    updateUI(currentUser);
+                }
+            } else {
+                // Nếu token lỗi hoặc hết hạn, có thể logout hoặc hiện thông báo
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi tải thông tin";
+                // Log.e("UserFragment", msg);
             }
         });
     }
@@ -137,7 +143,11 @@ public class UserFragment extends Fragment {
         tvEmail.setText(user.getEmail());
 
         if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
-            Glide.with(requireActivity()).load(user.getAvatar()).placeholder(R.drawable.ic_avatar_placeholder).into(ivProfile);
+            Glide.with(requireActivity())
+                    .load(user.getAvatar())
+                    .placeholder(R.drawable.ic_avatar_placeholder)
+                    .error(R.drawable.ic_avatar_placeholder) // Thêm ảnh lỗi nếu load fail
+                    .into(ivProfile);
         } else {
             ivProfile.setImageResource(R.drawable.ic_avatar_placeholder);
         }
@@ -165,14 +175,13 @@ public class UserFragment extends Fragment {
         ivVerifyStatus = view.findViewById(R.id.ivVerifyStatus);
         tvVerifyLabel = view.findViewById(R.id.tvVerifyLabel);
 
-        // [MỚI] Ánh xạ các TextView thống kê
         tvOrderConfirm = view.findViewById(R.id.tvOrderConfirm);
         tvOrderSuccess = view.findViewById(R.id.tvOrderSuccess);
         tvOrderCancelled = view.findViewById(R.id.tvOrderCancelled);
     }
 
     // =========================================================================
-    // KHU VỰC XỬ LÝ XÁC THỰC EMAIL (Giữ nguyên code cũ)
+    // KHU VỰC XỬ LÝ XÁC THỰC EMAIL (CẬP NHẬT API RESPONSE)
     // =========================================================================
 
     private void showDialogConfirmSendMail() {
@@ -198,12 +207,15 @@ public class UserFragment extends Fragment {
 
         btnConfirm.setOnClickListener(v -> {
             dialog.dismiss();
-            authViewModel.sendVerifyEmail(currentUser.getUserID()).observe(getViewLifecycleOwner(), res -> {
-                if ("OK".equals(res)) {
+
+            // [CẬP NHẬT LOGIC]
+            authViewModel.sendVerifyEmail(currentUser.getUserID()).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     FancyToast.makeText(requireContext(), "Đã gửi mã xác nhận!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
                     showInputOTPDialog();
                 } else {
-                    FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi kết nối";
+                    FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                 }
             });
         });
@@ -237,13 +249,15 @@ public class UserFragment extends Fragment {
                 return;
             }
 
-            authViewModel.verifyEmailOTP(currentUser.getUserID(), otp).observe(getViewLifecycleOwner(), res -> {
-                if ("OK".equals(res)) {
+            // [CẬP NHẬT LOGIC]
+            authViewModel.verifyEmailOTP(currentUser.getUserID(), otp).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     dialog.dismiss();
                     FancyToast.makeText(requireContext(), "Xác thực thành công!", FancyToast.LENGTH_LONG, FancyToast.SUCCESS, true).show();
-                    loadUserData();
+                    loadUserData(); // Load lại data để update icon tích xanh
                 } else {
-                    FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Mã OTP không đúng";
+                    FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                     etOtpInput.setText("");
                 }
             });
@@ -251,7 +265,7 @@ public class UserFragment extends Fragment {
     }
 
     // =========================================================================
-    // KHU VỰC XỬ LÝ ĐĂNG XUẤT (Giữ nguyên code cũ)
+    // KHU VỰC XỬ LÝ ĐĂNG XUẤT (CẬP NHẬT API RESPONSE)
     // =========================================================================
 
     private void showLogoutDialogConfirm() {
@@ -269,8 +283,12 @@ public class UserFragment extends Fragment {
     private void performLogout() {
         SharedPreferences sharedPref = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
         String refreshToken = sharedPref.getString("refreshToken", null);
+
         if (refreshToken != null) {
-            authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), response -> handleLogoutSuccess(sharedPref));
+            authViewModel.logout(refreshToken).observe(getViewLifecycleOwner(), apiResponse -> {
+                // Dù API thành công hay thất bại (do mạng...), Client vẫn nên logout để bảo mật
+                handleLogoutSuccess(sharedPref);
+            });
         } else {
             handleLogoutSuccess(sharedPref);
         }
@@ -279,7 +297,11 @@ public class UserFragment extends Fragment {
     private void handleLogoutSuccess(SharedPreferences sharedPref) {
         sharedPref.edit().clear().apply();
         FancyToast.makeText(requireContext(), "Đăng xuất thành công!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
-        startActivity(new Intent(requireActivity(), AuthActivity.class));
+
+        Intent intent = new Intent(requireActivity(), AuthActivity.class);
+        // Xóa backstack để không back lại được màn hình user
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
         requireActivity().finish();
     }
 }

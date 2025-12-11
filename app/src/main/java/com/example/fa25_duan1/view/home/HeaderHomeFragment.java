@@ -2,6 +2,7 @@ package com.example.fa25_duan1.view.home;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -19,8 +20,11 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.view.auth.AuthActivity; // Import AuthActivity
 import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
+
+import io.github.cutelibs.cutedialog.CuteDialog; // Import CuteDialog
 
 public class HeaderHomeFragment extends Fragment {
 
@@ -66,8 +70,8 @@ public class HeaderHomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (cartViewModel != null) {
-            // SỬA: Dùng hàm refreshCart() thay vì fetchCart()
+        // Chỉ refresh giỏ hàng nếu ĐÃ ĐĂNG NHẬP
+        if (cartViewModel != null && !isGuestUser()) {
             cartViewModel.refreshCart();
         }
     }
@@ -89,19 +93,58 @@ public class HeaderHomeFragment extends Fragment {
             }
         });
 
-        // SỬA: Gọi API làm mới dữ liệu
-        cartViewModel.refreshCart();
+        // Chỉ gọi API nếu không phải là khách
+        if (!isGuestUser()) {
+            cartViewModel.refreshCart();
+        } else {
+            // Nếu là khách, ẩn badge đi
+            tvBadge.setVisibility(View.GONE);
+        }
 
-        // Xử lý click icon giỏ hàng
+        // [MỚI] Xử lý click icon giỏ hàng (Có check Guest)
         flCart.setOnClickListener(v -> {
-            Intent intent = new Intent(getContext(), DetailActivity.class);
-            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
-            intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
-            startActivity(intent);
+            if (isGuestUser()) {
+                // Nếu là khách -> Hiện Dialog bắt đăng nhập
+                showLoginRequiredDialog();
+            } else {
+                // Nếu đã đăng nhập -> Vào giỏ hàng bình thường
+                Intent intent = new Intent(getContext(), DetailActivity.class);
+                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
+                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
+                startActivity(intent);
+            }
         });
     }
 
+    // --- [MỚI] HÀM KIỂM TRA GUEST ---
+    private boolean isGuestUser() {
+        if (getActivity() == null) return true;
+        SharedPreferences prefs = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        String token = prefs.getString("accessToken", null);
+        return token == null; // Không có token -> Là Guest
+    }
+
+    // --- [MỚI] DIALOG YÊU CẦU ĐĂNG NHẬP ---
+    private void showLoginRequiredDialog() {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_info)
+                .setTitle("Yêu cầu đăng nhập")
+                .setDescription("Bạn cần đăng nhập để xem giỏ hàng và thanh toán.")
+                .setPositiveButtonText("Đăng nhập", v -> {
+                    // Chuyển sang màn hình Auth
+                    Intent intent = new Intent(requireActivity(), AuthActivity.class);
+                    // Clear task để user không bấm back về lại được
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    requireActivity().finish();
+                })
+                .setNegativeButtonText("Để sau", v -> {})
+                .show();
+    }
+
     private void performSearch(String query) {
+        if (getActivity() == null) return;
+
         View view = getActivity().getCurrentFocus();
         if (view != null) {
             InputMethodManager imm = (InputMethodManager) getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);

@@ -1,6 +1,7 @@
 package com.example.fa25_duan1.view.home;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -16,10 +17,12 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.User;
-import com.example.fa25_duan1.view.detail.DetailActivity; // Import DetailActivity
-import com.example.fa25_duan1.view.home.ProductFragment;
+import com.example.fa25_duan1.view.auth.AuthActivity; // Import AuthActivity
+import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+
+import io.github.cutelibs.cutedialog.CuteDialog; // Import CuteDialog
 
 public class HomeActivity extends AppCompatActivity {
 
@@ -41,16 +44,27 @@ public class HomeActivity extends AppCompatActivity {
                 .replace(R.id.fragment_header, new HeaderHomeFragment())
                 .commit();
 
-        // 2. Xử lý Intent (Quan trọng)
+        // 2. Xử lý Intent
         handleIntent(getIntent());
 
-        // 3. Setup ViewModel
+        // 3. Setup ViewModel & Check Role
         authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
         checkUserRole();
 
-        // 4. Click Menu
+        // 4. Click Menu (CẬP NHẬT LOGIC GUEST)
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
+
+            // --- [MỚI] KIỂM TRA QUYỀN TRUY CẬP CỦA GUEST ---
+            // Nếu là Guest mà bấm vào Profile, Favorite hoặc Admin -> Chặn lại bắt đăng nhập
+            if (isGuestUser()) {
+                if (id == R.id.nav_profile || id == R.id.nav_favorite || id == R.id.nav_admin) {
+                    showLoginRequiredDialog();
+                    return false; // Không cho chuyển tab
+                }
+            }
+            // -------------------------------------------------
+
             Fragment selectedFragment = null;
             if (id == R.id.nav_home) {
                 selectedFragment = new HomeFragment();
@@ -82,7 +96,6 @@ public class HomeActivity extends AppCompatActivity {
         String target = intent.getStringExtra("target_fragment");
 
         if ("product".equals(target)) {
-            // Case 1: Mở màn hình tìm kiếm sản phẩm
             String query = intent.getStringExtra("search_query");
             ProductFragment productFragment = new ProductFragment();
             Bundle args = new Bundle();
@@ -91,12 +104,10 @@ public class HomeActivity extends AppCompatActivity {
             loadFragment(productFragment, true);
 
         } else if ("payment_qr".equals(target)) {
-            // Case 2: [MỚI] Mở màn hình thanh toán QR từ Checkout
             String orderId = intent.getStringExtra("ORDER_ID");
             long totalAmount = intent.getLongExtra("TOTAL_AMOUNT", 0);
             String transCode = intent.getStringExtra("TRANS_CODE");
 
-            // Mở DetailActivity chứa PaymentFragment đè lên trên Home
             Intent paymentIntent = new Intent(this, DetailActivity.class);
             paymentIntent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thanh toán QR");
             paymentIntent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "payment");
@@ -105,30 +116,57 @@ public class HomeActivity extends AppCompatActivity {
             paymentIntent.putExtra("TRANS_CODE", transCode);
 
             startActivity(paymentIntent);
-
-            // Lưu ý: KHÔNG loadFragment gì cả ở Home, để Home giữ nguyên trạng thái cũ (hoặc load HomeFragment mặc định)
-            // Nếu bạn muốn Home ở dưới load lại trang chủ cho mới thì:
             loadFragment(new HomeFragment(), true);
 
         } else {
-            // Mặc định load Home
             loadFragment(new HomeFragment(), true);
         }
     }
 
-    // ... (Rest of the class methods: checkUserRole, loadFragment, showLoading, hideLoading... remain unchanged) ...
-
+    // --- [MỚI] CẬP NHẬT LOGIC CHECK USER ROLE ---
     private void checkUserRole() {
-        authViewModel.getMyInfo().observe(this, response -> {
-            if (response != null && response.getData() != null) {
-                User user = response.getData();
-                Menu menu = bottomNavigationView.getMenu();
-                MenuItem adminItem = menu.findItem(R.id.nav_admin);
-                if (adminItem != null) {
-                    adminItem.setVisible(user.getRole() != 0);
+        Menu menu = bottomNavigationView.getMenu();
+        MenuItem adminItem = menu.findItem(R.id.nav_admin);
+
+        if (isGuestUser()) {
+            // Nếu là Guest -> Ẩn menu Admin ngay lập tức, không cần gọi API
+            if (adminItem != null) adminItem.setVisible(false);
+        } else {
+            // Nếu là User đăng nhập -> Gọi API lấy Role để hiện/ẩn Admin
+            authViewModel.getMyInfo().observe(this, response -> {
+                if (response != null && response.getData() != null) {
+                    User user = response.getData();
+                    if (adminItem != null) {
+                        adminItem.setVisible(user.getRole() != 0); // 0: User thường -> Ẩn
+                    }
                 }
-            }
-        });
+            });
+        }
+    }
+
+    // --- [MỚI] HÀM KIỂM TRA GUEST ---
+    private boolean isGuestUser() {
+        SharedPreferences prefs = getSharedPreferences("MyPrefs", MODE_PRIVATE);
+        String token = prefs.getString("accessToken", null);
+        return token == null; // Không có token -> Là Guest
+    }
+
+    // --- [MỚI] DIALOG YÊU CẦU ĐĂNG NHẬP ---
+    private void showLoginRequiredDialog() {
+        new CuteDialog.withIcon(this)
+                .setIcon(R.drawable.ic_dialog_info) // Đảm bảo có icon này
+                .setTitle("Yêu cầu đăng nhập")
+                .setDescription("Bạn cần đăng nhập để sử dụng tính năng này.")
+                .setPositiveButtonText("Đăng nhập", v -> {
+                    // Chuyển sang màn hình Auth
+                    Intent intent = new Intent(HomeActivity.this, AuthActivity.class);
+                    // Clear task để user không bấm back về lại Home được (tuỳ chọn)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                    startActivity(intent);
+                    finish();
+                })
+                .setNegativeButtonText("Để sau", v -> {})
+                .show();
     }
 
     public void loadFragment(@NonNull Fragment fragment, boolean showBottomNav) {

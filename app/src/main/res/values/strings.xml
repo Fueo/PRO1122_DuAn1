@@ -25,6 +25,6 @@
     </string-array>
     <string name="ipAtHome">http://192.168.1.7:3002/</string>
     <string name="ipAtSchool">http://172.16.100.116:3002/</string>
-
+    <string name="default_web_client_id">892526172230-82g31c2l8agotkq388no2c72mch2fj61.apps.googleusercontent.com</string>
     <string name="long_description_text"> "Và Rồi Chẳng Còn Ai" (And Then There Were None) là một tiểu thuyết bí ẩn kinh điển của Agatha Christie, kể về mười người lạ bị mời đến một hòn đảo biệt lập, sau đó lần lượt bị sát hại. Khi mỗi người chết đi theo một bài đồng dao được treo trong mỗi phòng, những người sống sót nhận ra kẻ giết người chính là một trong số họ. Cuốn sách này nổi tiếng với cốt truyện hồi hộp, plot twist bất ngờ và được xem là một trong những tác phẩm bán chạy nhất thế giới. </string>
 </resources>

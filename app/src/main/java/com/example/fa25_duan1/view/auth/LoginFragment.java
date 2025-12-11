@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Base64;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,15 +15,25 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
-import androidx.viewpager2.widget.ViewPager2;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.viewpager2.widget.ViewPager2;
 
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.model.auth.AuthResponse; // Import model AuthResponse
 import com.example.fa25_duan1.view.home.HomeActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.shashank.sony.fancytoastlib.FancyToast;
@@ -35,11 +46,17 @@ import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class LoginFragment extends Fragment {
     private AuthViewModel authViewModel;
+
+    // View Components
     TextInputLayout tilUsername, tilPassword;
     EditText etUsername, etPassword;
     Button btnLogin;
     TextView tvSignUp, tvForgotPassword;
     CheckBox cbRememberMe;
+
+    // Google Login Components
+    CardView cvGoogleLogin;
+    private GoogleSignInClient mGoogleSignInClient;
 
     @Nullable
     @Override
@@ -51,6 +68,35 @@ public class LoginFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
+        initViews(view);
+        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
+
+        // 1. Cấu hình Google Sign In
+        configureGoogleSignIn();
+
+        // 2. Kiểm tra tự động đăng nhập
+        checkAutoLogin();
+
+        // 3. Sự kiện Đăng nhập thường
+        btnLogin.setOnClickListener(v -> handleNormalLogin());
+
+        // 4. Sự kiện Đăng nhập Google
+        cvGoogleLogin.setOnClickListener(v -> {
+            Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+            googleSignInLauncher.launch(signInIntent);
+        });
+
+        // 5. Chuyển trang Đăng ký
+        tvSignUp.setOnClickListener(v -> {
+            ViewPager2 viewPager = requireActivity().findViewById(R.id.view_pager_auth);
+            if (viewPager != null) viewPager.setCurrentItem(1);
+        });
+
+        // 6. Quên mật khẩu
+        tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
+    }
+
+    private void initViews(View view) {
         tilUsername = view.findViewById(R.id.tilUsername);
         tilPassword = view.findViewById(R.id.tilPassword);
         etUsername = view.findViewById(R.id.etUsername);
@@ -59,46 +105,171 @@ public class LoginFragment extends Fragment {
         tvSignUp = view.findViewById(R.id.tvSignUp);
         tvForgotPassword = view.findViewById(R.id.tvForgotPassword);
         cbRememberMe = view.findViewById(R.id.cbRememberMe);
-
-        authViewModel = new ViewModelProvider(this).get(AuthViewModel.class);
-
-        checkAutoLogin();
-
-        btnLogin.setOnClickListener(v -> {
-            String username = etUsername.getText().toString().trim();
-            String password = etPassword.getText().toString().trim();
-            if (username.isEmpty() || password.isEmpty()) {
-                FancyToast.makeText(requireContext(), "Vui lòng nhập đầy đủ thông tin!", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
-                return;
-            }
-            authViewModel.login(username, password).observe(requireActivity(), authResponse -> {
-                if (authResponse != null && authResponse.getAccessToken() != null) {
-                    String userId = getUserIdFromToken(authResponse.getAccessToken());
-                    SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-                    SharedPreferences.Editor editor = sharedPreferences.edit();
-                    editor.putString("accessToken", authResponse.getAccessToken());
-                    editor.putString("refreshToken", authResponse.getRefreshToken());
-                    editor.putString("userId", userId);
-                    editor.putBoolean("rememberMe", cbRememberMe.isChecked());
-                    editor.apply();
-
-                    FancyToast.makeText(requireContext(), "Đăng nhập thành công!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
-                    goToHomeActivity();
-                } else {
-                    showLoginErrorDialog();
-                }
-            });
-        });
-
-        tvSignUp.setOnClickListener(v -> {
-            ViewPager2 viewPager = requireActivity().findViewById(R.id.view_pager_auth);
-            if (viewPager != null) viewPager.setCurrentItem(1);
-        });
-
-        tvForgotPassword.setOnClickListener(v -> showForgotPasswordDialog());
+        cvGoogleLogin = view.findViewById(R.id.cvGoogleLogin);
     }
 
-    // --- BƯỚC 1: NHẬP EMAIL ---
+    // =================================================================================
+    // [ĐÃ SỬA] XỬ LÝ ĐĂNG NHẬP THƯỜNG (Hiện message từ Backend)
+    // =================================================================================
+    private void handleNormalLogin() {
+        String username = etUsername.getText().toString().trim();
+        String password = etPassword.getText().toString().trim();
+        if (username.isEmpty() || password.isEmpty()) {
+            FancyToast.makeText(requireContext(), "Vui lòng nhập đầy đủ thông tin!", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
+            return;
+        }
+
+        // Hiện loading
+        CuteDialog.withIcon loadingDialog = showLoadingDialog();
+
+        // Quan sát ApiResponse<AuthResponse>
+        authViewModel.login(username, password).observe(getViewLifecycleOwner(), apiResponse -> {
+            loadingDialog.dismiss(); // Tắt loading
+
+            if (apiResponse == null) {
+                showLoginErrorDialog("Lỗi không xác định.");
+                return;
+            }
+
+            if (apiResponse.isStatus()) {
+                // === THÀNH CÔNG ===
+                AuthResponse data = apiResponse.getData();
+                if (data != null) {
+                    saveUserAndGoHome(data.getAccessToken(), data.getRefreshToken());
+                }
+            } else {
+                // === THẤT BẠI ===
+                // Hiển thị message lỗi chính xác từ Server trả về
+                showLoginErrorDialog(apiResponse.getMessage());
+            }
+        });
+    }
+
+    // =================================================================================
+    // KHU VỰC XỬ LÝ ĐĂNG NHẬP GOOGLE
+    // =================================================================================
+
+    private void configureGoogleSignIn() {
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestIdToken(getString(R.string.default_web_client_id))
+                .requestEmail()
+                .build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(requireActivity(), gso);
+    }
+
+    private final ActivityResultLauncher<Intent> googleSignInLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(result.getData());
+                handleSignInResult(task);
+            }
+    );
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            GoogleSignInAccount account = completedTask.getResult(ApiException.class);
+            String idToken = account.getIdToken();
+            Log.d("GoogleLogin", "Token: " + idToken);
+            loginWithGoogleToServer(idToken);
+        } catch (ApiException e) {
+            Log.w("GoogleLogin", "signInResult:failed code=" + e.getStatusCode());
+            FancyToast.makeText(requireContext(), "Đăng nhập Google thất bại (Code: " + e.getStatusCode() + ")", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+        }
+    }
+
+    // [ĐÃ SỬA] Xử lý Login Google với ApiResponse
+    private void loginWithGoogleToServer(String idToken) {
+        CuteDialog.withIcon loadingDialog = showLoadingDialog();
+
+        authViewModel.loginGoogle(idToken).observe(getViewLifecycleOwner(), apiResponse -> {
+            loadingDialog.dismiss();
+
+            if (apiResponse == null) {
+                showLoginErrorDialog("Lỗi kết nối tới server.");
+                return;
+            }
+
+            if (apiResponse.isStatus()) {
+                // === THÀNH CÔNG ===
+                AuthResponse data = apiResponse.getData();
+                if (data != null) {
+                    saveUserAndGoHome(data.getAccessToken(), data.getRefreshToken());
+                }
+            } else {
+                // === THẤT BẠI ===
+                showLoginErrorDialog(apiResponse.getMessage());
+            }
+        });
+    }
+
+    // =================================================================================
+    // CÁC HÀM TIỆN ÍCH CHUNG
+    // =================================================================================
+
+    private CuteDialog.withIcon showLoadingDialog() {
+        CuteDialog.withIcon dialog = new CuteDialog.withIcon(requireActivity())
+                .setTitle("Đang xử lý...")
+                .setDescription("Vui lòng đợi giây lát")
+                .hidePositiveButton(true)
+                .hideNegativeButton(true);
+        dialog.show();
+        return dialog;
+    }
+
+    private void saveUserAndGoHome(String accessToken, String refreshToken) {
+        String userId = getUserIdFromToken(accessToken);
+        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+
+        editor.putString("accessToken", accessToken);
+        editor.putString("refreshToken", refreshToken);
+        editor.putString("userId", userId);
+        editor.putBoolean("rememberMe", cbRememberMe.isChecked());
+        editor.apply();
+
+        FancyToast.makeText(requireContext(), "Đăng nhập thành công!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
+        goToHomeActivity();
+    }
+
+    private void showLoginErrorDialog(String message) {
+        new CuteDialog.withIcon(requireActivity())
+                .setIcon(R.drawable.ic_dialog_error)
+                .setTitle("Đăng nhập thất bại")
+                .setDescription(message) // Message từ server sẽ hiện ở đây
+                .setPositiveButtonText("Thử lại", v -> {})
+                .show();
+    }
+
+    private String getUserIdFromToken(String token) {
+        try {
+            String[] split = token.split("\\.");
+            String body = getJson(split[1]);
+            JSONObject jsonObject = new JSONObject(body);
+            return jsonObject.getString("id");
+        } catch (Exception e) { return ""; }
+    }
+
+    private String getJson(String strEncoded) throws UnsupportedEncodingException {
+        byte[] decodedBytes = Base64.decode(strEncoded, Base64.URL_SAFE);
+        return new String(decodedBytes, "UTF-8");
+    }
+
+    private void checkAutoLogin() {
+        SharedPreferences sp = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
+        if (sp.getBoolean("rememberMe", false) && sp.getString("accessToken", null) != null) goToHomeActivity();
+    }
+
+    private void goToHomeActivity() {
+        Intent intent = new Intent(getActivity(), HomeActivity.class);
+        requireActivity().startActivity(intent);
+        requireActivity().finish();
+    }
+
+    // =================================================================================
+    // [ĐÃ SỬA] KHU VỰC QUÊN MẬT KHẨU (CẬP NHẬT THEO API RESPONSE)
+    // =================================================================================
+
     private void showForgotPasswordDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         LayoutInflater inflater = getLayoutInflater();
@@ -121,19 +292,19 @@ public class LoginFragment extends Fragment {
                 return;
             }
 
-            authViewModel.forgotPassword(username, email).observe(getViewLifecycleOwner(), result -> {
-                if ("OK".equals(result)) {
+            authViewModel.forgotPassword(username, email).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     dialog.dismiss();
                     FancyToast.makeText(requireContext(), "Đã gửi mã OTP về Email!", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
                     showOtpStepDialog(email);
                 } else {
-                    FancyToast.makeText(requireContext(), result, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                    String msg = apiResponse != null ? apiResponse.getMessage() : "Lỗi kết nối";
+                    FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                 }
             });
         });
     }
 
-    // --- BƯỚC 2: NHẬP OTP ---
     private void showOtpStepDialog(String email) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         LayoutInflater inflater = getLayoutInflater();
@@ -159,19 +330,18 @@ public class LoginFragment extends Fragment {
                 return;
             }
 
-            authViewModel.checkOtpForgot(email, otp).observe(getViewLifecycleOwner(), res -> {
-                if ("OK".equals(res)) {
+            authViewModel.checkOtpForgot(email, otp).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     dialog.dismiss();
                     showNewPasswordStepDialog(email, otp);
                 } else {
-                    // Nếu vẫn lỗi kết nối thì check logcat, nhưng sau khi sửa router ở trên thì sẽ hết
-                    FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                    String msg = apiResponse != null ? apiResponse.getMessage() : "Mã OTP không đúng";
+                    FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                 }
             });
         });
     }
 
-    // --- BƯỚC 3: NHẬP MẬT KHẨU MỚI ---
     private void showNewPasswordStepDialog(String email, String confirmedOtp) {
         AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
         LayoutInflater inflater = getLayoutInflater();
@@ -204,44 +374,15 @@ public class LoginFragment extends Fragment {
                 return;
             }
 
-            authViewModel.resetPassword(email, confirmedOtp, newPass).observe(getViewLifecycleOwner(), res -> {
-                if ("OK".equals(res)) {
+            authViewModel.resetPassword(email, confirmedOtp, newPass).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     dialog.dismiss();
                     FancyToast.makeText(requireContext(), "Đổi mật khẩu thành công! Hãy đăng nhập ngay.", FancyToast.LENGTH_LONG, FancyToast.SUCCESS, true).show();
                 } else {
-                    FancyToast.makeText(requireContext(), res, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                    String msg = apiResponse != null ? apiResponse.getMessage() : "Lỗi đổi mật khẩu";
+                    FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                 }
             });
         });
-    }
-
-    private String getUserIdFromToken(String token) {
-        try {
-            String[] split = token.split("\\.");
-            String body = getJson(split[1]);
-            JSONObject jsonObject = new JSONObject(body);
-            return jsonObject.getString("id");
-        } catch (Exception e) { return ""; }
-    }
-    private String getJson(String strEncoded) throws UnsupportedEncodingException {
-        byte[] decodedBytes = Base64.decode(strEncoded, Base64.URL_SAFE);
-        return new String(decodedBytes, "UTF-8");
-    }
-    private void showLoginErrorDialog() {
-        new CuteDialog.withIcon(requireActivity())
-                .setIcon(R.drawable.ic_dialog_error)
-                .setTitle("Đăng nhập thất bại")
-                .setDescription("Sai tài khoản hoặc mật khẩu.")
-                .setPositiveButtonText("Thử lại", v -> {})
-                .show();
-    }
-    private void checkAutoLogin() {
-        SharedPreferences sp = requireActivity().getSharedPreferences("MyPrefs", Context.MODE_PRIVATE);
-        if (sp.getBoolean("rememberMe", false) && sp.getString("accessToken", null) != null) goToHomeActivity();
-    }
-    private void goToHomeActivity() {
-        Intent intent = new Intent(getActivity(), HomeActivity.class);
-        requireActivity().startActivity(intent);
-        requireActivity().finish();
     }
 }

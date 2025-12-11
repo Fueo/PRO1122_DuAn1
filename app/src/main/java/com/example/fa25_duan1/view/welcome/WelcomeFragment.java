@@ -1,4 +1,4 @@
-// Welcome3Fragment.java
+// WelcomeFragment.java
 package com.example.fa25_duan1.view.welcome;
 
 import android.content.Context;
@@ -34,23 +34,13 @@ public class WelcomeFragment extends Fragment {
         void onNextClicked();
         void onRegisterClicked();
         void onLoginClicked();
-        void onGuestClicked();
+        void onGuestClicked(); // Đã có sẵn trong code của bạn
     }
 
-    /**
-     * Constructor rỗng là BẮT BUỘC
-     */
     public WelcomeFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Phương thức "factory" chuẩn để tạo một instance mới của Fragment
-     * và truyền layoutId vào qua Bundle.
-     *
-     * @param layoutId ID của layout (ví dụ: R.layout.fragment_welcome1)
-     * @return Một instance mới của WelcomeFragment.
-     */
     public static WelcomeFragment newInstance(@LayoutRes int layoutId) {
         WelcomeFragment fragment = new WelcomeFragment();
         Bundle args = new Bundle();
@@ -62,7 +52,6 @@ public class WelcomeFragment extends Fragment {
     @Override
     public void onAttach(@NonNull Context context) {
         super.onAttach(context);
-        // Gán listener, Activity chứa Fragment này PHẢI implement interface
         if (context instanceof OnWelcomeActionListener) {
             listener = (OnWelcomeActionListener) context;
         } else {
@@ -74,7 +63,6 @@ public class WelcomeFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Lấy layoutId từ arguments
         if (getArguments() != null) {
             layoutId = getArguments().getInt(ARG_LAYOUT_ID);
         }
@@ -83,11 +71,9 @@ public class WelcomeFragment extends Fragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Kiểm tra layoutId hợp lệ
         if (layoutId == 0) {
             throw new IllegalArgumentException("Invalid layoutId provided to WelcomeFragment");
         }
-        // Inflate (vẽ) layout tương ứng
         return inflater.inflate(layoutId, container, false);
     }
 
@@ -95,8 +81,7 @@ public class WelcomeFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Vì các layout khác nhau, các button này có thể null (không tồn tại).
-        // Chúng ta phải tìm và kiểm tra null trước khi gán listener.
+        // --- Tìm các View ---
 
         // Các nút của Màn 1 & 2
         TextView btnSkip = view.findViewById(R.id.btn_skip);
@@ -106,35 +91,40 @@ public class WelcomeFragment extends Fragment {
         Button btnRegister = view.findViewById(R.id.btn_register);
         TextView btnLogin = view.findViewById(R.id.btn_login);
 
-        // Gán listener (chỉ gán nếu nút đó tồn tại)
+        // [MỚI] Tìm nút Guest
+        TextView btnGuest = view.findViewById(R.id.btn_guest);
+
+        // --- Gán Listener (Kiểm tra null trước khi gán) ---
+
         if (btnSkip != null) {
             btnSkip.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onSkipClicked();
-                }
+                if (listener != null) listener.onSkipClicked();
             });
         }
 
         if (btnNext != null) {
             btnNext.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onNextClicked();
-                }
+                if (listener != null) listener.onNextClicked();
             });
         }
 
         if (btnRegister != null) {
             btnRegister.setOnClickListener(v -> {
-                if (listener != null) {
-                    listener.onRegisterClicked();
-                }
+                if (listener != null) listener.onRegisterClicked();
             });
         }
 
         if (btnLogin != null) {
             btnLogin.setOnClickListener(v -> {
+                if (listener != null) listener.onLoginClicked();
+            });
+        }
+
+        // [MỚI] Xử lý sự kiện nút Guest
+        if (btnGuest != null) {
+            btnGuest.setOnClickListener(v -> {
                 if (listener != null) {
-                    listener.onLoginClicked();
+                    listener.onGuestClicked();
                 }
             });
         }
@@ -143,7 +133,6 @@ public class WelcomeFragment extends Fragment {
     @Override
     public void onDetach() {
         super.onDetach();
-        // Hủy listener để tránh rò rỉ bộ nhớ (memory leak)
         listener = null;
     }
 }
