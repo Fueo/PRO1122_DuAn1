@@ -25,4 +25,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "FA25_DuAn1"
 include(":app")
- 
+include(":zpdk")

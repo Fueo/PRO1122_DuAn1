@@ -1,5 +1,10 @@
 package com.example.fa25_duan1.view.profile;
 
+import android.net.Uri; // Để mở CH Play
+import vn.zalopay.sdk.ZaloPayError;
+import vn.zalopay.sdk.ZaloPaySDK;
+import vn.zalopay.sdk.listeners.PayOrderListener;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -133,7 +138,7 @@ public class OrderHistoryFragment extends Fragment {
         }
 
         // CASE 2: Nếu là Online (QR hoặc Zalopay)
-        else if (paymentMethod.equalsIgnoreCase("qr") || paymentMethod.equalsIgnoreCase("zalopay")){
+        else if (paymentMethod.equalsIgnoreCase("qr")){
             Intent intent = new Intent(getContext(), DetailActivity.class);
             intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Thanh toán Online");
             intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "payment");
@@ -147,9 +152,24 @@ public class OrderHistoryFragment extends Fragment {
             startActivity(intent);
         }
 
-        // CASE 3: Khác
+        else if (paymentMethod.equalsIgnoreCase("zalopay")) {
+            // Hiện dialog xác nhận trước khi chuyển qua App ZaloPay
+            new CuteDialog.withIcon(requireActivity())
+                    .setIcon(R.drawable.ic_dialog_confirm) // Đảm bảo bạn có icon này
+                    .setTitle("Thanh toán ZaloPay")
+                    .setDescription("Bạn có muốn mở ZaloPay để thanh toán đơn hàng này không?")
+                    .setPrimaryColor(R.color.blue)
+                    .setPositiveButtonText("Mở ZaloPay", v -> {
+                        // Gọi API lấy token mới cho đơn hàng này
+                        requestZaloPayToken(order.getId());
+                    })
+                    .setNegativeButtonText("Hủy", v -> {})
+                    .show();
+        }
+
+        // CASE 4: Khác
         else {
-            FancyToast.makeText(getContext(), "Phương thức thanh toán không hỗ trợ thanh toán ngay!",
+            FancyToast.makeText(getContext(), "Phương thức thanh toán không hỗ trợ!",
                     FancyToast.LENGTH_SHORT, FancyToast.WARNING, false).show();
         }
     }
@@ -276,5 +296,98 @@ public class OrderHistoryFragment extends Fragment {
                 observer.onChanged(t);
             }
         });
+    }
+
+    private void requestZaloPayToken(String orderId) {
+        // Có thể hiện Loading Dialog ở đây nếu muốn
+
+        // Gọi API tạo giao dịch ZaloPay để lấy zpTransToken
+        orderViewModel.createZaloPayPayment(orderId).observe(getViewLifecycleOwner(), response -> {
+            if (response == null) return;
+
+            if (response.isStatus() && response.getData() != null) {
+                String zpToken = response.getData().getZpTransToken();
+                if (zpToken != null && !zpToken.isEmpty()) {
+                    // Có token -> Gọi SDK
+                    requestZaloPaySDK(zpToken);
+                } else {
+                    FancyToast.makeText(getContext(), "Lỗi: Không lấy được Token thanh toán!", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                }
+            } else {
+                String msg = (response.getMessage() != null) ? response.getMessage() : "Lỗi kết nối ZaloPay";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+            }
+        });
+    }
+
+    private void requestZaloPaySDK(String zpToken) {
+        if (!isAdded() || getActivity() == null) return;
+
+        ZaloPaySDK.getInstance().payOrder(
+                requireActivity(),
+                zpToken,
+                "demozpdk://app", // PHẢI KHỚP VỚI MANIFEST CỦA BẠN
+                new PayOrderListener() {
+                    @Override
+                    public void onPaymentSucceeded(String transactionId, String transToken, String appTransID) {
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                new CuteDialog.withIcon(requireActivity())
+                                        .setIcon(R.drawable.ic_check_circle)
+                                        .setTitle("Thanh toán thành công!")
+                                        .setDescription("Mã giao dịch: " + transactionId)
+                                        .hideNegativeButton(true)
+                                        .setPositiveButtonText("Đóng", v -> {
+                                            // Load lại danh sách đơn hàng để cập nhật trạng thái
+                                            orderViewModel.fetchOrderHistory();
+                                        })
+                                        .show();
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onPaymentCanceled(String zpTransToken, String appTransID) {
+                        if (getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                new CuteDialog.withIcon(requireActivity())
+                                        .setIcon(R.drawable.ic_dialog_error)
+                                        .setTitle("Lỗi")
+                                        .hideNegativeButton(true)
+                                        .setDescription("Đã hủy thanh toán")
+                                        .setPositiveButtonText("Đóng", v -> {})
+                                        .show();
+                            });
+                        }
+                    }
+
+                    @Override
+                    public void onPaymentError(ZaloPayError zaloPayError, String zpTransToken, String appTransID) {
+                        if(getActivity() != null) {
+                            getActivity().runOnUiThread(() -> {
+                                if (zaloPayError == ZaloPayError.PAYMENT_APP_NOT_FOUND) {
+                                    ZaloPaySDK.getInstance().navigateToZaloOnStore(requireActivity());
+                                } else {
+                                    new CuteDialog.withIcon(requireActivity())
+                                            .setIcon(R.drawable.ic_dialog_error)
+                                            .setTitle("Lỗi")
+                                            .hideNegativeButton(true)
+                                            .setDescription("Lỗi thanh toán: " + zaloPayError.toString())
+                                            .setPositiveButtonText("Đóng", v -> {})
+                                            .show();
+                                }
+                            });
+                        }
+                    }
+                }
+        );
+    }
+
+    private void openZaloPayOnStore() {
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=vn.com.vng.zalopay")));
+        } catch (android.content.ActivityNotFoundException anfe) {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=vn.com.vng.zalopay")));
+        }
     }
 }

@@ -10,6 +10,7 @@ import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.CheckoutRequest;
 import com.example.fa25_duan1.model.CheckoutResponse;
 import com.example.fa25_duan1.model.Order;
+import com.example.fa25_duan1.model.ZaloPayResult;
 import com.example.fa25_duan1.network.OrderApi;
 import com.example.fa25_duan1.network.RetrofitClient;
 import com.google.gson.Gson;
@@ -112,8 +113,7 @@ public class OrderRepository {
         return data;
     }
 
-    // --- 5. Update Order Status (ADMIN - Cập nhật đầy đủ) ---
-    // status: Trạng thái đơn, paymentMethod: COD/QR..., isPaid: Đã thanh toán hay chưa
+    // --- 5. Update Order Status (ADMIN) ---
     public LiveData<ApiResponse<Order>> updateOrderStatus(String orderId, String status, String paymentMethod, Boolean isPaid) {
         MutableLiveData<ApiResponse<Order>> result = new MutableLiveData<>();
 
@@ -192,7 +192,7 @@ public class OrderRepository {
         return result;
     }
 
-    // --- [MỚI 9] Update Payment Method (USER) ---
+    // --- 9. Update Payment Method (USER) ---
     public LiveData<ApiResponse<Order>> updatePaymentMethod(String orderId, String newPaymentMethod) {
         MutableLiveData<ApiResponse<Order>> result = new MutableLiveData<>();
 
@@ -205,14 +205,42 @@ public class OrderRepository {
                 if (response.isSuccessful() && response.body() != null) {
                     result.setValue(response.body());
                 } else {
-                    // Parse lỗi logic từ backend (VD: Không phải Pending, sai method...)
                     result.setValue(parseErrorOrder(response));
+                }
+            }
+            @Override
+            public void onFailure(@NonNull Call<ApiResponse<Order>> call, @NonNull Throwable t) {
+                result.setValue(null);
+            }
+        });
+        return result;
+    }
+
+    // --- [MỚI 10] Create ZaloPay Order ---
+    public LiveData<ApiResponse<ZaloPayResult>> createZaloPayOrder(String orderId) {
+        MutableLiveData<ApiResponse<ZaloPayResult>> result = new MutableLiveData<>();
+
+        // Tạo Body gửi lên Server: { "orderId": "..." }
+        Map<String, String> body = new HashMap<>();
+        body.put("orderId", orderId);
+
+        orderApi.createZaloPayOrder(body).enqueue(new Callback<ApiResponse<ZaloPayResult>>() {
+            @Override
+            public void onResponse(@NonNull Call<ApiResponse<ZaloPayResult>> call, @NonNull Response<ApiResponse<ZaloPayResult>> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    // Thành công: Server trả về 200 OK
+                    result.setValue(response.body());
+                } else {
+                    // Thất bại: Server trả về lỗi (parseErrorBody là hàm tự viết để đọc lỗi từ response.errorBody())
+                    // Lưu ý: Bạn cần ép kiểu về ApiResponse<ZaloPayResult>
+                    result.setValue(new ApiResponse<>(false, "Lỗi kết nối hoặc server trả lỗi", null));
                 }
             }
 
             @Override
-            public void onFailure(@NonNull Call<ApiResponse<Order>> call, @NonNull Throwable t) {
-                result.setValue(null);
+            public void onFailure(@NonNull Call<ApiResponse<ZaloPayResult>> call, @NonNull Throwable t) {
+                // Lỗi mạng
+                result.setValue(new ApiResponse<>(false, t.getMessage(), null));
             }
         });
         return result;
@@ -246,6 +274,18 @@ public class OrderRepository {
             if (response.errorBody() != null) {
                 String errorBody = response.errorBody().string();
                 Type type = new TypeToken<ApiResponse<Order>>(){}.getType();
+                return new Gson().fromJson(errorBody, type);
+            }
+        } catch (Exception e) { e.printStackTrace(); }
+        return new ApiResponse<>(false, "Lỗi server: " + response.code(), null);
+    }
+
+    // [MỚI] Helper parse lỗi cho Map
+    private ApiResponse<Map<String, String>> parseErrorMap(Response<?> response) {
+        try {
+            if (response.errorBody() != null) {
+                String errorBody = response.errorBody().string();
+                Type type = new TypeToken<ApiResponse<Map<String, String>>>(){}.getType();
                 return new Gson().fromJson(errorBody, type);
             }
         } catch (Exception e) { e.printStackTrace(); }

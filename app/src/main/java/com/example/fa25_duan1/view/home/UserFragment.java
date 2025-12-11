@@ -24,6 +24,7 @@ import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.view.auth.AuthActivity;
 import com.example.fa25_duan1.view.detail.DetailActivity;
+import com.example.fa25_duan1.view.zalo.ZaloRedirectActivity;
 import com.example.fa25_duan1.viewmodel.AuthViewModel;
 import com.example.fa25_duan1.viewmodel.OrderViewModel; // [MỚI] Import OrderViewModel
 import com.example.fa25_duan1.viewmodel.UserViewModel;
@@ -71,9 +72,9 @@ public class UserFragment extends Fragment {
 
         // Click menu history
         rlHistory.setOnClickListener(v -> {
-            Intent intent = new Intent(view.getContext(), DetailActivity.class);
-            intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Lịch sử mua hàng");
-            intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "orderhistory");
+            Intent intent = new Intent(view.getContext(), ZaloRedirectActivity.class);
+            intent.putExtra(ZaloRedirectActivity.EXTRA_HEADER_TITLE, "Lịch sử mua hàng");
+            intent.putExtra(ZaloRedirectActivity.EXTRA_CONTENT_FRAGMENT, "orderhistory");
             startActivity(intent);
         });
 

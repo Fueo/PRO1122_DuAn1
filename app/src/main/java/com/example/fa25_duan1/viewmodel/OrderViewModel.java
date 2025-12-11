@@ -11,6 +11,7 @@ import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.CheckoutRequest;
 import com.example.fa25_duan1.model.CheckoutResponse;
 import com.example.fa25_duan1.model.Order;
+import com.example.fa25_duan1.model.ZaloPayResult;
 import com.example.fa25_duan1.repository.OrderRepository;
 
 import java.text.SimpleDateFormat;
@@ -87,22 +88,21 @@ public class OrderViewModel extends AndroidViewModel {
     }
 
     // 5. Update Order Status (ADMIN - Full Control)
-    // Nếu chỉ update status, truyền paymentMethod=null, isPaid=null
     public LiveData<ApiResponse<Order>> updateOrderStatus(String orderId, String newStatus, String paymentMethod, Boolean isPaid) {
         return repository.updateOrderStatus(orderId, newStatus, paymentMethod, isPaid);
     }
 
-    // [MỚI] 9. Update Payment Method (USER)
+    // 6. Update Payment Method (USER)
     public LiveData<ApiResponse<Order>> updatePaymentMethod(String orderId, String newPaymentMethod) {
         return repository.updatePaymentMethod(orderId, newPaymentMethod);
     }
 
-    // 6. Get Detail
+    // 7. Get Detail
     public LiveData<ApiResponse<Order>> getOrderById(String orderId) {
         return repository.getOrderById(orderId);
     }
 
-    // Stats
+    // 8. Stats
     public LiveData<ApiResponse<Map<String, Integer>>> getStatusCount() {
         return repository.getStatusCount();
     }
@@ -110,8 +110,13 @@ public class OrderViewModel extends AndroidViewModel {
         return repository.getTotalOrders();
     }
 
+    // [MỚI 9] Tạo thanh toán ZaloPay
+    public LiveData<ApiResponse<ZaloPayResult>> createZaloPayPayment(String orderId) {
+        return repository.createZaloPayOrder(orderId);
+    }
+
     // =========================================================================
-    // KHU VỰC LOGIC LỌC VÀ SẮP XẾP (Giữ nguyên logic cũ)
+    // KHU VỰC LOGIC LỌC VÀ SẮP XẾP
     // =========================================================================
 
     public void filterAndSortOrders(int sortType, List<Integer> statusFilter, long startDate, long endDate, List<Integer> priceRanges) {

@@ -69,7 +69,7 @@ public class OrderUpdateFragment extends Fragment {
     private final List<String> paymentMethodCodeList = new LinkedList<>(Arrays.asList(
             "COD",
             "QR",
-            "Zalopay"
+            "ZaloPay"
     ));
 
     // 3. Danh sách Trạng thái thanh toán (isPaid)

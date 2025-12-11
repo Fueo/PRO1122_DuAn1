@@ -19,6 +19,7 @@ import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.CartAdapter;
 import com.example.fa25_duan1.model.CartItem;
 import com.example.fa25_duan1.view.detail.DetailActivity;
+import com.example.fa25_duan1.view.zalo.ZaloRedirectActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.google.android.material.button.MaterialButton;
 
@@ -137,9 +138,9 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
             cartViewModel.checkCartAvailability().observe(getViewLifecycleOwner(), isValid -> {
                 if (Boolean.TRUE.equals(isValid)) {
                     // Hợp lệ -> Chuyển trang
-                    Intent intent = new Intent(requireContext(), DetailActivity.class);
-                    intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Trang thanh toán");
-                    intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "checkout");
+                    Intent intent = new Intent(requireContext(), ZaloRedirectActivity.class);
+                    intent.putExtra(ZaloRedirectActivity.EXTRA_HEADER_TITLE, "Trang thanh toán");
+                    intent.putExtra(ZaloRedirectActivity.EXTRA_CONTENT_FRAGMENT, "checkout");
                     startActivity(intent);
                 } else {
                     // Không hợp lệ -> Báo lỗi & Load lại để cập nhật số lượng thực tế

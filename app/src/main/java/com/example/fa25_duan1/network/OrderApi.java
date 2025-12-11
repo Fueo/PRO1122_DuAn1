@@ -4,6 +4,7 @@ import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.CheckoutRequest;
 import com.example.fa25_duan1.model.CheckoutResponse;
 import com.example.fa25_duan1.model.Order;
+import com.example.fa25_duan1.model.ZaloPayResult;
 
 import java.util.List;
 import java.util.Map;
@@ -53,4 +54,7 @@ public interface OrderApi {
     // Body: { "paymentMethod": "QR" }
     @PUT("order/user/update-payment/{orderId}")
     Call<ApiResponse<Order>> updatePaymentMethod(@Path("orderId") String orderId, @Body Map<String, String> body);
+
+    @POST("payment/create-zalopay-order")
+    Call<ApiResponse<ZaloPayResult>> createZaloPayOrder(@Body Map<String, String> body);
 }
