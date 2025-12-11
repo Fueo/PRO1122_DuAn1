@@ -20,11 +20,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.BookGridAdapter;
 import com.example.fa25_duan1.model.Product;
+import com.example.fa25_duan1.view.detail.DetailActivity; // Import DetailActivity (Chứa giỏ hàng)
 import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 import com.shashank.sony.fancytoastlib.FancyToast;
+import io.github.cutelibs.cutedialog.CuteDialog; // Import Dialog
 
 import java.util.ArrayList;
 import java.util.List;
@@ -68,7 +70,6 @@ public class FavoriteFragment extends Fragment {
         super.onResume();
 
         // 2. Kích hoạt lấy dữ liệu mới nhất mỗi khi màn hình hiện lên
-        // (Bao gồm lần đầu tiên và khi quay lại từ màn hình Detail)
         if (favoriteViewModel != null) {
             favoriteViewModel.refreshFavorites();
         }
@@ -123,6 +124,12 @@ public class FavoriteFragment extends Fragment {
             public void onAddToCartClick(Product product) {
                 addToCartLogic(product);
             }
+
+            // --- [MỚI] XỬ LÝ SỰ KIỆN MUA NGAY ---
+            @Override
+            public void onBuyNowClick(Product product) {
+                handleBuyNow(product);
+            }
         });
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(getContext(), 2);
@@ -159,6 +166,7 @@ public class FavoriteFragment extends Fragment {
         });
     }
 
+    // --- LOGIC THÊM VÀO GIỎ (Chỉ hiện thông báo) ---
     private void addToCartLogic(Product product) {
         if (product == null) return;
 
@@ -173,9 +181,37 @@ public class FavoriteFragment extends Fragment {
         });
     }
 
+    // --- [MỚI] LOGIC MUA NGAY (Thêm vào giỏ + Chuyển màn hình) ---
+    private void handleBuyNow(Product product) {
+        if (product == null) return;
+
+        // 1. Hiện Loading Dialog
+
+        // 2. Gọi API thêm vào giỏ
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
+            // 3. Tắt Loading
+            if (response != null && response.isStatus()) {
+                // Thành công
+                cartViewModel.refreshCart();
+
+                // 4. Chuyển sang màn hình Giỏ hàng (DetailActivity - Cart Fragment)
+                Intent intent = new Intent(getContext(), DetailActivity.class);
+                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
+                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
+                startActivity(intent);
+
+            } else {
+                // Thất bại
+                String msg = (response != null && response.getMessage() != null)
+                        ? response.getMessage()
+                        : "Lỗi kết nối server";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+            }
+        });
+    }
+
     /**
      * Hàm tải chi tiết sản phẩm từ danh sách ID.
-     * Đã được sửa lỗi duplicate item.
      */
     private void fetchProductsFromIds(List<String> ids) {
         // Clear danh sách cũ để tránh bị cộng dồn

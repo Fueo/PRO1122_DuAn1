@@ -20,7 +20,7 @@ public interface UserApi {
 
     @Multipart
     @POST("users/add")
-    Call<User> addUserWithAvatar(
+    Call<ApiResponse<User>> addUserWithAvatar(
             @Part("username") RequestBody username,
             @Part("password") RequestBody password,
             @Part("name") RequestBody name,
@@ -41,8 +41,7 @@ public interface UserApi {
             @Part MultipartBody.Part avatar
     );
 
+    // Dùng Object để hứng data null nhưng vẫn giữ cấu trúc ApiResponse
     @DELETE("users/delete/{id}")
-    Call<Void> deleteUser(@Path("id") String id);
-
-
+    Call<ApiResponse<Object>> deleteUser(@Path("id") String id);
 }

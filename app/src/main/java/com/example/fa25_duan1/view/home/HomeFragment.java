@@ -1,8 +1,12 @@
 package com.example.fa25_duan1.view.home;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,13 +37,14 @@ import com.example.fa25_duan1.model.Banner;
 import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.model.Discount;
 import com.example.fa25_duan1.model.Product;
+import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import com.example.fa25_duan1.viewmodel.DiscountViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
-import com.shashank.sony.fancytoastlib.FancyToast; // Import thêm FancyToast
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -68,6 +73,7 @@ public class HomeFragment extends Fragment {
     // --- CÁC NÚT XEM THÊM ---
     private View btnSeeMore;
     private View btnSeeMoreSale;
+    private View btnSeeMoreRanking;
 
     // --- Adapters ---
     private BookGridAdapter saleBookAdapter;
@@ -89,8 +95,31 @@ public class HomeFragment extends Fragment {
     private Observer<List<Product>> currentRankingBooksObserver;
 
     // --- State Variables ---
-    private String currentSelectedCategoryId = null;
+    private String currentSelectedCategoryId = null; // Cho phần "Top sách theo danh mục"
+    private String currentRankingCategoryId = null; // [MỚI] Cho phần "Bảng xếp hạng"
     private List<Category> mCategoryList = new ArrayList<>();
+
+    // --- [MỚI] Banner Auto-scroll Variables ---
+    private List<Banner> mListBanners = new ArrayList<>(); // Đưa ra toàn cục
+    private Handler bannerHandler = new Handler(Looper.getMainLooper());
+    private Runnable bannerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (viewPagerBanner == null || mListBanners == null || mListBanners.isEmpty()) return;
+
+            int currentItem = viewPagerBanner.getCurrentItem();
+            int totalItem = mListBanners.size();
+
+            int nextItem = currentItem + 1;
+            if (nextItem >= totalItem) {
+                nextItem = 0;
+            }
+            viewPagerBanner.setCurrentItem(nextItem);
+
+            // Lặp lại sau 5 giây
+            bannerHandler.postDelayed(this, 5000);
+        }
+    };
 
     @Nullable
     @Override
@@ -105,10 +134,8 @@ public class HomeFragment extends Fragment {
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
         categoryViewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
-
         // Dùng requireActivity để share với Main Activity
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
-
         discountViewModel = new ViewModelProvider(this).get(DiscountViewModel.class);
 
         setupAdapters();
@@ -137,6 +164,7 @@ public class HomeFragment extends Fragment {
 
         btnSeeMore = view.findViewById(R.id.btn_see_more);
         btnSeeMoreSale = view.findViewById(R.id.btn_see_more_sale);
+        btnSeeMoreRanking = view.findViewById(R.id.btn_see_more_ranking);
     }
 
     @Override
@@ -147,17 +175,28 @@ public class HomeFragment extends Fragment {
             favoriteViewModel.refreshFavorites();
         }
 
-        // (Tùy chọn) Nếu bạn muốn reload cả giỏ hàng để cập nhật badge số lượng
         if (cartViewModel != null) {
             cartViewModel.refreshCart();
         }
+
+        // [MỚI] Tiếp tục chạy banner khi quay lại
+        bannerHandler.postDelayed(bannerRunnable, 5000);
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // [MỚI] Dừng chạy banner khi thoát/ẩn app
+        bannerHandler.removeCallbacks(bannerRunnable);
     }
 
     private void setupClickEvents() {
+        // Nút xem thêm của Top sách (dùng currentSelectedCategoryId)
         if (btnSeeMore != null) {
             btnSeeMore.setOnClickListener(v -> handleSeeMoreClick());
         }
 
+        // Nút xem thêm của Flash Sale
         if (btnSeeMoreSale != null) {
             btnSeeMoreSale.setOnClickListener(v -> {
                 ProductFragment productFragment = new ProductFragment();
@@ -166,6 +205,32 @@ public class HomeFragment extends Fragment {
                 productFragment.setArguments(args);
                 if (getActivity() instanceof HomeActivity) {
                     ((HomeActivity) getActivity()).loadFragment(productFragment, true);
+                }
+            });
+        }
+
+        // [SỬA] Nút xem thêm của Ranking (dùng currentRankingCategoryId)
+        if (btnSeeMoreRanking != null) {
+            btnSeeMoreRanking.setOnClickListener(v -> {
+                ProductFragment productFragment = new ProductFragment();
+                Bundle args = new Bundle();
+
+                // Lấy ID từ biến riêng của Ranking
+                String idToSend = currentRankingCategoryId;
+
+                // Fallback nếu chưa chọn gì
+                if (idToSend == null && !mCategoryList.isEmpty()) {
+                    idToSend = mCategoryList.get(0).get_id();
+                }
+
+                if (idToSend != null) {
+                    args.putString("category_id", idToSend);
+                    productFragment.setArguments(args);
+                    if (getActivity() instanceof HomeActivity) {
+                        ((HomeActivity) getActivity()).loadFragment(productFragment, true);
+                    }
+                } else {
+                    Toast.makeText(getContext(), "Đang tải dữ liệu...", Toast.LENGTH_SHORT).show();
                 }
             });
         }
@@ -190,6 +255,7 @@ public class HomeFragment extends Fragment {
             @Override public void onItemClick(Product product) { openDetail(product.getId()); }
             @Override public void onFavoriteClick(String productId) { favoriteViewModel.toggleFavorite(productId); }
             @Override public void onAddToCartClick(Product product) { addToCart(product); }
+            @Override public void onBuyNowClick(Product product) { handleBuyNow(product); }
         });
         rvSaleBooks.setAdapter(saleBookAdapter);
 
@@ -198,13 +264,14 @@ public class HomeFragment extends Fragment {
             @Override public void onItemClick(Product product) { openDetail(product.getId()); }
             @Override public void onFavoriteClick(String productId) { favoriteViewModel.toggleFavorite(productId); }
             @Override public void onAddToCartClick(Product product) { addToCart(product); }
+            @Override public void onBuyNowClick(Product product) { handleBuyNow(product); }
         });
         rvBooksGrid.setAdapter(bookGridAdapter);
 
         // Horizontal Adapter (Top sách theo danh mục)
         bookHorizontalAdapter = new BookHorizontalAdapter(getContext(), new ArrayList<>(), new BookHorizontalAdapter.OnItemClickListener() {
             @Override public void onItemClick(Product product) { openDetail(product.getId()); }
-            @Override public void onBuyClick(Product product) { addToCart(product); /* Logic mua ngay tương tự add cart */ }
+            @Override public void onBuyClick(Product product) { handleBuyNow(product); }
             @Override public void onFavoriteClick(String productId) { favoriteViewModel.toggleFavorite(productId); }
             @Override public void onAddToCartClick(Product product) { addToCart(product); }
         });
@@ -253,8 +320,6 @@ public class HomeFragment extends Fragment {
         }
     }
 
-
-
     private void setupDataObservation() {
         // --- LOGIC FLASH SALE ---
         discountViewModel.getDisplayedDiscounts().observe(getViewLifecycleOwner(), discounts -> {
@@ -293,10 +358,7 @@ public class HomeFragment extends Fragment {
 
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null && !categories.isEmpty()) {
-                mCategoryList.clear();
-                mCategoryList.addAll(categories);
-                if (currentSelectedCategoryId == null) currentSelectedCategoryId = categories.get(0).get_id();
-                setupCategoryTabs(categories);
+                filterActiveCategories(categories);
             }
         });
 
@@ -305,8 +367,6 @@ public class HomeFragment extends Fragment {
             if (saleBookAdapter != null) saleBookAdapter.setFavoriteIds(ids);
             if (bookHorizontalAdapter != null) bookHorizontalAdapter.setFavoriteIds(ids);
         });
-
-        // SỬA: ĐÃ XÓA observer cartViewModel.getMessage() tại đây
     }
 
     private void fetchOnSaleProducts(int limit) {
@@ -352,20 +412,30 @@ public class HomeFragment extends Fragment {
         }
     }
 
-    // --- SỬA: LOGIC THÊM GIỎ HÀNG (MỚI) ---
     private void addToCart(Product product) {
         if (product == null) return;
-
-        // Gọi ViewModel và lắng nghe kết quả trực tiếp
         cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
             if (response != null && response.isStatus()) {
-                // 1. Thành công: Refresh lại giỏ hàng (để Badge cập nhật)
                 cartViewModel.refreshCart();
-
-                // 2. Hiện thông báo đẹp (Dùng FancyToast)
                 FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
             } else {
-                // 3. Thất bại
+                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+            }
+        });
+    }
+
+    private void handleBuyNow(Product product) {
+        if (product == null) return;
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.isStatus()) {
+                cartViewModel.refreshCart();
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+                Intent intent = new Intent(getContext(), DetailActivity.class);
+                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
+                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
+                startActivity(intent);
+            } else {
                 String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
                 FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
@@ -379,6 +449,7 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupCategoryTabs(List<Category> categories) {
+        // --- XỬ LÝ TAB TOP BOOKS ---
         List<Category> topCats = copyCategories(categories);
         if (!topCats.isEmpty()) {
             boolean found = false;
@@ -401,12 +472,18 @@ public class HomeFragment extends Fragment {
         });
         rvCategories.setAdapter(adapterTop);
 
+        // --- [SỬA] XỬ LÝ TAB RANKING ---
         List<Category> rankCats = copyCategories(categories);
         if (!rankCats.isEmpty()) {
             rankCats.get(0).setSelected(true);
+
+            // Khởi tạo biến riêng cho ranking
+            currentRankingCategoryId = rankCats.get(0).get_id();
             loadRankingBooksByCategory(rankCats.get(0).get_id());
         }
         CategoryAdapter adapterRanking = new CategoryAdapter(rankCats, category -> {
+            // Cập nhật biến riêng cho ranking khi click
+            currentRankingCategoryId = category.get_id();
             loadRankingBooksByCategory(category.get_id());
         });
         rvRankingCategories.setAdapter(adapterRanking);
@@ -425,23 +502,17 @@ public class HomeFragment extends Fragment {
         currentTopBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentTopBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
-
-            // --- [MỚI] BƯỚC LỌC SẢN PHẨM ACTIVE ---
             List<Product> activeProducts = new ArrayList<>();
             for (Product p : products) {
-                // Chỉ lấy sản phẩm có status = true (Đang kinh doanh)
                 if (p.isStatus()) {
                     activeProducts.add(p);
                 }
             }
-
-            // Đưa list đã lọc vào adapter
             bookHorizontalAdapter.setProducts(activeProducts);
         };
         currentTopBooksLiveData.observe(getViewLifecycleOwner(), currentTopBooksObserver);
     }
 
-    // --- SỬA THÊM HÀM NÀY CHO ĐỒNG BỘ (BẢNG XẾP HẠNG) ---
     private void loadRankingBooksByCategory(String categoryId) {
         if (currentRankingBooksLiveData != null && currentRankingBooksObserver != null)
             currentRankingBooksLiveData.removeObserver(currentRankingBooksObserver);
@@ -449,19 +520,13 @@ public class HomeFragment extends Fragment {
         currentRankingBooksLiveData = productViewModel.getProductsByCategory(categoryId);
         currentRankingBooksObserver = products -> {
             if (products == null) products = new ArrayList<>();
-
-            // --- [MỚI] BƯỚC LỌC SẢN PHẨM ACTIVE ---
             List<Product> activeProducts = new ArrayList<>();
             for (Product p : products) {
                 if (p.isStatus()) {
                     activeProducts.add(p);
                 }
             }
-
-            // Sau đó mới sắp xếp trên danh sách đã lọc
             Collections.sort(activeProducts, (p1, p2) -> Integer.compare(p2.getFavorite(), p1.getFavorite()));
-
-            // Lấy top 5
             int limit = Math.min(activeProducts.size(), 5);
             rankingBookAdapter.setProducts(activeProducts.subList(0, limit));
         };
@@ -469,16 +534,31 @@ public class HomeFragment extends Fragment {
     }
 
     private void setupBanner() {
-        List<Banner> mListBanners = new ArrayList<>();
-        mListBanners.add(new Banner("Giấc mơ Mỹ", "Huyền Chip", R.drawable.banner));
-        mListBanners.add(new Banner("Đắc Nhân Tâm", "Dale Carnegie", R.drawable.banner));
+        mListBanners = new ArrayList<>(); // Khởi tạo biến global
+        mListBanners.add(new Banner("Giấc mơ Mỹ", "Huyền Chip", R.drawable.banner1));
+        mListBanners.add(new Banner("Re:Zero − Bắt đầu lại ở thế giới khác", "Nagatsuki Tappei", R.drawable.banner2));
+        mListBanners.add(new Banner("Dược sư tự sự", "Hyuga Natsu", R.drawable.banner3));
+        mListBanners.add(new Banner("86 - Eighty six", "Asato Asato", R.drawable.banner4));
+
         BannerAdapter adapter = new BannerAdapter(mListBanners);
         viewPagerBanner.setAdapter(adapter);
         setupIndicators(mListBanners.size());
         setCurrentIndicator(0);
+
         viewPagerBanner.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
-            @Override public void onPageSelected(int position) { super.onPageSelected(position); setCurrentIndicator(position); }
+            @Override
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+                setCurrentIndicator(position);
+
+                // [MỚI] Reset timer khi người dùng tự vuốt tay
+                bannerHandler.removeCallbacks(bannerRunnable);
+                bannerHandler.postDelayed(bannerRunnable, 5000);
+            }
         });
+
+        // Bắt đầu chạy banner
+        bannerHandler.postDelayed(bannerRunnable, 5000);
     }
 
     private void setupIndicators(int count) {
@@ -506,5 +586,70 @@ public class HomeFragment extends Fragment {
     public void onDestroyView() {
         super.onDestroyView();
         if (countDownTimer != null) countDownTimer.cancel();
+        // Dừng banner handler khi hủy view
+        bannerHandler.removeCallbacks(bannerRunnable);
+    }
+
+    private void filterActiveCategories(List<Category> allCategories) {
+        List<String> validCategoryIds = new ArrayList<>();
+        AtomicInteger checkedCount = new AtomicInteger(0);
+        int total = allCategories.size();
+
+        for (Category cat : allCategories) {
+            // Gọi ViewModel để lấy list sản phẩm của danh mục này
+            // Lưu ý: Observer này sẽ chạy bất đồng bộ
+            productViewModel.getProductsByCategory(cat.get_id()).observe(getViewLifecycleOwner(), new Observer<List<Product>>() {
+                @Override
+                public void onChanged(List<Product> products) {
+                    // Xóa Observer ngay sau khi nhận dữ liệu để tránh rò rỉ bộ nhớ hoặc gọi lại nhiều lần
+                    productViewModel.getProductsByCategory(cat.get_id()).removeObserver(this);
+
+                    boolean hasActiveProduct = false;
+                    if (products != null && !products.isEmpty()) {
+                        for (Product p : products) {
+                            if (p.isStatus()) { // Chỉ tính sản phẩm đang kinh doanh
+                                hasActiveProduct = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (hasActiveProduct) {
+                        validCategoryIds.add(cat.get_id());
+                    }
+
+                    // Kiểm tra xem đã duyệt xong tất cả danh mục chưa
+                    if (checkedCount.incrementAndGet() == total) {
+                        finalizeCategorySetup(allCategories, validCategoryIds);
+                    }
+                }
+            });
+        }
+    }
+
+    private void finalizeCategorySetup(List<Category> allCategories, List<String> validIds) {
+        // Tạo list danh mục cuối cùng, giữ đúng thứ tự gốc
+        List<Category> finalCategories = new ArrayList<>();
+        for (Category cat : allCategories) {
+            if (validIds.contains(cat.get_id())) {
+                finalCategories.add(cat);
+            }
+        }
+
+        if (!finalCategories.isEmpty()) {
+            mCategoryList.clear();
+            mCategoryList.addAll(finalCategories);
+
+            // Reset lại lựa chọn nếu danh mục đang chọn bị biến mất do lọc
+            if (currentSelectedCategoryId == null || !validIds.contains(currentSelectedCategoryId)) {
+                currentSelectedCategoryId = finalCategories.get(0).get_id();
+            }
+            if (currentRankingCategoryId == null || !validIds.contains(currentRankingCategoryId)) {
+                currentRankingCategoryId = finalCategories.get(0).get_id();
+            }
+
+            // Tiến hành setup Tab như bình thường với list đã lọc
+            setupCategoryTabs(finalCategories);
+        }
     }
 }

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.BookGridAdapter;
 import com.example.fa25_duan1.model.Product;
+import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
@@ -153,6 +154,11 @@ public class ProductFragment extends Fragment {
                 // SỬA: Gọi hàm logic mới
                 addToCartLogic(product);
             }
+
+            @Override
+            public void onBuyNowClick(Product product) {
+                handleBuyNow(product);
+            }
         });
 
         GridLayoutManager gridLayoutManager = new GridLayoutManager(getContext(), 2);
@@ -199,6 +205,29 @@ public class ProductFragment extends Fragment {
 
                 // 2. Hiện thông báo đẹp
                 FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+            } else {
+                // 3. Thất bại
+                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+            }
+        });
+    }
+
+    private void handleBuyNow(Product product) {
+        if (product == null) return;
+
+        // Gọi ViewModel và lắng nghe kết quả trực tiếp
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
+            if (response != null && response.isStatus()) {
+                // 1. Thành công: Refresh lại giỏ hàng (để Badge cập nhật)
+                cartViewModel.refreshCart();
+
+                // 2. Hiện thông báo đẹp
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+                Intent intent = new Intent(getContext(), DetailActivity.class);
+                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
+                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
+                startActivity(intent);
             } else {
                 // 3. Thất bại
                 String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";

@@ -22,6 +22,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.bumptech.glide.Glide;
 import com.example.fa25_duan1.R;
+import com.example.fa25_duan1.model.ApiResponse; // IMPORT QUAN TRỌNG
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.utils.FileUtils;
 import com.example.fa25_duan1.viewmodel.UserViewModel;
@@ -42,10 +43,9 @@ import io.github.cutelibs.cutedialog.CuteDialog;
 public class AccountUpdateFragment extends Fragment {
 
     private NiceSpinner spRole;
-    // Đã xóa edtPassword vì layout không có
     private EditText edtUsername, edtNewPassword, edtConfirmPassword, edtFullName, edtEmail;
-    private TextView tvTitlePassword, tvTitleNewPassword; // Đã xóa tvTitleOldPassword
-    private LinearLayout llNewPassword; // Layout chứa ô mật khẩu mới
+    private TextView tvTitlePassword, tvTitleNewPassword;
+    private LinearLayout llNewPassword;
     private ImageView ivProfile, btnChangeAvatar;
     private Button btnUpdate;
 
@@ -73,18 +73,13 @@ public class AccountUpdateFragment extends Fragment {
         // Ánh xạ View
         spRole = view.findViewById(R.id.spRole);
         edtUsername = view.findViewById(R.id.edtUsername);
-
-        // Layout chỉ có edtNewPassword và edtConfirmPassword
         edtNewPassword = view.findViewById(R.id.edtNewPassword);
         edtConfirmPassword = view.findViewById(R.id.edtConfirmPassword);
-
         edtFullName = view.findViewById(R.id.edtFullName);
         edtEmail = view.findViewById(R.id.edtEmail);
-
         ivProfile = view.findViewById(R.id.ivProfile);
         btnUpdate = view.findViewById(R.id.btnSave);
         btnChangeAvatar = view.findViewById(R.id.btnChangeAvatar);
-
         tvTitlePassword = view.findViewById(R.id.tvTitlePassword);
         tvTitleNewPassword = view.findViewById(R.id.tvTitleNewPassword);
         llNewPassword = view.findViewById(R.id.llNewPassword);
@@ -100,16 +95,11 @@ public class AccountUpdateFragment extends Fragment {
             // --- CHẾ ĐỘ UPDATE ---
             edtUsername.setEnabled(false);
             edtUsername.setBackgroundTintList(ColorStateList.valueOf(0xFFCCCCCC));
-
-            // Giữ nguyên text layout: "Đổi mật khẩu", "Mật khẩu mới"
             loadUserDetail(userId);
         } else {
             // --- CHẾ ĐỘ ADD NEW ---
-            // Sửa lại text trên UI cho hợp lý với việc tạo mới
             tvTitlePassword.setText("Tạo mật khẩu");
             tvTitleNewPassword.setText("Mật khẩu");
-
-            // Ẩn/Hiện layout nếu cần (Ở đây ta giữ nguyên layout nhưng đổi text label)
         }
 
         btnChangeAvatar.setOnClickListener(v -> pickImageFromGallery());
@@ -122,19 +112,21 @@ public class AccountUpdateFragment extends Fragment {
         });
     }
 
+    // --- CẬP NHẬT LOGIC LOAD USER ---
     private void loadUserDetail(String id) {
-        viewModel.getUserByID(id).observe(getViewLifecycleOwner(), user -> {
-            if (user != null) {
-                this.currentUser = user;
+        viewModel.getUserByID(id).observe(getViewLifecycleOwner(), response -> {
+            // Check ApiResponse
+            if (response != null && response.isStatus() && response.getData() != null) {
+                this.currentUser = response.getData(); // Lấy data từ response
 
-                spRole.setSelectedIndex(user.getRole());
-                edtUsername.setText(user.getUsername());
-                edtFullName.setText(user.getName());
-                edtEmail.setText(user.getEmail());
+                spRole.setSelectedIndex(currentUser.getRole());
+                edtUsername.setText(currentUser.getUsername());
+                edtFullName.setText(currentUser.getName());
+                edtEmail.setText(currentUser.getEmail());
 
-                if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+                if (currentUser.getAvatar() != null && !currentUser.getAvatar().isEmpty()) {
                     Glide.with(getContext())
-                            .load(user.getAvatar())
+                            .load(currentUser.getAvatar())
                             .placeholder(R.drawable.ic_avatar_placeholder)
                             .error(R.drawable.ic_avatar_placeholder)
                             .into(ivProfile);
@@ -142,7 +134,8 @@ public class AccountUpdateFragment extends Fragment {
                     ivProfile.setImageResource(R.drawable.ic_avatar_placeholder);
                 }
             } else {
-                FancyToast.makeText(getContext(), "Không tải được thông tin User", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                String msg = (response != null && response.getMessage() != null) ? response.getMessage() : "Lỗi tải thông tin!";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
@@ -179,7 +172,6 @@ public class AccountUpdateFragment extends Fragment {
         return RequestBody.create(MediaType.parse("text/plain"), value);
     }
 
-    // Hàm validate chung cho các trường cơ bản (trừ password xử lý riêng)
     private boolean validateCommonInput() {
         String username = edtUsername.getText().toString().trim();
         String fullName = edtFullName.getText().toString().trim();
@@ -189,42 +181,35 @@ public class AccountUpdateFragment extends Fragment {
         if (username.isEmpty()) {
             edtUsername.setError("Username không được để trống");
             edtUsername.requestFocus();
-            FancyToast.makeText(getContext(), "Vui lòng nhập Username", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         }
-
         if (fullName.isEmpty()) {
             edtFullName.setError("Tên không được để trống");
             edtFullName.requestFocus();
-            FancyToast.makeText(getContext(), "Vui lòng nhập họ tên", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         }
-
         if (email.isEmpty()) {
             edtEmail.setError("Email không được để trống");
             edtEmail.requestFocus();
-            FancyToast.makeText(getContext(), "Vui lòng nhập email", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         } else if (!email.matches(emailRegex)) {
             edtEmail.setError("Email không hợp lệ");
             edtEmail.requestFocus();
-            FancyToast.makeText(getContext(), "Email không đúng định dạng", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         }
         return true;
     }
 
+    // --- CẬP NHẬT LOGIC ADD USER ---
     private void addUser() {
         if (!validateCommonInput()) return;
 
-        // Validate riêng cho ADD: Password là bắt buộc
         String password = edtNewPassword.getText().toString().trim();
         String confirmPass = edtConfirmPassword.getText().toString().trim();
 
         if (password.isEmpty()) {
             edtNewPassword.setError("Mật khẩu không được để trống");
             edtNewPassword.requestFocus();
-            FancyToast.makeText(getContext(), "Vui lòng nhập mật khẩu", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return;
         }
 
@@ -239,35 +224,36 @@ public class AccountUpdateFragment extends Fragment {
         String email = edtEmail.getText().toString().trim();
         int role = spRole.getSelectedIndex();
 
-        RequestBody usernameBody = toRequestBody(username);
-        RequestBody passwordBody = toRequestBody(password); // Dùng mật khẩu mới nhập
-        RequestBody nameBody = toRequestBody(fullName);
-        RequestBody emailBody = toRequestBody(email);
-        RequestBody roleBody = toRequestBody(String.valueOf(role));
-        MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
-
-        viewModel.addUserWithAvatar(usernameBody, passwordBody, nameBody, emailBody, roleBody, avatarPart)
-                .observe(getViewLifecycleOwner(), user -> {
-                    if (user != null) {
-                        showSuccessDialog("Thêm user thành công!");
-                    } else {
-                        FancyToast.makeText(getContext(), "Thêm user thất bại (Trùng Username/Email).", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
-                    }
-                });
+        viewModel.addUserWithAvatar(
+                toRequestBody(username),
+                toRequestBody(password),
+                toRequestBody(fullName),
+                toRequestBody(email),
+                toRequestBody(String.valueOf(role)),
+                prepareFilePart("avatar", selectedAvatarUri)
+        ).observe(getViewLifecycleOwner(), response -> {
+            // Check ApiResponse
+            if (response != null && response.isStatus()) {
+                String msg = response.getMessage() != null ? response.getMessage() : "Thêm user thành công!";
+                showSuccessDialog(msg);
+            } else {
+                String msg = (response != null && response.getMessage() != null) ? response.getMessage() : "Thêm thất bại!";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+            }
+        });
     }
 
+    // --- CẬP NHẬT LOGIC UPDATE USER ---
     private void updateUser() {
         if (currentUser == null) {
-            FancyToast.makeText(requireContext(), "Đang tải dữ liệu...", FancyToast.LENGTH_SHORT, FancyToast.INFO, true).show();
+            FancyToast.makeText(requireContext(), "Chưa tải xong dữ liệu...", FancyToast.LENGTH_SHORT, FancyToast.INFO, true).show();
             return;
         }
         if (!validateCommonInput()) return;
 
-        // Logic Update Password:
-        // Nếu ô "Mật khẩu mới" có nhập -> Cập nhật. Nếu trống -> Giữ mật khẩu cũ.
         String newPass = edtNewPassword.getText().toString().trim();
         String confirmPass = edtConfirmPassword.getText().toString().trim();
-        String finalPassword = currentUser.getPassword(); // Mặc định dùng password cũ
+        String finalPassword = currentUser.getPassword();
 
         if (!newPass.isEmpty()) {
             if (!newPass.equals(confirmPass)) {
@@ -275,27 +261,29 @@ public class AccountUpdateFragment extends Fragment {
                 FancyToast.makeText(getContext(), "Mật khẩu mới không trùng khớp", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                 return;
             }
-            finalPassword = newPass; // Nếu nhập mới thì lấy password mới
+            finalPassword = newPass;
         }
 
         String fullName = edtFullName.getText().toString().trim();
         String email = edtEmail.getText().toString().trim();
         int role = spRole.getSelectedIndex();
 
-        RequestBody usernameBody = toRequestBody(currentUser.getUsername());
-        RequestBody passwordBody = toRequestBody(finalPassword);
-        RequestBody nameBody = toRequestBody(fullName);
-        RequestBody emailBody = toRequestBody(email);
-        RequestBody roleBody = toRequestBody(String.valueOf(role));
-        MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
-
-        viewModel.updateUserWithAvatar(userId, usernameBody, passwordBody, nameBody, emailBody,
-                roleBody, avatarPart).observe(getViewLifecycleOwner(), updatedUser -> {
-
-            if (updatedUser != null) {
-                showSuccessDialog("Cập nhật thành công!");
+        viewModel.updateUserWithAvatar(
+                userId,
+                toRequestBody(currentUser.getUsername()),
+                toRequestBody(finalPassword),
+                toRequestBody(fullName),
+                toRequestBody(email),
+                toRequestBody(String.valueOf(role)),
+                prepareFilePart("avatar", selectedAvatarUri)
+        ).observe(getViewLifecycleOwner(), response -> {
+            // Check ApiResponse
+            if (response != null && response.isStatus()) {
+                String msg = response.getMessage() != null ? response.getMessage() : "Cập nhật thành công!";
+                showSuccessDialog(msg);
             } else {
-                FancyToast.makeText(getContext(), "Cập nhật thất bại. Vui lòng thử lại.", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                String msg = (response != null && response.getMessage() != null) ? response.getMessage() : "Cập nhật thất bại!";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }

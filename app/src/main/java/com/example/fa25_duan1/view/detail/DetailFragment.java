@@ -1,6 +1,7 @@
 package com.example.fa25_duan1.view.detail;
 
 import android.app.Dialog;
+import android.content.Intent; // Import thêm Intent
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -122,7 +123,6 @@ public class DetailFragment extends Fragment {
 
     private void initViewModel() {
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-        // Dùng requireActivity để share ViewModel với Activity chính
         cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
         favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
     }
@@ -145,8 +145,14 @@ public class DetailFragment extends Fragment {
 
             @Override
             public void onAddToCartClick(Product product) {
-                // Gọi hàm xử lý thêm vào giỏ
+                // Thêm vào giỏ hàng (không chuyển màn hình)
                 addToCartLogic(product.getId());
+            }
+
+            // --- [MỚI] XỬ LÝ NÚT MUA NGAY TRÊN SẢN PHẨM LIÊN QUAN ---
+            @Override
+            public void onBuyNowClick(Product product) {
+                handleBuyNow(product.getId());
             }
         });
 
@@ -154,45 +160,61 @@ public class DetailFragment extends Fragment {
     }
 
     private void setupDataObservation() {
-        // Lắng nghe danh sách yêu thích
         favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
             if (relatedProductAdapter != null) {
                 relatedProductAdapter.setFavoriteIds(ids);
             }
             if (currentProduct != null) {
                 if (ids != null && ids.contains(currentProduct.getId())) {
-                    // Đã yêu thích -> Tim đỏ
                     ivHeart.setImageResource(R.drawable.ic_heart_filled_red);
                 } else {
-                    // Chưa yêu thích -> Tim xám viền
                     ivHeart.setImageResource(R.drawable.ic_heart_outline_gray);
                 }
             }
         });
     }
 
-    // --- LOGIC CART (ĐÃ BỎ NAVIGATE) ---
+    // --- LOGIC THÊM VÀO GIỎ (NÚT CART) ---
     private void addToCartLogic(String productId) {
-        // Disable nút để tránh spam click
         btnAddToCart.setEnabled(false);
         btnBuyNow.setEnabled(false);
 
-        // Gọi ViewModel và observe kết quả ngay tại chỗ
         cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), response -> {
-            // Enable lại nút
             btnAddToCart.setEnabled(true);
             btnBuyNow.setEnabled(true);
 
             if (response != null && response.isStatus()) {
-                // Thành công -> Refresh lại giỏ hàng (để update badge số lượng)
+                cartViewModel.refreshCart();
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
+            } else {
+                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối hoặc hết hàng";
+                showErrorDialog(msg);
+            }
+        });
+    }
+
+    // --- [MỚI] LOGIC MUA NGAY (NÚT MUA NGAY) ---
+    private void handleBuyNow(String productId) {
+        if (productId == null) return;
+        // 2. Gọi API thêm vào giỏ
+        cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), response -> {
+            // 3. Tắt Loading
+
+            if (response != null && response.isStatus()) {
+                // Thành công -> Refresh lại giỏ hàng
                 cartViewModel.refreshCart();
 
-                // Chỉ hiển thị thông báo thành công (Không chuyển màn hình)
-                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
+                // 4. Chuyển sang màn hình Giỏ hàng (DetailActivity - Fragment Cart)
+                Intent intent = new Intent(getContext(), DetailActivity.class);
+                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
+                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
+                startActivity(intent);
 
             } else {
-                // Thất bại -> Báo lỗi
-                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối hoặc hết hàng";
+                // Thất bại
+                String msg = (response != null && response.getMessage() != null)
+                        ? response.getMessage()
+                        : "Lỗi kết nối server";
                 showErrorDialog(msg);
             }
         });
@@ -205,60 +227,48 @@ public class DetailFragment extends Fragment {
             }
         });
 
-        // --- SỬA ĐỔI LOGIC CLICK TIM ---
         ivHeart.setOnClickListener(v -> {
             if (currentProduct != null) {
-                // 1. Lấy trạng thái hiện tại từ ViewModel
                 List<String> currentIds = favoriteViewModel.getFavoriteIds().getValue();
                 boolean isCurrentlyFavorite = currentIds != null && currentIds.contains(currentProduct.getId());
 
-                // 2. Xử lý số lượng hiển thị (Optimistic UI update)
                 try {
                     int currentCount = Integer.parseInt(tvLikes.getText().toString());
-
                     if (isCurrentlyFavorite) {
-                        // Nếu đang thích mà bấm -> Bỏ thích -> Giảm 1
                         currentCount = Math.max(0, currentCount - 1);
                     } else {
-                        // Nếu chưa thích mà bấm -> Thích -> Tăng 1
                         currentCount = currentCount + 1;
                     }
-                    // Cập nhật text ngay lập tức
                     tvLikes.setText(String.valueOf(currentCount));
-
-                    // Cập nhật lại biến local currentProduct để đồng bộ dữ liệu nếu cần dùng lại
                     currentProduct.setFavorite(currentCount);
-
                 } catch (NumberFormatException e) {
                     e.printStackTrace();
                 }
 
-                // 3. Gọi ViewModel để xử lý logic lưu xuống DB/API
                 favoriteViewModel.toggleFavorite(currentProduct.getId());
 
-                // 4. Hiệu ứng Animation
                 v.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).withEndAction(() ->
                         v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
                 ).start();
             }
         });
 
-        // Nút Thêm vào giỏ
+        // Nút Thêm vào giỏ (Chỉ thêm, không chuyển trang)
         btnAddToCart.setOnClickListener(v -> {
             if (currentProduct != null) {
                 addToCartLogic(currentProduct.getId());
             }
         });
 
-        // Nút Mua ngay
+        // Nút Mua ngay (Thêm + Chuyển trang thanh toán)
         btnBuyNow.setOnClickListener(v -> {
             if (currentProduct != null) {
-                addToCartLogic(currentProduct.getId());
+                handleBuyNow(currentProduct.getId());
             }
         });
     }
 
-    // ... (Các phần code bên dưới giữ nguyên y hệt logic cũ) ...
+    // ... (Các phần code hiển thị dữ liệu giữ nguyên) ...
 
     private void navigateToProductDetail(String newProductId) {
         DetailFragment newFragment = new DetailFragment();

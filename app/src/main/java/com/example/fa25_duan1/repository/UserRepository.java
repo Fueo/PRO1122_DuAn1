@@ -8,7 +8,8 @@ import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.network.RetrofitClient;
 import com.example.fa25_duan1.network.UserApi;
-import java.util.ArrayList;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import java.util.List;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
@@ -18,96 +19,79 @@ import retrofit2.Response;
 
 public class UserRepository {
     private final UserApi userApi;
+    private final Gson gson = new Gson(); // Để parse lỗi từ errorBody
 
     public UserRepository(Context context) {
         userApi = RetrofitClient.getInstance(context).getUserApi();
     }
 
-    public LiveData<List<User>> getAllUsers() {
-        MutableLiveData<List<User>> data = new MutableLiveData<>();
-        userApi.getAllUsers().enqueue(new Callback<ApiResponse<List<User>>>() {
+    /**
+     * HÀM XỬ LÝ TẬP TRUNG (CORE)
+     * ViewModel chỉ cần gọi hàm này, mọi thứ onResponse/onFailure/ErrorParsing
+     * đều được xử lý tại đây và bắn ra LiveData kết quả cuối cùng.
+     */
+    private <T> LiveData<ApiResponse<T>> callApi(Call<ApiResponse<T>> call) {
+        MutableLiveData<ApiResponse<T>> liveData = new MutableLiveData<>();
+
+        call.enqueue(new Callback<ApiResponse<T>>() {
             @Override
-            public void onResponse(@NonNull Call<ApiResponse<List<User>>> call, @NonNull Response<ApiResponse<List<User>>> response) {
+            public void onResponse(@NonNull Call<ApiResponse<T>> call, @NonNull Response<ApiResponse<T>> response) {
                 if (response.isSuccessful() && response.body() != null) {
-                    data.setValue(response.body().getData() != null ? response.body().getData() : new ArrayList<>());
+                    // 1. Thành công (HTTP 200) -> Trả về body gốc
+                    liveData.setValue(response.body());
                 } else {
-                    data.setValue(new ArrayList<>());
+                    // 2. Lỗi từ Server (HTTP 400, 404, 500...)
+                    // Retrofit đẩy JSON lỗi vào errorBody(), ta phải parse nó ra
+                    try {
+                        if (response.errorBody() != null) {
+                            ApiResponse<T> errorResponse = gson.fromJson(
+                                    response.errorBody().charStream(),
+                                    new TypeToken<ApiResponse<T>>() {}.getType()
+                            );
+                            liveData.setValue(errorResponse);
+                        } else {
+                            liveData.setValue(new ApiResponse<>(false, "Lỗi không xác định: " + response.code(), null));
+                        }
+                    } catch (Exception e) {
+                        liveData.setValue(new ApiResponse<>(false, "Lỗi phân tích dữ liệu lỗi: " + e.getMessage(), null));
+                    }
                 }
             }
+
             @Override
-            public void onFailure(@NonNull Call<ApiResponse<List<User>>> call, @NonNull Throwable t) {
-                data.setValue(new ArrayList<>());
+            public void onFailure(@NonNull Call<ApiResponse<T>> call, @NonNull Throwable t) {
+                // 3. Lỗi mạng, mất kết nối, timeout
+                liveData.setValue(new ApiResponse<>(false, "Lỗi kết nối: " + t.getMessage(), null));
             }
         });
-        return data;
+
+        return liveData;
     }
 
-    public LiveData<Integer> getTotalAccount() {
-        MutableLiveData<Integer> countData = new MutableLiveData<>();
-        userApi.getTotalAccount().enqueue(new Callback<ApiResponse<Integer>>() {
-            @Override
-            public void onResponse(@NonNull Call<ApiResponse<Integer>> call, @NonNull Response<ApiResponse<Integer>> response) {
-                if (response.isSuccessful() && response.body() != null) countData.setValue(response.body().getData());
-                else countData.setValue(0);
-            }
-            @Override
-            public void onFailure(@NonNull Call<ApiResponse<Integer>> call, @NonNull Throwable t) { countData.setValue(0); }
-        });
-        return countData;
+    // --- CÁC HÀM PUBLIC ---
+    // Code cực gọn, chỉ việc truyền Call vào hàm callApi
+
+    public LiveData<ApiResponse<List<User>>> getAllUsers() {
+        return callApi(userApi.getAllUsers());
     }
 
-    public LiveData<User> getUserByID(String id) {
-        MutableLiveData<User> data = new MutableLiveData<>();
-        userApi.getUserByID(id).enqueue(new Callback<ApiResponse<User>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<User>> call, Response<ApiResponse<User>> response) {
-                if (response.isSuccessful() && response.body() != null) data.setValue(response.body().getData());
-                else data.setValue(null);
-            }
-            @Override
-            public void onFailure(Call<ApiResponse<User>> call, Throwable t) { data.setValue(null); }
-        });
-        return data;
+    public LiveData<ApiResponse<Integer>> getTotalAccount() {
+        return callApi(userApi.getTotalAccount());
     }
 
-    public LiveData<User> addUserWithAvatar(RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
-        MutableLiveData<User> result = new MutableLiveData<>();
-        userApi.addUserWithAvatar(username, password, name, email, role, avatar).enqueue(new Callback<User>() {
-            @Override
-            public void onResponse(Call<User> call, Response<User> response) {
-                if (response.isSuccessful() && response.body() != null) result.setValue(response.body());
-                else result.setValue(null);
-            }
-            @Override
-            public void onFailure(Call<User> call, Throwable t) { result.setValue(null); }
-        });
-        return result;
+    public LiveData<ApiResponse<User>> getUserByID(String id) {
+        return callApi(userApi.getUserByID(id));
     }
 
-    public LiveData<User> updateUserWithAvatar(String id, RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
-        MutableLiveData<User> result = new MutableLiveData<>();
-        userApi.updateUserWithAvatar(id, username, password, name, email, role, avatar).enqueue(new Callback<ApiResponse<User>>() {
-            @Override
-            public void onResponse(Call<ApiResponse<User>> call, Response<ApiResponse<User>> response) {
-                if (response.isSuccessful() && response.body() != null) result.setValue(response.body().getData());
-                else result.setValue(null);
-            }
-            @Override
-            public void onFailure(Call<ApiResponse<User>> call, Throwable t) { result.setValue(null); }
-        });
-        return result;
+    public LiveData<ApiResponse<User>> addUserWithAvatar(RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
+        return callApi(userApi.addUserWithAvatar(username, password, name, email, role, avatar));
     }
 
-    public LiveData<Boolean> deleteUser(String id) {
-        MutableLiveData<Boolean> result = new MutableLiveData<>();
-        userApi.deleteUser(id).enqueue(new Callback<Void>() {
-            @Override
-            public void onResponse(Call<Void> call, Response<Void> response) { result.setValue(response.isSuccessful()); }
-            @Override
-            public void onFailure(Call<Void> call, Throwable t) { result.setValue(false); }
-        });
-        return result;
+    public LiveData<ApiResponse<User>> updateUserWithAvatar(String id, RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
+        return callApi(userApi.updateUserWithAvatar(id, username, password, name, email, role, avatar));
     }
 
-
+    public LiveData<ApiResponse<Object>> deleteUser(String id) {
+        return callApi(userApi.deleteUser(id));
+    }
 }

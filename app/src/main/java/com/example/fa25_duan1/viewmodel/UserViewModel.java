@@ -5,6 +5,7 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.repository.UserRepository;
 import java.util.ArrayList;
@@ -14,9 +15,13 @@ import okhttp3.RequestBody;
 
 public class UserViewModel extends AndroidViewModel {
     private final UserRepository repository;
+
+    // Dùng để quản lý search/filter tại local
     private final MediatorLiveData<List<User>> allUsersLiveData = new MediatorLiveData<>();
     private final MediatorLiveData<List<User>> displayedUsersLiveData = new MediatorLiveData<>();
-    private LiveData<List<User>> currentRepoSource;
+
+    // Biến để hứng LiveData từ Repo
+    private LiveData<ApiResponse<List<User>>> currentRepoSource;
 
     public UserViewModel(@NonNull Application application) {
         super(application);
@@ -28,10 +33,21 @@ public class UserViewModel extends AndroidViewModel {
 
     public void refreshData() {
         if (currentRepoSource != null) displayedUsersLiveData.removeSource(currentRepoSource);
+
+        // Gọi Repo -> Repo trả về LiveData<ApiResponse> đã xử lý xong xuôi
         currentRepoSource = repository.getAllUsers();
-        displayedUsersLiveData.addSource(currentRepoSource, users -> {
-            if (users == null) users = new ArrayList<>();
+
+        displayedUsersLiveData.addSource(currentRepoSource, response -> {
+            List<User> users = new ArrayList<>();
+
+            // ViewModel chỉ cần check status và lấy data
+            if (response != null && response.isStatus() && response.getData() != null) {
+                users = response.getData();
+            }
+
             allUsersLiveData.setValue(users);
+
+            // Sort mặc định (Mới nhất lên đầu)
             List<User> sorted = new ArrayList<>(users);
             sorted.sort((u1, u2) -> {
                 if (u1.getCreateAt() == null || u2.getCreateAt() == null) return 0;
@@ -41,20 +57,31 @@ public class UserViewModel extends AndroidViewModel {
         });
     }
 
-    public LiveData<Integer> getTotalAccount() { return repository.getTotalAccount(); }
+    // --- CÁC HÀM GỌI API ---
+    // Trả thẳng ApiResponse về cho View xử lý hiển thị Message
 
-    public LiveData<User> addUserWithAvatar(RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
+    public LiveData<ApiResponse<Integer>> getTotalAccount() {
+        return repository.getTotalAccount();
+    }
+
+    public LiveData<ApiResponse<User>> addUserWithAvatar(RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
         return repository.addUserWithAvatar(username, password, name, email, role, avatar);
     }
-    public LiveData<User> updateUserWithAvatar(String id, RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
+
+    public LiveData<ApiResponse<User>> updateUserWithAvatar(String id, RequestBody username, RequestBody password, RequestBody name, RequestBody email, RequestBody role, MultipartBody.Part avatar) {
         return repository.updateUserWithAvatar(id, username, password, name, email, role, avatar);
     }
-    public LiveData<Boolean> deleteUser(String id) { return repository.deleteUser(id); }
-    public LiveData<User> getUserByID(String id) { return repository.getUserByID(id); }
 
+    public LiveData<ApiResponse<Object>> deleteUser(String id) {
+        return repository.deleteUser(id);
+    }
 
+    public LiveData<ApiResponse<User>> getUserByID(String id) {
+        return repository.getUserByID(id);
+    }
 
-    // --- Search Logic (Giữ nguyên của bạn) ---
+    // --- CÁC HÀM SEARCH / FILTER GIỮ NGUYÊN ---
+    // (Vì các hàm này thao tác trên List<User> đã lưu trong RAM ở biến allUsersLiveData)
     public void searchUsers(String query, String type) {
         List<User> masterList = allUsersLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
@@ -79,6 +106,7 @@ public class UserViewModel extends AndroidViewModel {
     }
 
     public void filterByRole(int role) {
+        // ... (Giữ nguyên code filter cũ của bạn) ...
         List<User> masterList = allUsersLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
 
@@ -100,6 +128,7 @@ public class UserViewModel extends AndroidViewModel {
     }
 
     public void filterByRoles(List<Integer> roles) {
+        // ... (Giữ nguyên code filter cũ của bạn) ...
         List<User> masterList = allUsersLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
 
@@ -124,6 +153,7 @@ public class UserViewModel extends AndroidViewModel {
     }
 
     public void sortByCreateAt(boolean newestFirst) {
+        // ... (Giữ nguyên code sort cũ của bạn) ...
         List<User> current = displayedUsersLiveData.getValue();
         if (current == null || current.isEmpty()) return;
 

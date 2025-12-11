@@ -33,7 +33,8 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
     public interface OnItemClickListener {
         void onItemClick(Product product);      // Xem chi tiết
         void onFavoriteClick(String productId); // Thả tim
-        void onAddToCartClick(Product product); // Thêm vào giỏ (MỚI)
+        void onAddToCartClick(Product product); // Thêm vào giỏ
+        void onBuyNowClick(Product product);    // [MỚI] Mua ngay
     }
 
     public BookGridAdapter(Context context, List<Product> mListProducts, OnItemClickListener listener) {
@@ -64,7 +65,7 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
         Product product = mListProducts.get(position);
         if (product == null) return;
 
-        // --- 1. Load Ảnh (Giữ nguyên) ---
+        // --- 1. Load Ảnh ---
         if (product.getImage() != null && !product.getImage().isEmpty()) {
             Glide.with(context)
                     .load(product.getImage())
@@ -75,7 +76,7 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
             holder.ivCover.setImageResource(R.drawable.book_cover_placeholder);
         }
 
-        // --- 2. Set Text cơ bản (Giữ nguyên) ---
+        // --- 2. Set Text cơ bản ---
         holder.tvTitle.setText(product.getName());
         if (product.getAuthor() != null) {
             holder.tvAuthor.setText(product.getAuthor().getName());
@@ -86,58 +87,39 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
         holder.tvViewCount.setText("Lượt xem: " + product.getView());
         holder.tvLikeCount.setText("Lượt thích: " + product.getFavorite());
 
-        // ============================================================
-        // --- 3. LOGIC GIẢM GIÁ (CẬP NHẬT MỚI) ---
-        // ============================================================
-
+        // --- 3. LOGIC GIẢM GIÁ ---
         double originalPrice = product.getPrice();
         int discount = product.getDiscount();
 
         if (discount > 0) {
-            // A. CÓ GIẢM GIÁ
-            // Tính giá sau giảm: Giá gốc * (100 - discount) / 100
             double newPrice = originalPrice * (100 - discount) / 100;
-
-            // 1. Hiển thị giá mới (giá bán)
             holder.tvSalePrice.setText(formatter.format(newPrice));
-
-            // 2. Hiển thị giá gốc (giá cũ) và gạch ngang
             holder.tvOriginalPrice.setText(formatter.format(originalPrice));
             holder.tvOriginalPrice.setPaintFlags(holder.tvOriginalPrice.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             holder.tvOriginalPrice.setVisibility(View.VISIBLE);
-
-            // 3. Hiển thị Badge % giảm giá
             holder.tvDiscount.setText("-" + discount + "%");
             holder.tvDiscount.setVisibility(View.VISIBLE);
-
         } else {
-            // B. KHÔNG GIẢM GIÁ
-            // 1. Giá bán chính là giá gốc
             holder.tvSalePrice.setText(formatter.format(originalPrice));
-
-            // 2. Ẩn giá gốc (giá cũ)
             holder.tvOriginalPrice.setVisibility(View.GONE);
-
-            // 3. Ẩn Badge giảm giá
             holder.tvDiscount.setVisibility(View.GONE);
         }
-        // ============================================================
 
-
-        // --- 4. Xử lý Tim (Giữ nguyên) ---
+        // --- 4. Xử lý Tim ---
         if (favoriteIds.contains(product.getId())) {
             holder.ivFavorite.setImageResource(R.drawable.ic_heart_filled_red);
         } else {
             holder.ivFavorite.setImageResource(R.drawable.ic_heart_outline_gray);
         }
 
-        // --- 5. Sự kiện Click (Giữ nguyên) ---
+        // --- 5. Sự kiện Click ---
         holder.btnAddToCart.setOnClickListener(v -> {
             if (mListener != null) mListener.onAddToCartClick(product);
         });
 
+        // [SỬA ĐOẠN NÀY] Gọi onBuyNowClick thay vì onItemClick
         holder.btnBuyNow.setOnClickListener(v -> {
-            if (mListener != null) mListener.onItemClick(product);
+            if (mListener != null) mListener.onBuyNowClick(product);
         });
 
         holder.ivFavorite.setOnClickListener(v -> {
@@ -172,21 +154,17 @@ public class BookGridAdapter extends RecyclerView.Adapter<BookGridAdapter.BookVi
             tvViewCount = itemView.findViewById(R.id.tv_view_count);
             tvLikeCount = itemView.findViewById(R.id.tv_like_count);
 
-            btnBuyNow = itemView.findViewById(R.id.btnEdit);
+            btnBuyNow = itemView.findViewById(R.id.btnEdit); // Giả sử id trong layout là btnEdit (hoặc btnBuyNow tùy XML)
             btnAddToCart = itemView.findViewById(R.id.btnAddToCart);
         }
     }
 
-    // --- HÀM BẠN ĐANG THIẾU ĐÂY ---
     public void removeProductById(String productId) {
         if (mListProducts == null) return;
-
         for (int i = 0; i < mListProducts.size(); i++) {
             if (mListProducts.get(i).getId().equals(productId)) {
                 mListProducts.remove(i);
-                // Thông báo cho Adapter biết item tại vị trí i đã bị xóa
                 notifyItemRemoved(i);
-                // Cập nhật lại index của các item phía sau để tránh lỗi
                 notifyItemRangeChanged(i, mListProducts.size());
                 return;
             }
