@@ -107,6 +107,8 @@ public class ProductUpdateFragment extends Fragment {
 
         initViews(view);
         setupStatusSpinner();
+        categoryViewModel.refreshAllForAdmin();
+        // Gọi setup spinner trước để load danh sách
         setupDynamicSpinners();
 
         if (getActivity() != null && getActivity().getIntent() != null) {
@@ -115,6 +117,7 @@ public class ProductUpdateFragment extends Fragment {
 
         if (productId != null) {
             btnSave.setText("Cập nhật sản phẩm");
+            // Load detail sẽ tự fill data vào spinner sau khi API trả về
             loadProductDetail(productId);
         } else {
             btnSave.setText("Lưu sản phẩm");
@@ -161,6 +164,7 @@ public class ProductUpdateFragment extends Fragment {
     }
 
     private void setupDynamicSpinners() {
+        // --- 1. AUTHOR (Giữ nguyên hoặc sửa tương tự nếu AuthorViewModel có fetchAll) ---
         authorViewModel.getDisplayedAuthors().observe(getViewLifecycleOwner(), authors -> {
             if (authors != null) {
                 List<String> authorNames = new ArrayList<>();
@@ -178,21 +182,31 @@ public class ProductUpdateFragment extends Fragment {
             }
         });
 
-        categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
+        // --- 2. CATEGORY [ĐÃ SỬA] ---
+        // Sử dụng fetchAllCategories() để lấy toàn bộ danh mục từ API
+        categoryViewModel.getAllCategoriesForAdmin().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 List<String> categoryNames = new ArrayList<>();
                 categoryMap.clear();
+
+                // Thêm option "Không chọn" ở đầu
                 categoryNames.add(NO_CATEGORY_OPTION);
 
                 for (Category category : categories) {
-                    categoryNames.add(category.getName());
-                    categoryMap.put(category.getName(), category.get_id());
+                    String name = category.getName() != null ? category.getName() : "Unnamed";
+                    categoryNames.add(name);
+                    categoryMap.put(name, category.get_id());
                 }
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, categoryNames);
+
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(),
+                        android.R.layout.simple_dropdown_item_1line, categoryNames);
                 acCategory.setAdapter(adapter);
 
+                // Nếu đang ở chế độ Edit, set lại category hiện tại
                 if (currentProduct != null) {
-                    String catName = currentProduct.getCategory() != null ? currentProduct.getCategory().getName() : NO_CATEGORY_OPTION;
+                    String catName = currentProduct.getCategory() != null
+                            ? currentProduct.getCategory().getName()
+                            : NO_CATEGORY_OPTION;
                     acCategory.setText(catName, false);
                 }
             }
@@ -200,7 +214,6 @@ public class ProductUpdateFragment extends Fragment {
     }
 
     private void loadProductDetail(String id) {
-        // [SỬA] Xử lý ApiResponse<Product>
         productViewModel.getProductByID(id).observe(getViewLifecycleOwner(), apiResponse -> {
             if (apiResponse != null && apiResponse.isStatus()) {
                 Product product = apiResponse.getData();
@@ -214,10 +227,17 @@ public class ProductUpdateFragment extends Fragment {
 
                     if (product.getPublishDate() != null && !product.getPublishDate().isEmpty()) {
                         try {
-                            SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-                            Date beDate = sourceFormat.parse(product.getPublishDate());
-                            if (beDate != null) etDate.setText(displayFormat.format(beDate));
-                        } catch (ParseException e) {
+                            // Xử lý 2 định dạng ngày phổ biến
+                            try {
+                                SimpleDateFormat isoFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                                Date beDate = isoFormat.parse(product.getPublishDate());
+                                if (beDate != null) etDate.setText(displayFormat.format(beDate));
+                            } catch (ParseException ex1) {
+                                SimpleDateFormat shortFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
+                                Date beDate = shortFormat.parse(product.getPublishDate());
+                                if (beDate != null) etDate.setText(displayFormat.format(beDate));
+                            }
+                        } catch (Exception e) {
                             etDate.setText(product.getPublishDate());
                         }
                     }
@@ -237,7 +257,16 @@ public class ProductUpdateFragment extends Fragment {
                     String statusText = product.isStatus() ? statusOptions[0] : statusOptions[1];
                     acStatus.setText(statusText, false);
 
-                    setupDynamicSpinners();
+                    // Quan trọng: Gọi lại setup dynamic để bind dữ liệu selected item
+                    // Tuy nhiên, vì fetchAllCategories là async, ta đã handle việc set text trong observer của nó
+                    // Nếu loadDetail chạy sau khi fetchAllCategories xong, ta cần set text thủ công ở đây:
+                    if (acCategory.getAdapter() != null) {
+                        String catName = product.getCategory() != null ? product.getCategory().getName() : NO_CATEGORY_OPTION;
+                        acCategory.setText(catName, false);
+                    }
+                    if (acAuthor.getAdapter() != null && product.getAuthor() != null) {
+                        acAuthor.setText(product.getAuthor().getName(), false);
+                    }
                 }
             } else {
                 String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi tải dữ liệu";
@@ -257,10 +286,9 @@ public class ProductUpdateFragment extends Fragment {
         String qty = etQuantity.getText().toString().trim();
 
         String authorId = getSelectedId(acAuthor, authorMap);
-        String categoryId = getSelectedId(acCategory, categoryMap);
+        String categoryId = getSelectedCategoryId();
         String status = convertStatusToBooleanString(acStatus.getText().toString());
 
-        // [SỬA] Xử lý ApiResponse<Product>
         productViewModel.addProductWithImage(
                 toRequestBody(name), toRequestBody(desc), toRequestBody(pages),
                 toRequestBody(date), toRequestBody(status), toRequestBody(categoryId),
@@ -290,7 +318,6 @@ public class ProductUpdateFragment extends Fragment {
         String categoryId = getSelectedId(acCategory, categoryMap);
         String status = convertStatusToBooleanString(acStatus.getText().toString());
 
-        // [SỬA] Xử lý ApiResponse<Product>
         productViewModel.updateProductWithImage(
                 productId,
                 toRequestBody(name), toRequestBody(desc), toRequestBody(pages),
@@ -330,7 +357,14 @@ public class ProductUpdateFragment extends Fragment {
             FancyToast.makeText(getContext(), "Vui lòng chọn tác giả", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         }
-        acAuthor.setError(null);
+
+        // Category có thể null nếu chọn "Chưa có danh mục" (tùy logic business của bạn)
+        // Nhưng nếu bắt buộc chọn:
+        String categoryId = getSelectedId(acCategory, categoryMap);
+        if (categoryId == null && !acCategory.getText().toString().equals(NO_CATEGORY_OPTION)) {
+            // Logic kiểm tra category
+        }
+
         return true;
     }
 
@@ -351,7 +385,6 @@ public class ProductUpdateFragment extends Fragment {
                 .show();
     }
 
-    // ... (Các hàm helper khác giữ nguyên) ...
     private boolean isEmpty(TextInputEditText et) {
         return et.getText() == null || et.getText().toString().trim().isEmpty();
     }
@@ -359,6 +392,14 @@ public class ProductUpdateFragment extends Fragment {
     private String getSelectedId(AutoCompleteTextView ac, Map<String, String> map) {
         String text = ac.getText().toString();
         return map.getOrDefault(text, null);
+    }
+
+    private String getSelectedCategoryId() {
+        String text = acCategory.getText().toString();
+        if (text.equals(NO_CATEGORY_OPTION)) {
+            return ""; // <<< RẤT QUAN TRỌNG
+        }
+        return categoryMap.get(text);
     }
 
     private String convertStatusToBooleanString(String statusText) {
@@ -410,6 +451,6 @@ public class ProductUpdateFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (authorViewModel != null) authorViewModel.refreshData();
-        if (categoryViewModel != null) categoryViewModel.refreshData();
+        // Không cần refreshData cho category ở đây vì fetchAllCategories() đã gọi API rồi
     }
 }

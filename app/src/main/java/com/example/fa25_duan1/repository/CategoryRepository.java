@@ -44,4 +44,8 @@ public class CategoryRepository extends BaseRepository {
     public LiveData<ApiResponse<Void>> deleteCategory(String id) {
         return performRequest(categoryApi.deleteCategory(id));
     }
+
+    public LiveData<ApiResponse<List<Category>>> getAllCategoriesForAdmin() {
+        return performRequest(categoryApi.getAllCategoriesForAdmin());
+    }
 }

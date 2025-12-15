@@ -168,8 +168,15 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+
+        // 🔥 BẮT BUỘC: reload data cho Home
+        productViewModel.refreshData();
+        categoryViewModel.refreshData();
+        discountViewModel.refreshData();
+
         if (favoriteViewModel != null) favoriteViewModel.refreshFavorites();
         if (cartViewModel != null) cartViewModel.refreshCart();
+
         bannerHandler.postDelayed(bannerRunnable, 5000);
     }
 

@@ -8,7 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.example.fa25_duan1.model.ApiResponse; // Import ApiResponse
+import com.example.fa25_duan1.model.ApiResponse;
 import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.repository.CategoryRepository;
 
@@ -19,92 +19,189 @@ public class CategoryViewModel extends AndroidViewModel {
 
     private final CategoryRepository repository;
 
-    // Danh sách gốc (Master list)
+    // ===== MASTER LIST =====
+    // Danh sách gốc để search / filter
     private final MediatorLiveData<List<Category>> allCategoriesLiveData = new MediatorLiveData<>();
 
-    // Danh sách hiển thị lên UI (sau khi filter/search)
+    // ===== USER LIST =====
+    // Chỉ danh mục có sản phẩm (API /categories/)
     private final MediatorLiveData<List<Category>> displayedCategoriesLiveData = new MediatorLiveData<>();
 
-    // LiveData để báo lỗi cho View
+    // ===== ADMIN LIST =====
+    // Tất cả danh mục (kể cả không có sản phẩm)
+    private final MediatorLiveData<List<Category>> allCategoriesForAdminLiveData = new MediatorLiveData<>();
+
     private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
 
-    // Nguồn dữ liệu hiện tại từ Repo (Đổi thành ApiResponse)
-    private LiveData<ApiResponse<List<Category>>> currentRepoSource;
+    private LiveData<ApiResponse<List<Category>>> userRepoSource;
+    private LiveData<ApiResponse<List<Category>>> adminRepoSource;
 
     public CategoryViewModel(@NonNull Application application) {
         super(application);
         repository = new CategoryRepository(application.getApplicationContext());
-        refreshData();
     }
 
-    /**
-     * Lấy danh sách category để hiển thị
-     */
+    // =======================
+    // GETTERS
+    // =======================
+
+    // USER
     public LiveData<List<Category>> getDisplayedCategories() {
         return displayedCategoriesLiveData;
+    }
+
+    // ADMIN
+    public LiveData<List<Category>> getAllCategoriesForAdmin() {
+        return allCategoriesForAdminLiveData;
     }
 
     public LiveData<String> getMessage() {
         return messageLiveData;
     }
 
+    public List<Category> getMasterCategoryList() {
+        return allCategoriesLiveData.getValue() != null
+                ? allCategoriesLiveData.getValue()
+                : new ArrayList<>();
+    }
+
+    // =======================
+    // USER FLOW
+    // =======================
+
     /**
-     * Tải lại dữ liệu từ Server
+     * USER: chỉ lấy danh mục có sản phẩm
      */
     public void refreshData() {
-        if (currentRepoSource != null) {
-            displayedCategoriesLiveData.removeSource(currentRepoSource);
+        if (userRepoSource != null) {
+            displayedCategoriesLiveData.removeSource(userRepoSource);
         }
 
-        // Gọi Repository (trả về ApiResponse)
-        currentRepoSource = repository.getAllCategories();
+        userRepoSource = repository.getAllCategories();
 
-        displayedCategoriesLiveData.addSource(currentRepoSource, apiResponse -> {
-            List<Category> categories = new ArrayList<>();
+        displayedCategoriesLiveData.addSource(userRepoSource, this::handleUserResponse);
+    }
 
-            if (apiResponse != null) {
-                if (apiResponse.isStatus()) {
-                    // Thành công: Lấy data
-                    if (apiResponse.getData() != null) {
-                        categories = apiResponse.getData();
-                    }
-                } else {
-                    // Thất bại: Gửi thông báo lỗi
-                    messageLiveData.setValue(apiResponse.getMessage());
-                }
-            } else {
-                messageLiveData.setValue("Lỗi kết nối");
-            }
+    private void handleUserResponse(ApiResponse<List<Category>> response) {
+        if (response != null && response.isStatus() && response.getData() != null) {
 
-            // Cập nhật danh sách gốc
-            allCategoriesLiveData.setValue(categories);
+            List<Category> list = new ArrayList<>(response.getData());
 
-            // Sắp xếp mặc định: Mới nhất lên đầu
-            List<Category> sorted = new ArrayList<>(categories);
-            sorted.sort((a1, a2) -> {
-                if (a1.getCreateAt() == null || a2.getCreateAt() == null) return 0;
-                return a2.getCreateAt().compareTo(a1.getCreateAt());
+            // ✅ sort mới nhất cho USER
+            list.sort((a, b) -> {
+                if (a.getCreateAt() == null || b.getCreateAt() == null) return 0;
+                return b.getCreateAt().compareTo(a.getCreateAt());
             });
 
-            displayedCategoriesLiveData.setValue(sorted);
+            displayedCategoriesLiveData.setValue(list);
+
+        } else if (response != null) {
+            messageLiveData.setValue(response.getMessage());
+        }
+    }
+
+    // =======================
+    // ADMIN FLOW
+    // =======================
+
+    /**
+     * ADMIN / STAFF: lấy tất cả danh mục
+     */
+    public void refreshAllForAdmin() {
+        if (adminRepoSource != null) {
+            allCategoriesForAdminLiveData.removeSource(adminRepoSource);
+        }
+
+        adminRepoSource = repository.getAllCategoriesForAdmin();
+
+        allCategoriesForAdminLiveData.addSource(adminRepoSource, response -> {
+            if (response != null && response.isStatus() && response.getData() != null) {
+
+                List<Category> list = new ArrayList<>(response.getData());
+
+                // sort mặc định: mới nhất
+                list.sort((a, b) -> {
+                    if (a.getCreateAt() == null || b.getCreateAt() == null) return 0;
+                    return b.getCreateAt().compareTo(a.getCreateAt());
+                });
+
+                allCategoriesForAdminLiveData.setValue(list);
+                allCategoriesLiveData.setValue(list);
+
+            } else if (response != null) {
+                messageLiveData.setValue(response.getMessage());
+            }
         });
     }
 
-    public LiveData<ApiResponse<Integer>> getTotalCategory() {
-        return repository.getTotalCategory();
+    // =======================
+    // SORT & SEARCH (ADMIN)
+    // =======================
+
+    public void sortCategories(int type) {
+        List<Category> list = allCategoriesForAdminLiveData.getValue();
+        if (list == null) return;
+
+        List<Category> sorted = new ArrayList<>(list);
+
+        switch (type) {
+            case 0: // Mới nhất
+                sorted.sort((a, b) -> {
+                    if (a.getCreateAt() == null || b.getCreateAt() == null) return 0;
+                    return b.getCreateAt().compareTo(a.getCreateAt());
+                });
+                break;
+
+            case 1: // Cũ nhất
+                sorted.sort((a, b) -> {
+                    if (a.getCreateAt() == null || b.getCreateAt() == null) return 0;
+                    return a.getCreateAt().compareTo(b.getCreateAt());
+                });
+                break;
+
+            case 2: // A-Z
+            default:
+                sorted.sort((a, b) -> {
+                    String n1 = a.getName() != null ? a.getName() : "";
+                    String n2 = b.getName() != null ? b.getName() : "";
+                    return n1.compareToIgnoreCase(n2);
+                });
+                break;
+        }
+
+        allCategoriesForAdminLiveData.setValue(sorted);
     }
 
-    // --- CRUD OPERATIONS (CẬP NHẬT KIỂU TRẢ VỀ APIRESPONSE) ---
+    public void searchCategories(String query) {
+        List<Category> master = getMasterCategoryList();
+
+        if (query == null || query.trim().isEmpty()) {
+            allCategoriesForAdminLiveData.setValue(new ArrayList<>(master));
+            return;
+        }
+
+        String q = query.toLowerCase().trim();
+        List<Category> result = new ArrayList<>();
+
+        for (Category c : master) {
+            if (c.getName() != null && c.getName().toLowerCase().contains(q)) {
+                result.add(c);
+            }
+        }
+
+        allCategoriesForAdminLiveData.setValue(result);
+    }
+
+    // =======================
+    // CRUD
+    // =======================
 
     public LiveData<ApiResponse<Category>> addCategory(String name) {
-        // Tạo object Category mới
-        Category newCategory = new Category(name, false);
-        return repository.addCategory(newCategory);
+        return repository.addCategory(new Category(name, false));
     }
 
     public LiveData<ApiResponse<Category>> updateCategory(String id, String name) {
-        Category updateCategory = new Category(name, false);
-        return repository.updateCategory(id, updateCategory);
+        return repository.updateCategory(id, new Category(name, false));
     }
 
     public LiveData<ApiResponse<Void>> deleteCategory(String id) {
@@ -115,69 +212,7 @@ public class CategoryViewModel extends AndroidViewModel {
         return repository.getCategoryByID(id);
     }
 
-    // --- LOCAL SORT & SEARCH (Logic giữ nguyên) ---
-
-    public void sortCategories(int type) {
-        List<Category> masterList = allCategoriesLiveData.getValue();
-        if (masterList == null) masterList = new ArrayList<>();
-
-        List<Category> sorted = new ArrayList<>(masterList);
-
-        switch (type) {
-            case 0: // Mới nhất
-                sorted.sort((c1, c2) -> {
-                    if (c1.getCreateAt() == null || c2.getCreateAt() == null) return 0;
-                    return c2.getCreateAt().compareTo(c1.getCreateAt()); // DESC
-                });
-                break;
-
-            case 1: // Cũ nhất
-                sorted.sort((c1, c2) -> {
-                    if (c1.getCreateAt() == null || c2.getCreateAt() == null) return 0;
-                    return c1.getCreateAt().compareTo(c2.getCreateAt()); // ASC
-                });
-                break;
-
-            case 2: // Tên A-Z
-            default:
-                sorted.sort((c1, c2) -> {
-                    String n1 = c1.getName() != null ? c1.getName() : "";
-                    String n2 = c2.getName() != null ? c2.getName() : "";
-                    return n1.compareToIgnoreCase(n2);
-                });
-                break;
-        }
-
-        displayedCategoriesLiveData.setValue(sorted);
-    }
-
-    /**
-     * Tìm kiếm category theo tên
-     */
-    public void searchCategories(String query) {
-        List<Category> masterList = allCategoriesLiveData.getValue();
-        if (masterList == null) masterList = new ArrayList<>();
-
-        if (query == null || query.trim().isEmpty()) {
-            // Nếu query rỗng, trả về danh sách gốc (có thể sort lại A-Z cho dễ nhìn)
-            List<Category> sorted = new ArrayList<>(masterList);
-            sorted.sort((c1, c2) -> {
-                String n1 = c1.getName() != null ? c1.getName() : "";
-                String n2 = c2.getName() != null ? c2.getName() : "";
-                return n1.compareToIgnoreCase(n2);
-            });
-            displayedCategoriesLiveData.setValue(sorted);
-            return;
-        }
-
-        String q = query.toLowerCase().trim();
-        List<Category> result = new ArrayList<>();
-
-        for (Category c : masterList) {
-            if (c.getName() != null && c.getName().toLowerCase().contains(q)) {
-                result.add(c);
-            }
-        }
-        displayedCategoriesLiveData.setValue(result);
+    public LiveData<ApiResponse<Integer>> getTotalCategory() {
+        return repository.getTotalCategory();
     }
 }

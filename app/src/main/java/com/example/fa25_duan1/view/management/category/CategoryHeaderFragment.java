@@ -14,7 +14,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.fa25_duan1.R;
-import com.example.fa25_duan1.viewmodel.AuthorViewModel;
 import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 
 import org.angmarch.views.NiceSpinner;

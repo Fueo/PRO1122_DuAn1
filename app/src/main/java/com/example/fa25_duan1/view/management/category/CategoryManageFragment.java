@@ -43,14 +43,19 @@ public class CategoryManageFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        getActivity().getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_filter, new CategoryFilterFragment())
-                .commit();
+        viewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
+
+        if (savedInstanceState == null) {
+            getChildFragmentManager().beginTransaction()
+                    .replace(R.id.fragment_filter, new CategoryFilterFragment())
+                    .commit();
+        }
 
         rvData = view.findViewById(R.id.rvData);
         btnAdd = view.findViewById(R.id.btnAdd);
         layout_empty = view.findViewById(R.id.layout_empty);
 
+        rvData.setLayoutManager(new LinearLayoutManager(getContext()));
         categoryAdapter = new CategoryManageAdapter(getContext(), new ArrayList<>(), new CategoryManageAdapter.OnCategoryActionListener() {
             @Override
             public void onEditClick(Category category) {
@@ -62,20 +67,14 @@ public class CategoryManageFragment extends Fragment {
                 deleteCategory(category);
             }
         });
-
-        rvData.setLayoutManager(new LinearLayoutManager(getContext()));
         rvData.setAdapter(categoryAdapter);
 
-        viewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
-
-        viewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
-            if (categories != null) {
-                categoryAdapter.setData(categories);
-                checkEmptyState(categories);
-            }
+        // **Thay đổi ở đây:** quan sát allCategoriesForAdmin để hiển thị tất cả danh mục
+        viewModel.getAllCategoriesForAdmin().observe(getViewLifecycleOwner(), categories -> {
+            categoryAdapter.setData(categories);
+            checkEmptyState(categories);
         });
 
-        // Observe Error Message
         viewModel.getMessage().observe(getViewLifecycleOwner(), msg -> {
             if (msg != null && !msg.isEmpty()) {
                 FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
@@ -85,16 +84,20 @@ public class CategoryManageFragment extends Fragment {
         btnAdd.setOnClickListener(v -> openUpdateActivity(null));
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (viewModel != null) {
+            viewModel.refreshAllForAdmin();
+        }
+
+    }
+
     private void openUpdateActivity(Category category) {
         Intent intent = new Intent(getContext(), UpdateActivity.class);
-        intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Thêm mới danh mục");
-
-        if (category != null) {
-            intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, "Chỉnh sửa danh mục");
-            intent.putExtra("Id", category.get_id());
-        }
+        intent.putExtra(UpdateActivity.EXTRA_HEADER_TITLE, category == null ? "Thêm mới danh mục" : "Chỉnh sửa danh mục");
+        if (category != null) intent.putExtra("Id", category.get_id());
         intent.putExtra(UpdateActivity.EXTRA_CONTENT_FRAGMENT, "category");
-
         startActivityForResult(intent, 1001);
     }
 
@@ -115,11 +118,9 @@ public class CategoryManageFragment extends Fragment {
     }
 
     private void performDelete(Category category) {
-        // [SỬA] Xử lý ApiResponse<Void>
         viewModel.deleteCategory(category.get_id()).observe(getViewLifecycleOwner(), apiResponse -> {
             if (apiResponse != null && apiResponse.isStatus()) {
-                viewModel.refreshData(); // Refresh list
-
+                viewModel.refreshAllForAdmin();
                 new CuteDialog.withIcon(requireActivity())
                         .setIcon(R.drawable.ic_dialog_success)
                         .setTitle("Thành công")
@@ -139,9 +140,7 @@ public class CategoryManageFragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 1001 && resultCode == Activity.RESULT_OK) {
-            viewModel.refreshData();
-        }
+        if (requestCode == 1001 && resultCode == Activity.RESULT_OK && viewModel != null) viewModel.refreshAllForAdmin();;
     }
 
     private void checkEmptyState(List<Category> list) {
