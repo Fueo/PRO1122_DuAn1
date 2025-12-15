@@ -62,11 +62,10 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         Order order = orders.get(position);
         if (order == null) return;
 
-        // Lấy phương thức thanh toán gốc từ server (ví dụ: "QR", "COD", "Zalopay")
+        // ... (Giữ nguyên phần 1: Bind data cơ bản) ...
         String rawPaymentMethod = order.getPaymentMethod();
         String displayPaymentMethod = rawPaymentMethod;
 
-        // --- 1. BIND DATA CƠ BẢN & CHUYỂN ĐỔI TÊN PHƯƠNG THỨC THANH TOÁN ---
         if (rawPaymentMethod != null) {
             if (rawPaymentMethod.equalsIgnoreCase("QR")) {
                 displayPaymentMethod = "Chuyển khoản ngân hàng";
@@ -79,18 +78,18 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
         holder.tvOrderCode.setText(order.getId());
         holder.tvReceiverName.setText(order.getFullname());
-        holder.tvPaymentMethod.setText(displayPaymentMethod); // Hiển thị tên đã chuyển đổi
-
+        holder.tvPaymentMethod.setText(displayPaymentMethod);
         DecimalFormat formatter = new DecimalFormat("###,###,###");
         holder.tvTotal.setText(formatter.format(order.getTotal()) + " đ");
-
         holder.tvDate.setText(convertUtcToLocal(order.getDate()));
         holder.tvAddress.setText(order.getAddress());
         holder.tvPhone.setText(order.getPhone());
 
-
         // --- 2. XỬ LÝ TRẠNG THÁI ĐƠN HÀNG (Status) ---
         String status = order.getStatus() != null ? order.getStatus().toLowerCase().trim() : "";
+
+        // Tạo biến kiểm tra xem đơn có bị hủy hay không
+        boolean isCancelled = status.equals("cancelled") || status.equals("đã hủy") || status.equals("canceled");
 
         // Reset mặc định các nút
         holder.btnCancel.setVisibility(View.GONE);
@@ -145,41 +144,42 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
                 break;
         }
 
-        // --- 3. [UPDATED] XỬ LÝ TRẠNG THÁI THANH TOÁN (IsPaid & Button PayNow) ---
+        // --- 3. [ĐÃ SỬA] XỬ LÝ TRẠNG THÁI THANH TOÁN (IsPaid & Button PayNow) ---
         boolean isPaid = order.isPaid();
 
-        // Kiểm tra xem phương thức này có hỗ trợ thanh toán online không (QR hoặc Zalopay)
         boolean isOnlinePayment = rawPaymentMethod != null &&
                 (rawPaymentMethod.equalsIgnoreCase("QR") ||
                         rawPaymentMethod.equalsIgnoreCase("Zalopay") ||
-                        rawPaymentMethod.equalsIgnoreCase("Chuyển khoản ngân hàng")); // Giữ lại check cũ để an toàn
+                        rawPaymentMethod.equalsIgnoreCase("Chuyển khoản ngân hàng"));
 
         if (isPaid) {
-            // Đã thanh toán -> Hiện Badge Xanh, Ẩn nút thanh toán
+            // Đã thanh toán -> Hiện Badge Xanh
             holder.tvPaymentStatus.setVisibility(View.VISIBLE);
             holder.tvPaymentStatus.setText("Đã thanh toán");
-            holder.tvPaymentStatus.setTextColor(Color.parseColor("#2E7D32")); // Xanh lá đậm
+            holder.tvPaymentStatus.setTextColor(Color.parseColor("#2E7D32"));
             holder.btnPayNow.setVisibility(View.GONE);
         } else {
             // Chưa thanh toán
-            if (isOnlinePayment) {
-                // Là QR hoặc Zalopay -> Hiện Badge Cam "Chờ thanh toán"
+            // [LOGIC MỚI]: Nếu là Online Payment VÀ Chưa bị hủy thì mới hiện "Chờ thanh toán"
+            if (isOnlinePayment && !isCancelled) {
                 holder.tvPaymentStatus.setVisibility(View.VISIBLE);
                 holder.tvPaymentStatus.setText("Chờ thanh toán");
-                holder.tvPaymentStatus.setTextColor(Color.parseColor("#EF6C00")); // Cam đậm
+                holder.tvPaymentStatus.setTextColor(Color.parseColor("#EF6C00"));
 
                 // Logic hiện nút Thanh toán: Chỉ hiện khi Đơn đang Pending/Processing
                 if ("pending".equals(status) || "chờ xác nhận".equals(status) || "processing".equals(status)) {
                     holder.btnPayNow.setVisibility(View.VISIBLE);
+                } else {
+                    holder.btnPayNow.setVisibility(View.GONE);
                 }
             } else {
-                // COD -> Ẩn Badge và Nút thanh toán
+                // COD hoặc ĐÃ HỦY -> Ẩn Badge và Nút thanh toán
                 holder.tvPaymentStatus.setVisibility(View.GONE);
                 holder.btnPayNow.setVisibility(View.GONE);
             }
         }
 
-        // --- 4. SỰ KIỆN CLICK ---
+        // ... (Giữ nguyên phần 4 & 5: Click Listener và Expandable) ...
         holder.btnCancel.setOnClickListener(v -> {
             if (actionListener != null) actionListener.onCancelOrder(order.getId());
         });
@@ -196,7 +196,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             if (actionListener != null) actionListener.onViewDetail(order);
         });
 
-        // --- 5. EXPANDABLE LIST ---
         if (order.getOrderDetails() != null) {
             OrderItemAdapter itemAdapter = new OrderItemAdapter(order.getOrderDetails());
             holder.rvOrderItems.setAdapter(itemAdapter);

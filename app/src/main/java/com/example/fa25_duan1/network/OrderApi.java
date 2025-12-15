@@ -57,4 +57,7 @@ public interface OrderApi {
 
     @POST("payment/create-zalopay-order")
     Call<ApiResponse<ZaloPayResult>> createZaloPayOrder(@Body Map<String, String> body);
+
+    @POST("payment/check-status-zalopay")
+    Call<ApiResponse<Map<String, Object>>> checkZaloPayStatus(@Body Map<String, String> body);
 }

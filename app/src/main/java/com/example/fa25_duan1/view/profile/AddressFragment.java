@@ -1,6 +1,5 @@
 package com.example.fa25_duan1.view.profile;
 
-import android.app.AlertDialog;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,6 +23,7 @@ import com.example.fa25_duan1.adapter.AddressAdapter;
 import com.example.fa25_duan1.model.Address;
 import com.example.fa25_duan1.viewmodel.AddressViewModel;
 import com.google.android.material.button.MaterialButton;
+import com.shashank.sony.fancytoastlib.FancyToast;
 
 import net.cachapa.expandablelayout.ExpandableLayout;
 
@@ -56,7 +56,6 @@ public class AddressFragment extends Fragment {
 
         initViews(view);
 
-        // Khởi tạo ViewModel
         addressViewModel = new ViewModelProvider(this).get(AddressViewModel.class);
 
         setupRecyclerView();
@@ -70,7 +69,6 @@ public class AddressFragment extends Fragment {
         expandableForm = view.findViewById(R.id.expandable_form);
         btnToggleAdd = view.findViewById(R.id.btn_toggle_add);
 
-        // Form inputs
         tvFormTitle = view.findViewById(R.id.tv_form_title);
         etName = view.findViewById(R.id.et_fullname);
         etPhone = view.findViewById(R.id.et_phone);
@@ -78,11 +76,9 @@ public class AddressFragment extends Fragment {
         rgTag = view.findViewById(R.id.rg_tag);
         cbIsDefault = view.findViewById(R.id.cb_is_default);
 
-        // Buttons
         btnSave = view.findViewById(R.id.btn_save_address);
         btnCancel = view.findViewById(R.id.btn_cancel_edit);
 
-        // List & Scroll
         rvAddresses = view.findViewById(R.id.rv_addresses);
         nestedScrollView = view.findViewById(R.id.nested_scroll);
     }
@@ -91,19 +87,16 @@ public class AddressFragment extends Fragment {
         adapter = new AddressAdapter(new AddressAdapter.OnAddressActionListener() {
             @Override
             public void onEdit(Address address) {
-                // Khi bấm nút Edit trên item: Đổ dữ liệu lên form và cuộn lên
                 prepareEditForm(address);
             }
 
             @Override
             public void onDelete(Address address) {
-                // Khi bấm nút Delete: Hiện dialog xác nhận
                 showDeleteConfirmation(address);
             }
 
             @Override
             public void onItemClick(Address address) {
-
             }
         });
 
@@ -112,29 +105,31 @@ public class AddressFragment extends Fragment {
     }
 
     private void setupEvents() {
-        // 1. Nút "+ Thêm địa chỉ mới"
         btnToggleAdd.setOnClickListener(v -> {
             if (expandableForm.isExpanded() && !isEditing) {
-                // Nếu đang mở form thêm mới rồi thì đóng lại
                 closeForm();
             } else {
-                // Mở form để thêm mới
                 prepareAddForm();
             }
         });
 
-        // 2. Nút "Hủy" trong form
         btnCancel.setOnClickListener(v -> closeForm());
 
-        // 3. Nút "Lưu địa chỉ"
         btnSave.setOnClickListener(v -> handleSaveAddress());
     }
 
     private void observeData() {
-        // Lắng nghe dữ liệu từ ViewModel để cập nhật RecyclerView
+        // Observe danh sách địa chỉ
         addressViewModel.getDisplayedAddresses().observe(getViewLifecycleOwner(), addresses -> {
             if (addresses != null) {
                 adapter.setList(addresses);
+            }
+        });
+
+        // [MỚI] Observe lỗi từ ViewModel
+        addressViewModel.getMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty()) {
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
         });
     }
@@ -146,22 +141,17 @@ public class AddressFragment extends Fragment {
         String phone = etPhone.getText().toString().trim();
         String addressDetail = etAddress.getText().toString().trim();
         String tag = (rgTag.getCheckedRadioButtonId() == R.id.rb_office) ? "Văn phòng" : "Nhà riêng";
-
-        // Lấy giá trị CheckBox
         boolean isDefault = cbIsDefault.isChecked();
 
-        // 1. Validate rỗng
         if (name.isEmpty() || phone.isEmpty() || addressDetail.isEmpty()) {
             Toast.makeText(getContext(), "Vui lòng nhập đầy đủ thông tin", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 2. Validate số điện thoại (MỚI THÊM)
         if (!isValidPhoneNumber(phone)) {
             Toast.makeText(getContext(), "Số điện thoại không hợp lệ", Toast.LENGTH_SHORT).show();
-            // Set lỗi hiển thị ngay tại ô nhập liệu để user biết
             etPhone.setError("SĐT phải có 10 số (VD: 09xx, 03xx...)");
-            etPhone.requestFocus(); // Focus vào ô lỗi
+            etPhone.requestFocus();
             return;
         }
 
@@ -173,50 +163,55 @@ public class AddressFragment extends Fragment {
         address.setDefault(isDefault);
 
         if (isEditing && currentEditingId != null) {
-            // Case: Update
-            addressViewModel.updateAddress(currentEditingId, address).observe(getViewLifecycleOwner(), res -> {
-                if (res != null) {
+            // [SỬA] Case: Update (Xử lý ApiResponse<Address>)
+            addressViewModel.updateAddress(currentEditingId, address).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     Toast.makeText(getContext(), "Cập nhật thành công", Toast.LENGTH_SHORT).show();
                     closeForm();
                     addressViewModel.refreshData();
                 } else {
-                    Toast.makeText(getContext(), "Cập nhật thất bại", Toast.LENGTH_SHORT).show();
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Cập nhật thất bại";
+                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
                 }
             });
         } else {
-            // Case: Add New
-            addressViewModel.addAddress(address).observe(getViewLifecycleOwner(), res -> {
-                if (res != null) {
+            // [SỬA] Case: Add New (Xử lý ApiResponse<Address>)
+            addressViewModel.addAddress(address).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
                     Toast.makeText(getContext(), "Thêm mới thành công", Toast.LENGTH_SHORT).show();
                     closeForm();
                     addressViewModel.refreshData();
                 } else {
-                    Toast.makeText(getContext(), "Thêm mới thất bại", Toast.LENGTH_SHORT).show();
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Thêm mới thất bại";
+                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
                 }
             });
         }
     }
 
     private void prepareAddForm() {
+        // 1. Xóa trắng form trước
         clearFormInput();
+
         isEditing = false;
         currentEditingId = null;
 
-        // --- LOGIC MỚI: KIỂM TRA ĐỊA CHỈ ĐẦU TIÊN ---
+        // 2. Kiểm tra số lượng địa chỉ hiện tại trong Adapter
         int currentCount = adapter.getItemCount();
 
+        // --- LOGIC MỚI Ở ĐÂY ---
         if (currentCount == 0) {
-            // Nếu chưa có địa chỉ nào: Bắt buộc chọn và KHÓA checkbox
-            cbIsDefault.setChecked(true);
-            cbIsDefault.setEnabled(false); // Không cho bỏ tick
-            cbIsDefault.setText("Đặt làm địa chỉ mặc định (Bắt buộc)");
+            // Nếu chưa có địa chỉ nào (List rỗng)
+            cbIsDefault.setChecked(true);        // Tự động tích V
+            cbIsDefault.setEnabled(false);       // Vô hiệu hóa (làm mờ) để user không thể bỏ tích
+            cbIsDefault.setText("Địa chỉ mặc định (Bắt buộc)"); // Đổi text để user hiểu
         } else {
-            // Nếu đã có địa chỉ: Cho phép tùy chọn
-            cbIsDefault.setChecked(false);
-            cbIsDefault.setEnabled(true);
+            // Nếu đã có địa chỉ khác
+            cbIsDefault.setChecked(false);       // Mặc định không tích
+            cbIsDefault.setEnabled(true);        // Cho phép user tự chọn
             cbIsDefault.setText("Đặt làm địa chỉ mặc định");
         }
-        // ---------------------------------------------
+        // -----------------------
 
         tvFormTitle.setText("Thêm địa chỉ mới");
         btnSave.setText("Lưu địa chỉ");
@@ -224,7 +219,6 @@ public class AddressFragment extends Fragment {
     }
 
     private void prepareEditForm(Address address) {
-        // 1. Đổ dữ liệu cũ vào form
         etName.setText(address.getName());
         etPhone.setText(address.getPhone());
         etAddress.setText(address.getAddress());
@@ -235,23 +229,17 @@ public class AddressFragment extends Fragment {
             rgTag.check(R.id.rb_home);
         }
 
-        // 2. --- LOGIC MỚI: KIỂM TRA SỐ LƯỢNG KHI EDIT ---
         int currentCount = adapter.getItemCount();
 
         if (currentCount == 1) {
-            // Trường hợp đặc biệt: Chỉ có duy nhất 1 địa chỉ trong danh sách
-            // -> Bắt buộc phải là mặc định, không cho bỏ chọn
             cbIsDefault.setChecked(true);
-            cbIsDefault.setEnabled(false); // Khóa
+            cbIsDefault.setEnabled(false);
             cbIsDefault.setText("Đặt làm địa chỉ mặc định (Bắt buộc)");
         } else {
-            // Trường hợp thường: Có > 1 địa chỉ
-            // -> Load trạng thái theo dữ liệu cũ và cho phép sửa
             cbIsDefault.setChecked(address.isDefault());
             cbIsDefault.setEnabled(true);
             cbIsDefault.setText("Đặt làm địa chỉ mặc định");
         }
-        // ------------------------------------------------
 
         isEditing = true;
         currentEditingId = address.getId();
@@ -267,37 +255,30 @@ public class AddressFragment extends Fragment {
 
     private void showDeleteConfirmation(Address address) {
         new CuteDialog.withIcon(requireActivity())
-                .setIcon(R.drawable.ic_dialog_confirm) // Đảm bảo bạn có icon này (hoặc dùng ic_dialog_confirm)
+                .setIcon(R.drawable.ic_dialog_confirm)
                 .setTitle("Xóa địa chỉ")
                 .setDescription("Bạn có chắc chắn muốn xóa địa chỉ của " + address.getName() + "?")
-
-                // Cấu hình màu sắc
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonColor(R.color.blue)
                 .setTitleTextColor(R.color.black)
                 .setDescriptionTextColor(R.color.gray_text)
-
-                // Sự kiện nút Xóa
                 .setPositiveButtonText("Xóa", v -> {
-                    addressViewModel.deleteAddress(address.getId()).observe(getViewLifecycleOwner(), success -> {
-                        if (success) {
+                    // [SỬA] Xử lý ApiResponse<Void>
+                    addressViewModel.deleteAddress(address.getId()).observe(getViewLifecycleOwner(), apiResponse -> {
+                        if (apiResponse != null && apiResponse.isStatus()) {
                             Toast.makeText(getContext(), "Đã xóa địa chỉ", Toast.LENGTH_SHORT).show();
                             addressViewModel.refreshData();
 
-                            // Nếu đang edit đúng cái địa chỉ vừa xóa thì đóng form lại
                             if (isEditing && address.getId().equals(currentEditingId)) {
                                 closeForm();
                             }
                         } else {
-                            Toast.makeText(getContext(), "Xóa thất bại", Toast.LENGTH_SHORT).show();
+                            String msg = (apiResponse != null) ? apiResponse.getMessage() : "Xóa thất bại";
+                            Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
                         }
                     });
                 })
-
-                // Sự kiện nút Hủy
-                .setNegativeButtonText("Hủy", v -> {
-                    // Không làm gì cả, dialog tự đóng
-                })
+                .setNegativeButtonText("Hủy", v -> {})
                 .show();
     }
 
@@ -306,7 +287,6 @@ public class AddressFragment extends Fragment {
         clearFormInput();
         isEditing = false;
         currentEditingId = null;
-        // Trả lại text nút Thêm
         btnToggleAdd.setText("+ Thêm địa chỉ mới");
     }
 
@@ -316,7 +296,8 @@ public class AddressFragment extends Fragment {
         etAddress.setText("");
         rgTag.check(R.id.rb_home);
 
-        // Reset hoàn toàn trạng thái checkbox về mặc định
+        // Reset về trạng thái bình thường (Cho phép nhập)
+        // Logic Bắt buộc/Không bắt buộc sẽ được prepareAddForm xử lý lại ngay sau đó
         cbIsDefault.setChecked(false);
         cbIsDefault.setEnabled(true);
         cbIsDefault.setText("Đặt làm địa chỉ mặc định");
@@ -328,7 +309,6 @@ public class AddressFragment extends Fragment {
         if (phone == null || phone.isEmpty()) {
             return false;
         }
-        // Regex: ^ bắt đầu, 0 là số đầu, [35789] là các đầu số, \\d{8} là 8 số cuối, $ là kết thúc
         return phone.matches("^0[35789]\\d{8}$");
     }
 }

@@ -1,15 +1,15 @@
 package com.example.fa25_duan1.viewmodel;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 
+import com.example.fa25_duan1.model.ApiResponse; // Import ApiResponse
 import com.example.fa25_duan1.model.Author;
-import com.example.fa25_duan1.model.User;
 import com.example.fa25_duan1.repository.AuthorRepository;
 
 import java.util.ArrayList;
@@ -28,7 +28,11 @@ public class AuthorViewModel extends AndroidViewModel {
     // "displayedAuthorsLiveData" là danh sách mà Fragment sẽ observe để hiển thị
     private final MediatorLiveData<List<Author>> displayedAuthorsLiveData = new MediatorLiveData<>();
 
-    private LiveData<List<Author>> currentRepoSource;
+    // LiveData để báo lỗi cho View (Fragment) nếu cần
+    private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
+
+    // Biến theo dõi nguồn từ repo để refresh (Kiểu dữ liệu thay đổi thành ApiResponse)
+    private LiveData<ApiResponse<List<Author>>> currentRepoSource;
 
     public AuthorViewModel(@NonNull Application application) {
         super(application);
@@ -40,22 +44,39 @@ public class AuthorViewModel extends AndroidViewModel {
         return displayedAuthorsLiveData;
     }
 
+    public LiveData<String> getMessage() {
+        return messageLiveData;
+    }
+
     public void refreshData() {
         if (currentRepoSource != null) {
             displayedAuthorsLiveData.removeSource(currentRepoSource);
         }
 
+        // Gọi Repository (trả về ApiResponse)
         currentRepoSource = repository.getAllAuthors();
 
-        displayedAuthorsLiveData.addSource(currentRepoSource, authors -> {
-            if (authors == null) {
-                authors = new ArrayList<>();
+        displayedAuthorsLiveData.addSource(currentRepoSource, apiResponse -> {
+            List<Author> authors = new ArrayList<>();
+
+            if (apiResponse != null) {
+                if (apiResponse.isStatus()) {
+                    // Thành công: Lấy data
+                    if (apiResponse.getData() != null) {
+                        authors = apiResponse.getData();
+                    }
+                } else {
+                    // Thất bại: Gửi thông báo lỗi
+                    messageLiveData.setValue(apiResponse.getMessage());
+                }
+            } else {
+                messageLiveData.setValue("Lỗi kết nối");
             }
 
             // Cập nhật danh sách gốc
             allAuthorsLiveData.setValue(authors);
 
-            // Sắp xếp mặc định theo tên (A -> Z) vì model không có createAt
+            // Sắp xếp mặc định theo ngày tạo mới nhất
             List<Author> sorted = new ArrayList<>(authors);
             sorted.sort((a1, a2) -> {
                 if (a1.getCreateAt() == null || a2.getCreateAt() == null) return 0;
@@ -66,30 +87,30 @@ public class AuthorViewModel extends AndroidViewModel {
         });
     }
 
-    // --- CRUD ---
+    // --- CRUD (CẬP NHẬT KIỂU TRẢ VỀ) ---
 
-    public LiveData<Author> addAuthorWithAvatar(RequestBody name,
-                                                RequestBody description,
-                                                MultipartBody.Part avatar) {
+    public LiveData<ApiResponse<Author>> addAuthorWithAvatar(RequestBody name,
+                                                             RequestBody description,
+                                                             MultipartBody.Part avatar) {
         return repository.addAuthorWithAvatar(name, description, avatar);
     }
 
-    public LiveData<Author> updateAuthorWithAvatar(String id,
-                                                   RequestBody name,
-                                                   RequestBody description,
-                                                   MultipartBody.Part avatar) {
+    public LiveData<ApiResponse<Author>> updateAuthorWithAvatar(String id,
+                                                                RequestBody name,
+                                                                RequestBody description,
+                                                                MultipartBody.Part avatar) {
         return repository.updateAuthorWithAvatar(id, name, description, avatar);
     }
 
-    public LiveData<Boolean> deleteAuthor(String id) {
+    public LiveData<ApiResponse<Void>> deleteAuthor(String id) {
         return repository.deleteAuthor(id);
     }
 
-    public LiveData<Author> getAuthorByID(String id) {
+    public LiveData<ApiResponse<Author>> getAuthorByID(String id) {
         return repository.getAuthorByID(id);
     }
 
-    // --- TÌM KIẾM ---
+    // --- TÌM KIẾM & LỌC (LOGIC GIỮ NGUYÊN VÌ CHẠY TRÊN LIST ĐÃ TẢI) ---
 
     /**
      * Tìm kiếm tác giả theo tên
@@ -98,7 +119,7 @@ public class AuthorViewModel extends AndroidViewModel {
         List<Author> masterList = allAuthorsLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
 
-        // Nếu query rỗng, trả về danh sách gốc (đã sort A-Z)
+        // Nếu query rỗng, trả về danh sách gốc (sắp xếp A-Z theo tên để dễ nhìn)
         if (query == null || query.trim().isEmpty()) {
             List<Author> sorted = new ArrayList<>(masterList);
             sorted.sort((a1, a2) -> {

@@ -136,7 +136,7 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
 
             // Gọi hàm kiểm tra tồn kho
             cartViewModel.checkCartAvailability().observe(getViewLifecycleOwner(), isValid -> {
-                if (Boolean.TRUE.equals(isValid)) {
+                if (Boolean.TRUE.equals(isValid.getData())) {
                     // Hợp lệ -> Chuyển trang
                     Intent intent = new Intent(requireContext(), ZaloRedirectActivity.class);
                     intent.putExtra(ZaloRedirectActivity.EXTRA_HEADER_TITLE, "Trang thanh toán");
@@ -212,14 +212,22 @@ public class CartFragment extends Fragment implements CartAdapter.OnCartItemClic
 
     @Override
     public void onDeleteClick(CartItem item, int position) {
-        // Logic mới cho xóa
+        // Gọi API xóa và lắng nghe kết quả (ApiResponse)
         cartViewModel.deleteItem(item.getId())
-                .observe(getViewLifecycleOwner(), isSuccess -> {
-                    if (Boolean.TRUE.equals(isSuccess)) {
+                .observe(getViewLifecycleOwner(), apiResponse -> {
+                    // Kiểm tra trạng thái trả về từ server
+                    if (apiResponse != null && apiResponse.isStatus()) {
+                        // --- THÀNH CÔNG ---
                         Toast.makeText(getContext(), "Đã xóa sản phẩm", Toast.LENGTH_SHORT).show();
+
+                        // QUAN TRỌNG: Fetch lại dữ liệu giỏ hàng mới nhất
+                        // Hàm này sẽ tự động cập nhật List và Tổng tiền thông qua Observer ở trên
                         cartViewModel.refreshCart();
+
                     } else {
-                        Toast.makeText(getContext(), "Xóa thất bại", Toast.LENGTH_SHORT).show();
+                        // --- THẤT BẠI ---
+                        String msg = (apiResponse != null) ? apiResponse.getMessage() : "Xóa thất bại";
+                        showErrorDialog(msg);
                     }
                 });
     }

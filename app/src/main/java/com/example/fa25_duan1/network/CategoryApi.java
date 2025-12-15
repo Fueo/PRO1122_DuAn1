@@ -36,5 +36,5 @@ public interface CategoryApi {
 
     // DELETE: Xóa danh mục theo ID
     @DELETE("categories/delete/{id}")
-    Call<Void> deleteCategory(@Path("id") String id);
+    Call<ApiResponse<Void>> deleteCategory(@Path("id") String id);
 }

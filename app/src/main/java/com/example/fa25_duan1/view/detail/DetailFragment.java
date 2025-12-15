@@ -1,7 +1,7 @@
 package com.example.fa25_duan1.view.detail;
 
 import android.app.Dialog;
-import android.content.Intent; // Import thêm Intent
+import android.content.Intent;
 import android.graphics.Paint;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -82,10 +82,7 @@ public class DetailFragment extends Fragment {
         initViewModel();
         setupTabEvents();
 
-        // Setup Adapter
         setupRelatedProductsAdapter();
-
-        // Setup lắng nghe dữ liệu
         setupDataObservation();
 
         getProductData();
@@ -108,7 +105,7 @@ public class DetailFragment extends Fragment {
         tvViews = view.findViewById(R.id.tv_views_value);
 
         btnAddToCart = view.findViewById(R.id.btn_add_to_cart);
-        btnBuyNow = view.findViewById(R.id.btnEdit); // ID nút Mua ngay
+        btnBuyNow = view.findViewById(R.id.btnEdit); // ID nút Mua ngay (Lưu ý: check lại ID btnEdit trong XML)
 
         tabLayout = view.findViewById(R.id.tab_layout);
         layoutDescription = view.findViewById(R.id.layout_description);
@@ -145,11 +142,9 @@ public class DetailFragment extends Fragment {
 
             @Override
             public void onAddToCartClick(Product product) {
-                // Thêm vào giỏ hàng (không chuyển màn hình)
                 addToCartLogic(product.getId());
             }
 
-            // --- [MỚI] XỬ LÝ NÚT MUA NGAY TRÊN SẢN PHẨM LIÊN QUAN ---
             @Override
             public void onBuyNowClick(Product product) {
                 handleBuyNow(product.getId());
@@ -179,42 +174,36 @@ public class DetailFragment extends Fragment {
         btnAddToCart.setEnabled(false);
         btnBuyNow.setEnabled(false);
 
-        cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), response -> {
+        // [SỬA] Xử lý ApiResponse
+        cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), apiResponse -> {
             btnAddToCart.setEnabled(true);
             btnBuyNow.setEnabled(true);
 
-            if (response != null && response.isStatus()) {
+            if (apiResponse != null && apiResponse.isStatus()) {
                 cartViewModel.refreshCart();
                 FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, true).show();
             } else {
-                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối hoặc hết hàng";
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi kết nối hoặc hết hàng";
                 showErrorDialog(msg);
             }
         });
     }
 
-    // --- [MỚI] LOGIC MUA NGAY (NÚT MUA NGAY) ---
+    // --- LOGIC MUA NGAY (NÚT MUA NGAY) ---
     private void handleBuyNow(String productId) {
         if (productId == null) return;
-        // 2. Gọi API thêm vào giỏ
-        cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), response -> {
-            // 3. Tắt Loading
 
-            if (response != null && response.isStatus()) {
-                // Thành công -> Refresh lại giỏ hàng
+        // [SỬA] Xử lý ApiResponse
+        cartViewModel.increaseQuantity(productId).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
                 cartViewModel.refreshCart();
 
-                // 4. Chuyển sang màn hình Giỏ hàng (DetailActivity - Fragment Cart)
                 Intent intent = new Intent(getContext(), DetailActivity.class);
                 intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
                 intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
                 startActivity(intent);
-
             } else {
-                // Thất bại
-                String msg = (response != null && response.getMessage() != null)
-                        ? response.getMessage()
-                        : "Lỗi kết nối server";
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi kết nối server";
                 showErrorDialog(msg);
             }
         });
@@ -229,46 +218,46 @@ public class DetailFragment extends Fragment {
 
         ivHeart.setOnClickListener(v -> {
             if (currentProduct != null) {
-                List<String> currentIds = favoriteViewModel.getFavoriteIds().getValue();
-                boolean isCurrentlyFavorite = currentIds != null && currentIds.contains(currentProduct.getId());
+                // 1. Khóa nút tạm thời để tránh spam click
+                ivHeart.setEnabled(false);
 
-                try {
-                    int currentCount = Integer.parseInt(tvLikes.getText().toString());
-                    if (isCurrentlyFavorite) {
-                        currentCount = Math.max(0, currentCount - 1);
+                // 2. Gọi Toggle và chờ kết quả
+                favoriteViewModel.toggleFavorite(currentProduct.getId()).observe(getViewLifecycleOwner(), apiResponse -> {
+                    // Mở lại nút ngay khi có phản hồi
+                    ivHeart.setEnabled(true);
+
+                    if (apiResponse != null && apiResponse.isStatus()) {
+                        // --- THÀNH CÔNG ---
+
+                        // A. Chạy Animation cho đẹp
+                        v.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).withEndAction(() ->
+                                v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                        ).start();
+
+                        // B. MẤU CHỐT: Gọi lại API Product để cập nhật toàn bộ view (số like, view, v.v.)
+                        // Hàm này sẽ tự động chạy lại viewProductApi -> bindDataToUI -> cập nhật số like trên màn hình
+                        getProductData();
+
+                        // C. Cập nhật lại trạng thái icon tim (đỏ/xám)
+                        favoriteViewModel.refreshFavorites();
+
                     } else {
-                        currentCount = currentCount + 1;
+                        // --- THẤT BẠI ---
+                        String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi kết nối";
+                        Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
                     }
-                    tvLikes.setText(String.valueOf(currentCount));
-                    currentProduct.setFavorite(currentCount);
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-
-                favoriteViewModel.toggleFavorite(currentProduct.getId());
-
-                v.animate().scaleX(1.2f).scaleY(1.2f).setDuration(100).withEndAction(() ->
-                        v.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
-                ).start();
+                });
             }
         });
 
-        // Nút Thêm vào giỏ (Chỉ thêm, không chuyển trang)
         btnAddToCart.setOnClickListener(v -> {
-            if (currentProduct != null) {
-                addToCartLogic(currentProduct.getId());
-            }
+            if (currentProduct != null) addToCartLogic(currentProduct.getId());
         });
 
-        // Nút Mua ngay (Thêm + Chuyển trang thanh toán)
         btnBuyNow.setOnClickListener(v -> {
-            if (currentProduct != null) {
-                handleBuyNow(currentProduct.getId());
-            }
+            if (currentProduct != null) handleBuyNow(currentProduct.getId());
         });
     }
-
-    // ... (Các phần code hiển thị dữ liệu giữ nguyên) ...
 
     private void navigateToProductDetail(String newProductId) {
         DetailFragment newFragment = new DetailFragment();
@@ -305,37 +294,47 @@ public class DetailFragment extends Fragment {
         if (productId == null && getActivity().getIntent() != null) productId = getActivity().getIntent().getStringExtra("product_id");
 
         if (productId != null) {
-            productViewModel.viewProductApi(productId).observe(getViewLifecycleOwner(), product -> {
-                if (product != null) {
-                    currentProduct = product;
-                    bindDataToUI(product);
-                    favoriteViewModel.refreshFavorites();
-                    if (product.getCategory() != null) {
-                        loadRelatedProducts(product.getCategory().get_id());
+            // [SỬA] Xử lý ApiResponse<Product>
+            productViewModel.viewProductApi(productId).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
+                    Product product = apiResponse.getData();
+                    if (product != null) {
+                        currentProduct = product;
+                        bindDataToUI(product);
+                        favoriteViewModel.refreshFavorites();
+                        if (product.getCategory() != null) {
+                            loadRelatedProducts(product.getCategory().get_id());
+                        }
                     }
                 } else {
-                    Toast.makeText(getContext(), "Lỗi tải dữ liệu", Toast.LENGTH_SHORT).show();
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi tải dữ liệu";
+                    Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
                 }
             });
         }
     }
 
     private void loadRelatedProducts(String categoryId) {
-        productViewModel.getProductsByCategory(categoryId).observe(getViewLifecycleOwner(), products -> {
-            if (products != null) {
-                List<Product> filteredList = new ArrayList<>();
-                for (Product p : products) {
-                    if (!p.getId().equals(currentProduct.getId())) {
-                        filteredList.add(p);
+        // [SỬA] Xử lý ApiResponse<List<Product>>
+        productViewModel.getProductsByCategory(categoryId).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                List<Product> products = apiResponse.getData();
+                if (products != null) {
+                    List<Product> filteredList = new ArrayList<>();
+                    for (Product p : products) {
+                        if (!p.getId().equals(currentProduct.getId())) {
+                            filteredList.add(p);
+                        }
                     }
+                    listRelated = filteredList;
+                    relatedProductAdapter.setProducts(listRelated);
                 }
-                listRelated = filteredList;
-                relatedProductAdapter.setProducts(listRelated);
             }
         });
     }
 
     private void bindDataToUI(Product product) {
+        // ... (Logic bind data giữ nguyên) ...
         if (product.getImage() != null && !product.getImage().isEmpty()) {
             Glide.with(this).load(product.getImage()).placeholder(R.drawable.book_cover_placeholder).into(ivImage);
         }

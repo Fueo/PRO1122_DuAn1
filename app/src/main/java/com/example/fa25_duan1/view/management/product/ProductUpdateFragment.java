@@ -48,20 +48,17 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
-// --- IMPORT THƯ VIỆN MỚI ---
 import com.shashank.sony.fancytoastlib.FancyToast;
 import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class ProductUpdateFragment extends Fragment {
 
-    // Views
     private ShapeableImageView ivImage;
     private ImageView btnChangeAvatar;
     private TextInputEditText etName, etDescription, etPages, etDate, etPrice, etQuantity;
     private AutoCompleteTextView acStatus, acCategory, acAuthor;
     private Button btnSave;
 
-    // Logic variables
     private ProductViewModel productViewModel;
     private AuthorViewModel authorViewModel;
     private CategoryViewModel categoryViewModel;
@@ -70,15 +67,12 @@ public class ProductUpdateFragment extends Fragment {
     private String productId;
     private Product currentProduct;
 
-    // Maps lưu trữ ID và Tên
     private Map<String, String> authorMap = new HashMap<>();
     private Map<String, String> categoryMap = new HashMap<>();
     private final String NO_CATEGORY_OPTION = "Chưa có danh mục";
 
-    // Danh sách trạng thái
     private final String[] statusOptions = {"Đang kinh doanh", "Ngừng kinh doanh"};
 
-    // Formatters
     private final SimpleDateFormat displayFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
     private final SimpleDateFormat backendFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
 
@@ -94,7 +88,6 @@ public class ProductUpdateFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Đăng ký Launcher chọn ảnh
         imagePickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.StartActivityForResult(),
                 result -> {
@@ -108,7 +101,6 @@ public class ProductUpdateFragment extends Fragment {
                 }
         );
 
-        // 2. Khởi tạo ViewModel
         productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
         authorViewModel = new ViewModelProvider(this).get(AuthorViewModel.class);
         categoryViewModel = new ViewModelProvider(this).get(CategoryViewModel.class);
@@ -117,7 +109,6 @@ public class ProductUpdateFragment extends Fragment {
         setupStatusSpinner();
         setupDynamicSpinners();
 
-        // 3. Kiểm tra Intent (Update hay Add)
         if (getActivity() != null && getActivity().getIntent() != null) {
             productId = getActivity().getIntent().getStringExtra("Id");
         }
@@ -129,7 +120,6 @@ public class ProductUpdateFragment extends Fragment {
             btnSave.setText("Lưu sản phẩm");
         }
 
-        // 4. Sự kiện Click
         btnChangeAvatar.setOnClickListener(v -> pickImageFromGallery());
         etDate.setOnClickListener(v -> showDatePickerDialog());
 
@@ -157,13 +147,11 @@ public class ProductUpdateFragment extends Fragment {
         btnSave = view.findViewById(R.id.btnSave);
     }
 
-    // --- XỬ LÝ ẢNH ---
     private void pickImageFromGallery() {
         Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         imagePickerLauncher.launch(intent);
     }
 
-    // --- SETUP SPINNERS ---
     private void setupStatusSpinner() {
         ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, statusOptions);
         acStatus.setAdapter(adapter);
@@ -173,7 +161,6 @@ public class ProductUpdateFragment extends Fragment {
     }
 
     private void setupDynamicSpinners() {
-        // --- AUTHOR ---
         authorViewModel.getDisplayedAuthors().observe(getViewLifecycleOwner(), authors -> {
             if (authors != null) {
                 List<String> authorNames = new ArrayList<>();
@@ -191,7 +178,6 @@ public class ProductUpdateFragment extends Fragment {
             }
         });
 
-        // --- CATEGORY ---
         categoryViewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 List<String> categoryNames = new ArrayList<>();
@@ -213,50 +199,52 @@ public class ProductUpdateFragment extends Fragment {
         });
     }
 
-    // --- LOAD DETAIL ---
     private void loadProductDetail(String id) {
-        productViewModel.getProductByID(id).observe(getViewLifecycleOwner(), product -> {
-            if (product != null) {
-                this.currentProduct = product;
+        // [SỬA] Xử lý ApiResponse<Product>
+        productViewModel.getProductByID(id).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                Product product = apiResponse.getData();
+                if (product != null) {
+                    this.currentProduct = product;
 
-                etName.setText(product.getName());
-                etDescription.setText(product.getDescription());
-                etPages.setText(String.valueOf(product.getPages() > 0 ? product.getPages() : ""));
-                etQuantity.setText(String.valueOf(product.getQuantity() > 0 ? product.getQuantity() : ""));
+                    etName.setText(product.getName());
+                    etDescription.setText(product.getDescription());
+                    etPages.setText(String.valueOf(product.getPages() > 0 ? product.getPages() : ""));
+                    etQuantity.setText(String.valueOf(product.getQuantity() > 0 ? product.getQuantity() : ""));
 
-                if (product.getPublishDate() != null && !product.getPublishDate().isEmpty()) {
-                    try {
-                        SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
-                        Date beDate = sourceFormat.parse(product.getPublishDate());
-                        if (beDate != null) etDate.setText(displayFormat.format(beDate));
-                    } catch (ParseException e) {
-                        etDate.setText(product.getPublishDate());
+                    if (product.getPublishDate() != null && !product.getPublishDate().isEmpty()) {
+                        try {
+                            SimpleDateFormat sourceFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+                            Date beDate = sourceFormat.parse(product.getPublishDate());
+                            if (beDate != null) etDate.setText(displayFormat.format(beDate));
+                        } catch (ParseException e) {
+                            etDate.setText(product.getPublishDate());
+                        }
                     }
+
+                    if (product.getPrice() > 0) {
+                        etPrice.setText(String.valueOf((long) product.getPrice()));
+                    }
+
+                    if (product.getImage() != null && !product.getImage().isEmpty()) {
+                        Glide.with(requireContext()).load(product.getImage())
+                                .placeholder(R.drawable.book_cover_placeholder)
+                                .error(R.drawable.book_cover_placeholder)
+                                .centerCrop()
+                                .into(ivImage);
+                    }
+
+                    String statusText = product.isStatus() ? statusOptions[0] : statusOptions[1];
+                    acStatus.setText(statusText, false);
+
+                    setupDynamicSpinners();
                 }
-
-                if (product.getPrice() > 0) {
-                    etPrice.setText(String.valueOf((long) product.getPrice()));
-                }
-
-                if (product.getImage() != null && !product.getImage().isEmpty()) {
-                    Glide.with(requireContext()).load(product.getImage())
-                            .placeholder(R.drawable.book_cover_placeholder)
-                            .error(R.drawable.book_cover_placeholder)
-                            .centerCrop()
-                            .into(ivImage);
-                }
-
-                String statusText = product.isStatus() ? statusOptions[0] : statusOptions[1];
-                acStatus.setText(statusText, false);
-
-                setupDynamicSpinners();
             } else {
-                FancyToast.makeText(getContext(), "Không tìm thấy sản phẩm", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi tải dữ liệu";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
-
-    // --- LOGIC ADD/UPDATE ---
 
     private void addProduct() {
         if (!validateInput()) return;
@@ -272,16 +260,18 @@ public class ProductUpdateFragment extends Fragment {
         String categoryId = getSelectedId(acCategory, categoryMap);
         String status = convertStatusToBooleanString(acStatus.getText().toString());
 
+        // [SỬA] Xử lý ApiResponse<Product>
         productViewModel.addProductWithImage(
                 toRequestBody(name), toRequestBody(desc), toRequestBody(pages),
                 toRequestBody(date), toRequestBody(status), toRequestBody(categoryId),
                 toRequestBody(authorId), toRequestBody(price), toRequestBody(qty),
                 prepareFilePart("image", selectedAvatarUri)
-        ).observe(getViewLifecycleOwner(), product -> {
-            if (product != null) {
+        ).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
                 showSuccessDialog("Thêm sản phẩm thành công!");
             } else {
-                FancyToast.makeText(getContext(), "Thêm thất bại. Vui lòng thử lại.", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Thêm thất bại";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
@@ -300,22 +290,22 @@ public class ProductUpdateFragment extends Fragment {
         String categoryId = getSelectedId(acCategory, categoryMap);
         String status = convertStatusToBooleanString(acStatus.getText().toString());
 
+        // [SỬA] Xử lý ApiResponse<Product>
         productViewModel.updateProductWithImage(
                 productId,
                 toRequestBody(name), toRequestBody(desc), toRequestBody(pages),
                 toRequestBody(date), toRequestBody(status), toRequestBody(categoryId),
                 toRequestBody(authorId), toRequestBody(price), toRequestBody(qty),
                 prepareFilePart("image", selectedAvatarUri)
-        ).observe(getViewLifecycleOwner(), product -> {
-            if (product != null) {
+        ).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
                 showSuccessDialog("Cập nhật sản phẩm thành công!");
             } else {
-                FancyToast.makeText(getContext(), "Cập nhật thất bại. Vui lòng thử lại.", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Cập nhật thất bại";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
-
-    // --- HELPER FUNCTIONS ---
 
     private boolean validateInput() {
         if (isEmpty(etName)) {
@@ -344,19 +334,15 @@ public class ProductUpdateFragment extends Fragment {
         return true;
     }
 
-    // --- HÀM HIỂN THỊ DIALOG THÀNH CÔNG ---
     private void showSuccessDialog(String message) {
         new CuteDialog.withIcon(requireActivity())
                 .setIcon(R.drawable.ic_dialog_success)
                 .setTitle("Thành công")
                 .setDescription(message)
-
-                // Cấu hình màu sắc đồng bộ Blue
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonColor(R.color.blue)
                 .setTitleTextColor(R.color.black)
                 .setDescriptionTextColor(R.color.gray_text)
-
                 .setPositiveButtonText("Đóng", v -> {
                     requireActivity().setResult(Activity.RESULT_OK);
                     requireActivity().finish();
@@ -365,6 +351,7 @@ public class ProductUpdateFragment extends Fragment {
                 .show();
     }
 
+    // ... (Các hàm helper khác giữ nguyên) ...
     private boolean isEmpty(TextInputEditText et) {
         return et.getText() == null || et.getText().toString().trim().isEmpty();
     }

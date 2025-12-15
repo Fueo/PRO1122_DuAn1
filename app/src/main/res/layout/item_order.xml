@@ -116,6 +116,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginBottom="4dp"
+                        android:gravity="center_vertical"
                         android:orientation="horizontal">
 
                         <TextView
@@ -135,6 +136,20 @@
                             android:text="0 đ"
                             android:textColor="#FF3B30"
                             android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvPaymentStatus"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:background="@drawable/bg_status_processing"
+                            android:fontFamily="@font/robotoserif_bold"
+                            android:paddingHorizontal="6dp"
+                            android:paddingVertical="1dp"
+                            android:text="Đã thanh toán"
+                            android:textColor="#2E7D32"
+                            android:textSize="10sp"
+                            android:visibility="gone" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -163,20 +178,6 @@
                             android:text="Đang xử lý"
                             android:textColor="#0486E9"
                             android:textSize="12sp" />
-
-                        <TextView
-                            android:id="@+id/tvPaymentStatus"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="6dp"
-                            android:background="@drawable/bg_status_processing"
-                            android:fontFamily="@font/robotoserif_bold"
-                            android:paddingHorizontal="8dp"
-                            android:paddingVertical="2dp"
-                            android:text="Đã thanh toán"
-                            android:textColor="#2E7D32"
-                            android:textSize="10sp"
-                            android:visibility="gone" />
                     </LinearLayout>
                 </LinearLayout>
 

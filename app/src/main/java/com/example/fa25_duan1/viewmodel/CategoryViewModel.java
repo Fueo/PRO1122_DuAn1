@@ -1,14 +1,14 @@
 package com.example.fa25_duan1.viewmodel;
 
 import android.app.Application;
-import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 
-import com.example.fa25_duan1.model.Author;
+import com.example.fa25_duan1.model.ApiResponse; // Import ApiResponse
 import com.example.fa25_duan1.model.Category;
 import com.example.fa25_duan1.repository.CategoryRepository;
 
@@ -25,8 +25,11 @@ public class CategoryViewModel extends AndroidViewModel {
     // Danh sách hiển thị lên UI (sau khi filter/search)
     private final MediatorLiveData<List<Category>> displayedCategoriesLiveData = new MediatorLiveData<>();
 
-    // Nguồn dữ liệu hiện tại từ Repo
-    private LiveData<List<Category>> currentRepoSource;
+    // LiveData để báo lỗi cho View
+    private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
+
+    // Nguồn dữ liệu hiện tại từ Repo (Đổi thành ApiResponse)
+    private LiveData<ApiResponse<List<Category>>> currentRepoSource;
 
     public CategoryViewModel(@NonNull Application application) {
         super(application);
@@ -35,32 +38,48 @@ public class CategoryViewModel extends AndroidViewModel {
     }
 
     /**
-     * Lấy danh sách category để hiển thị (Fragment sẽ observe cái này)
+     * Lấy danh sách category để hiển thị
      */
     public LiveData<List<Category>> getDisplayedCategories() {
         return displayedCategoriesLiveData;
     }
 
+    public LiveData<String> getMessage() {
+        return messageLiveData;
+    }
 
     /**
      * Tải lại dữ liệu từ Server
      */
     public void refreshData() {
         if (currentRepoSource != null) {
-            displayedCategoriesLiveData .removeSource(currentRepoSource);
+            displayedCategoriesLiveData.removeSource(currentRepoSource);
         }
 
+        // Gọi Repository (trả về ApiResponse)
         currentRepoSource = repository.getAllCategories();
 
-        displayedCategoriesLiveData.addSource(currentRepoSource, categories -> {
-            if (categories == null) {
-                categories = new ArrayList<>();
+        displayedCategoriesLiveData.addSource(currentRepoSource, apiResponse -> {
+            List<Category> categories = new ArrayList<>();
+
+            if (apiResponse != null) {
+                if (apiResponse.isStatus()) {
+                    // Thành công: Lấy data
+                    if (apiResponse.getData() != null) {
+                        categories = apiResponse.getData();
+                    }
+                } else {
+                    // Thất bại: Gửi thông báo lỗi
+                    messageLiveData.setValue(apiResponse.getMessage());
+                }
+            } else {
+                messageLiveData.setValue("Lỗi kết nối");
             }
 
             // Cập nhật danh sách gốc
             allCategoriesLiveData.setValue(categories);
 
-            // Sắp xếp mới nhất
+            // Sắp xếp mặc định: Mới nhất lên đầu
             List<Category> sorted = new ArrayList<>(categories);
             sorted.sort((a1, a2) -> {
                 if (a1.getCreateAt() == null || a2.getCreateAt() == null) return 0;
@@ -71,30 +90,32 @@ public class CategoryViewModel extends AndroidViewModel {
         });
     }
 
-    public LiveData<Integer> getTotalCategory() { return repository.getTotalCategory(); }
+    public LiveData<ApiResponse<Integer>> getTotalCategory() {
+        return repository.getTotalCategory();
+    }
 
+    // --- CRUD OPERATIONS (CẬP NHẬT KIỂU TRẢ VỀ APIRESPONSE) ---
 
-    // --- CRUD OPERATIONS ---
-
-    public LiveData<Category> addCategory(String name) {
-        // Tạo object Category mới để gửi đi
-        // Lưu ý: Constructor của bạn là Category(String name, boolean isSelected)
+    public LiveData<ApiResponse<Category>> addCategory(String name) {
+        // Tạo object Category mới
         Category newCategory = new Category(name, false);
         return repository.addCategory(newCategory);
     }
 
-    public LiveData<Category> updateCategory(String id, String name) {
+    public LiveData<ApiResponse<Category>> updateCategory(String id, String name) {
         Category updateCategory = new Category(name, false);
         return repository.updateCategory(id, updateCategory);
     }
 
-    public LiveData<Boolean> deleteCategory(String id) {
+    public LiveData<ApiResponse<Void>> deleteCategory(String id) {
         return repository.deleteCategory(id);
     }
 
-    public LiveData<Category> getCategoryByID(String id) {
+    public LiveData<ApiResponse<Category>> getCategoryByID(String id) {
         return repository.getCategoryByID(id);
     }
+
+    // --- LOCAL SORT & SEARCH (Logic giữ nguyên) ---
 
     public void sortCategories(int type) {
         List<Category> masterList = allCategoriesLiveData.getValue();
@@ -119,7 +140,11 @@ public class CategoryViewModel extends AndroidViewModel {
 
             case 2: // Tên A-Z
             default:
-                sorted.sort((c1, c2) -> c1.getName().compareToIgnoreCase(c2.getName()));
+                sorted.sort((c1, c2) -> {
+                    String n1 = c1.getName() != null ? c1.getName() : "";
+                    String n2 = c2.getName() != null ? c2.getName() : "";
+                    return n1.compareToIgnoreCase(n2);
+                });
                 break;
         }
 
@@ -134,9 +159,13 @@ public class CategoryViewModel extends AndroidViewModel {
         if (masterList == null) masterList = new ArrayList<>();
 
         if (query == null || query.trim().isEmpty()) {
-            // Nếu query rỗng, trả về danh sách gốc (sort A-Z)
+            // Nếu query rỗng, trả về danh sách gốc (có thể sort lại A-Z cho dễ nhìn)
             List<Category> sorted = new ArrayList<>(masterList);
-            sorted.sort((c1, c2) -> c1.getName().compareToIgnoreCase(c2.getName()));
+            sorted.sort((c1, c2) -> {
+                String n1 = c1.getName() != null ? c1.getName() : "";
+                String n2 = c2.getName() != null ? c2.getName() : "";
+                return n1.compareToIgnoreCase(n2);
+            });
             displayedCategoriesLiveData.setValue(sorted);
             return;
         }

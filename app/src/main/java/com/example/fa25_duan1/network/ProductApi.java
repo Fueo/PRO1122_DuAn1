@@ -53,6 +53,9 @@ public interface ProductApi {
     @GET("products/view/{id}")
     Call<ApiResponse<Product>> viewProduct(@Path("id") String id);
 
+    // [MỚI] GET: Lấy danh sách sản phẩm yêu thích (Cần Token)
+    @GET("products/favorites")
+    Call<ApiResponse<List<Product>>> getFavoriteProducts();
     // ... (Các method POST, PUT, DELETE giữ nguyên như cũ) ...
     @Multipart
     @POST("products/add")
@@ -86,5 +89,5 @@ public interface ProductApi {
     );
 
     @DELETE("products/delete/{id}")
-    Call<Void> deleteProduct(@Path("id") String id);
+    Call<ApiResponse<Void>> deleteProduct(@Path("id") String id);
 }

@@ -8,10 +8,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Button;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.widget.AppCompatButton; // Dùng AppCompatButton cho đồng bộ
+import androidx.appcompat.widget.AppCompatButton;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -79,18 +78,19 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
         // ========= HEADER ==========
         holder.tvOrderCode.setText(order.getId());
         holder.tvReceiverName.setText(order.getFullname());
-        holder.tvPaymentMethod.setText(displayPaymentMethod); // Hiển thị tên tiếng Việt
+        holder.tvPaymentMethod.setText(displayPaymentMethod);
         holder.tvTotal.setText(formatter.format(order.getTotal()) + " đ");
 
-        // Xử lý ngày giờ từ UTC sang Local (UTC+7)
         holder.tvDate.setText(convertUtcToLocal(order.getDate()));
-
         holder.tvAddress.setText(order.getAddress());
         holder.tvPhone.setText(order.getPhone());
         holder.btnDetail.setText("Cập nhật đơn");
 
         // ========= STATUS UI (TRẠNG THÁI ĐƠN HÀNG) ==========
         String status = order.getStatus() != null ? order.getStatus().toLowerCase().trim() : "";
+
+        // [SỬA ĐỔI 1] Biến kiểm tra hủy đơn
+        boolean isCancelled = status.equals("cancelled") || status.equals("đã hủy") || status.equals("canceled");
 
         switch (status) {
             case "pending":
@@ -136,9 +136,8 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
                 break;
         }
 
-        // ========= [MỚI] TRẠNG THÁI THANH TOÁN (Chỉ hiện Badge, ẩn Nút) =========
+        // ========= [SỬA ĐỔI 2] TRẠNG THÁI THANH TOÁN =========
         boolean isPaid = order.isPaid();
-        // Kiểm tra xem có phải thanh toán online không
         boolean isOnlinePayment = rawPaymentMethod != null &&
                 (rawPaymentMethod.equalsIgnoreCase("QR") ||
                         rawPaymentMethod.equalsIgnoreCase("Zalopay") ||
@@ -151,13 +150,13 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
             holder.tvPaymentStatus.setTextColor(Color.parseColor("#2E7D32"));
         } else {
             // Chưa thanh toán
-            if (isOnlinePayment) {
-                // Nếu là QR/Zalo mà chưa trả -> Hiện cảnh báo Badge Cam
+            // Logic mới: Nếu là Online VÀ Chưa bị hủy thì mới hiện "Chờ thanh toán"
+            if (isOnlinePayment && !isCancelled) {
                 holder.tvPaymentStatus.setVisibility(View.VISIBLE);
                 holder.tvPaymentStatus.setText("Chờ thanh toán");
                 holder.tvPaymentStatus.setTextColor(Color.parseColor("#EF6C00"));
             } else {
-                // COD -> Ẩn
+                // COD hoặc ĐÃ HỦY -> Ẩn Badge
                 holder.tvPaymentStatus.setVisibility(View.GONE);
             }
         }
@@ -165,10 +164,9 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
         // ========= BUTTON VISIBILITY (ADMIN) ==========
         holder.btnCancel.setVisibility(View.GONE);
         holder.btnBuyAgain.setVisibility(View.GONE);
-        holder.btnPayNow.setVisibility(View.GONE); // Luôn ẩn nút thanh toán ở trang Admin
+        holder.btnPayNow.setVisibility(View.GONE);
 
         holder.btnDetail.setVisibility(View.VISIBLE);
-
         holder.btnDetail.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onOrderClick(order);
@@ -199,7 +197,6 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
 
     private String convertUtcToLocal(String utcDateString) {
         if (utcDateString == null || utcDateString.isEmpty()) return "";
-
         try {
             SimpleDateFormat inputFormat;
             if (utcDateString.contains(".")) {
@@ -208,12 +205,9 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
                 inputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault());
             }
             inputFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-
             Date date = inputFormat.parse(utcDateString);
-
             SimpleDateFormat outputFormat = new SimpleDateFormat("HH:mm dd/MM/yyyy", Locale.getDefault());
             return outputFormat.format(date);
-
         } catch (Exception e) {
             e.printStackTrace();
             if (utcDateString.contains("T")) {
@@ -243,12 +237,11 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
         ExpandableLayout layoutDetail;
 
         TextView tvOrderCode, tvPaymentMethod, tvTotal, tvStatus, tvDate, tvAddress, tvPhone, tvReceiverName;
-        TextView tvPaymentStatus; // Badge thanh toán
+        TextView tvPaymentStatus;
 
         ImageView imgToggleHeader, imgToggleDetail;
         RecyclerView rvOrderItems;
 
-        // Dùng AppCompatButton để khớp với layout
         AppCompatButton btnCancel, btnBuyAgain, btnDetail, btnPayNow;
 
         public OrderViewHolder(@NonNull View itemView) {
@@ -265,7 +258,6 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
             tvAddress = itemView.findViewById(R.id.tvAddress);
             tvPhone = itemView.findViewById(R.id.tvPhone);
 
-            // Ánh xạ thêm badge thanh toán
             tvPaymentStatus = itemView.findViewById(R.id.tvPaymentStatus);
 
             imgToggleHeader = itemView.findViewById(R.id.imgToggleHeader);
@@ -277,8 +269,6 @@ public class OrderManageAdapter extends RecyclerView.Adapter<OrderManageAdapter.
             btnCancel = itemView.findViewById(R.id.btnCancel);
             btnBuyAgain = itemView.findViewById(R.id.btnBuyAgain);
             btnDetail = itemView.findViewById(R.id.btnDetail);
-
-            // Ánh xạ nút PayNow để ẩn đi
             btnPayNow = itemView.findViewById(R.id.btnPayNow);
         }
     }

@@ -1,6 +1,7 @@
 package com.example.fa25_duan1.viewmodel;
 
 import android.app.Application;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
@@ -30,13 +31,24 @@ public class OrderViewModel extends AndroidViewModel {
 
     private final OrderRepository repository;
 
+    // ===================== LIVE DATA =====================
     private final MediatorLiveData<List<Order>> orderHistory = new MediatorLiveData<>();
-    private LiveData<List<Order>> currentSource;
-
-    private List<Order> masterOrderList = new ArrayList<>();
+    private LiveData<ApiResponse<List<Order>>> currentSource;
     private final MutableLiveData<List<Order>> displayedOrders = new MutableLiveData<>();
+    private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
 
-    private SimpleDateFormat isoFormat;
+    // ===================== DATA =====================
+    private List<Order> masterOrderList = new ArrayList<>();
+
+    // ===================== FILTER STATE =====================
+    private int currentSortType = 0;
+    private List<Integer> currentStatusFilter = null;
+    private long currentStartDate = 0;
+    private long currentEndDate = 0;
+    private List<Integer> currentPriceRanges = null;
+
+    // ===================== DATE FORMAT =====================
+    private final SimpleDateFormat isoFormat;
 
     public OrderViewModel(@NonNull Application application) {
         super(application);
@@ -46,11 +58,22 @@ public class OrderViewModel extends AndroidViewModel {
         isoFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
     }
 
-    // --- GETTERS ---
-    public LiveData<List<Order>> getOrderHistory() { return orderHistory; }
-    public LiveData<List<Order>> getDisplayedOrders() { return displayedOrders; }
+    // ===================== GETTERS =====================
+    public LiveData<List<Order>> getOrderHistory() {
+        return orderHistory;
+    }
 
-    // --- API CALLS ---
+    public LiveData<List<Order>> getDisplayedOrders() {
+        return displayedOrders;
+    }
+
+    public LiveData<String> getMessage() {
+        return messageLiveData;
+    }
+
+    // ======================================================
+    // ===================== API CALLS ======================
+    // ======================================================
 
     // 1. Checkout
     public LiveData<ApiResponse<CheckoutResponse>> checkout(String fullname, String address, String phone, String note, String paymentMethod) {
@@ -58,36 +81,28 @@ public class OrderViewModel extends AndroidViewModel {
         return repository.checkout(request);
     }
 
-    // 2. Fetch History (User)
+    // 2. Fetch Order History (USER)
     public void fetchOrderHistory() {
         if (currentSource != null) orderHistory.removeSource(currentSource);
+
         currentSource = repository.getOrderHistory();
-        orderHistory.addSource(currentSource, orders -> {
-            if (orders == null) orders = new ArrayList<>();
-            this.masterOrderList = new ArrayList<>(orders);
-            filterAndSortOrders(0, null, 0, 0, null);
-            orderHistory.setValue(orders);
-        });
+        orderHistory.addSource(currentSource, apiResponse -> handleOrderResponse(apiResponse));
     }
 
-    // 3. Cancel
+    // 3. Fetch All Orders (ADMIN)
+    public void fetchAllOrdersForAdmin() {
+        if (currentSource != null) orderHistory.removeSource(currentSource);
+
+        currentSource = repository.getAllOrders();
+        orderHistory.addSource(currentSource, apiResponse -> handleOrderResponse(apiResponse));
+    }
+
+    // 4. Cancel Order
     public LiveData<ApiResponse<Void>> cancelOrder(String orderId) {
         return repository.cancelOrder(orderId);
     }
 
-    // 4. Fetch All (Admin)
-    public void fetchAllOrdersForAdmin() {
-        if (currentSource != null) orderHistory.removeSource(currentSource);
-        currentSource = repository.getAllOrders();
-        orderHistory.addSource(currentSource, orders -> {
-            if (orders == null) orders = new ArrayList<>();
-            this.masterOrderList = new ArrayList<>(orders);
-            filterAndSortOrders(0, null, 0, 0, null);
-            orderHistory.setValue(orders);
-        });
-    }
-
-    // 5. Update Order Status (ADMIN - Full Control)
+    // 5. Update Order Status (ADMIN)
     public LiveData<ApiResponse<Order>> updateOrderStatus(String orderId, String newStatus, String paymentMethod, Boolean isPaid) {
         return repository.updateOrderStatus(orderId, newStatus, paymentMethod, isPaid);
     }
@@ -97,61 +112,151 @@ public class OrderViewModel extends AndroidViewModel {
         return repository.updatePaymentMethod(orderId, newPaymentMethod);
     }
 
-    // 7. Get Detail
+    // 7. Get Order Detail
     public LiveData<ApiResponse<Order>> getOrderById(String orderId) {
         return repository.getOrderById(orderId);
     }
 
-    // 8. Stats
+    // 8. Statistics
     public LiveData<ApiResponse<Map<String, Integer>>> getStatusCount() {
         return repository.getStatusCount();
     }
+
     public LiveData<ApiResponse<Integer>> getTotalOrders() {
         return repository.getTotalOrders();
     }
 
-    // [MỚI 9] Tạo thanh toán ZaloPay
+    // 9. ZaloPay
     public LiveData<ApiResponse<ZaloPayResult>> createZaloPayPayment(String orderId) {
         return repository.createZaloPayOrder(orderId);
     }
 
-    // =========================================================================
-    // KHU VỰC LOGIC LỌC VÀ SẮP XẾP
-    // =========================================================================
+    public LiveData<ApiResponse<Map<String, Object>>> checkZaloPayStatus(String appTransId) {
+        return repository.checkZaloPayStatus(appTransId);
+    }
 
-    public void filterAndSortOrders(int sortType, List<Integer> statusFilter, long startDate, long endDate, List<Integer> priceRanges) {
+    // ======================================================
+    // ===================== CORE LOGIC =====================
+    // ======================================================
+
+    private void handleOrderResponse(ApiResponse<List<Order>> apiResponse) {
+        List<Order> orders = new ArrayList<>();
+
+        if (apiResponse != null) {
+            if (apiResponse.isStatus() && apiResponse.getData() != null) {
+                orders = apiResponse.getData();
+            } else {
+                messageLiveData.setValue(apiResponse.getMessage());
+            }
+        } else {
+            messageLiveData.setValue("Lỗi kết nối");
+        }
+
+        masterOrderList = new ArrayList<>(orders);
+        applyFilterInternal(); // ✅ GIỮ FILTER
+        orderHistory.setValue(orders);
+    }
+
+    // ======================================================
+    // ===================== FILTER & SORT ==================
+    // ======================================================
+
+    public void filterAndSortOrders(int sortType,
+                                    List<Integer> statusFilter,
+                                    long startDate,
+                                    long endDate,
+                                    List<Integer> priceRanges) {
+
+        // ✅ SAVE STATE
+        currentSortType = sortType;
+        currentStatusFilter = statusFilter;
+        currentStartDate = startDate;
+        currentEndDate = endDate;
+        currentPriceRanges = priceRanges;
+
+        applyFilterInternal();
+    }
+
+    private void applyFilterInternal() {
         List<Order> result = new ArrayList<>();
-        if (masterOrderList == null) {
-            displayedOrders.setValue(new ArrayList<>());
+        if (masterOrderList == null || masterOrderList.isEmpty()) {
+            displayedOrders.setValue(result);
             return;
         }
 
         for (Order order : masterOrderList) {
-            boolean matchesStatus = checkStatusMatch(order.getStatus(), statusFilter);
-            boolean matchesDate = checkDateMatch(order.getDate(), startDate, endDate);
-            boolean matchesPrice = checkPriceMatch(order.getTotal(), priceRanges);
-
-            if (matchesStatus && matchesDate && matchesPrice) {
+            if (checkStatusMatch(order.getStatus(), currentStatusFilter)
+                    && checkDateMatch(order.getDate(), currentStartDate, currentEndDate)
+                    && checkPriceMatch(order.getTotal(), currentPriceRanges)) {
                 result.add(order);
             }
         }
-        sortResultList(result, sortType);
+
+        sortResultList(result, currentSortType);
         displayedOrders.setValue(result);
     }
 
-    // --- CÁC HÀM CHECK LOGIC CON ---
+    // ======================================================
+    // ===================== SEARCH =========================
+    // ======================================================
+
+    public void searchOrders(String query, int searchType) {
+        if (masterOrderList == null || masterOrderList.isEmpty()) return;
+
+        if (query == null || query.trim().isEmpty()) {
+            applyFilterInternal();
+            return;
+        }
+
+        String finalQuery = query.toLowerCase().trim();
+        List<Order> result = new ArrayList<>();
+
+        for (Order order : masterOrderList) {
+            boolean match = false;
+            switch (searchType) {
+                case 0:
+                    match = order.getFullname() != null && order.getFullname().toLowerCase().contains(finalQuery);
+                    break;
+                case 1:
+                    match = order.getPhone() != null && order.getPhone().contains(finalQuery);
+                    break;
+                case 2:
+                    match = order.getDate() != null && order.getDate().contains(finalQuery);
+                    break;
+            }
+            if (match) result.add(order);
+        }
+
+        sortResultList(result, currentSortType);
+        displayedOrders.setValue(result);
+    }
+
+    // ======================================================
+    // ===================== UTIL METHODS ===================
+    // ======================================================
+
     private boolean checkStatusMatch(String serverStatus, List<Integer> filterCodes) {
         if (filterCodes == null || filterCodes.isEmpty()) return true;
         if (serverStatus == null) return false;
-        String status = serverStatus.toLowerCase().trim();
 
+        String status = serverStatus.toLowerCase().trim();
         for (int code : filterCodes) {
             switch (code) {
-                case 0: if (status.equals("pending") || status.equals("wait_confirm") || status.equals("chờ xác nhận")) return true; break;
-                case 1: if (status.equals("processing") || status.equals("confirmed") || status.equals("đang xử lý")) return true; break;
-                case 2: if (status.equals("shipping") || status.equals("shipped") || status.contains("đang giao")) return true; break;
-                case 3: if (status.equals("delivered") || status.equals("completed") || status.equals("hoàn thành")) return true; break;
-                case 4: if (status.equals("cancelled") || status.equals("canceled") || status.equals("đã hủy")) return true; break;
+                case 0:
+                    if (status.contains("pending") || status.contains("wait") || status.contains("chờ")) return true;
+                    break;
+                case 1:
+                    if (status.contains("processing") || status.contains("confirmed")) return true;
+                    break;
+                case 2:
+                    if (status.contains("shipping") || status.contains("giao")) return true;
+                    break;
+                case 3:
+                    if (status.contains("completed") || status.contains("delivered")) return true;
+                    break;
+                case 4:
+                    if (status.contains("cancel")) return true;
+                    break;
             }
         }
         return false;
@@ -172,43 +277,39 @@ public class OrderViewModel extends AndroidViewModel {
 
     private boolean checkDateMatch(String dateString, long startDate, long endDate) {
         if (startDate == 0 && endDate == 0) return true;
+
         long orderTime = parseDateToLong(dateString);
         if (orderTime == 0) return false;
 
-        LocalDate orderDate = Instant.ofEpochMilli(orderTime).atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate startLocal = (startDate == 0) ? LocalDate.MIN : Instant.ofEpochMilli(startDate).atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalDate endLocal = (endDate == 0) ? LocalDate.MAX : Instant.ofEpochMilli(endDate).atZone(ZoneId.systemDefault()).toLocalDate();
-        return !orderDate.isBefore(startLocal) && !orderDate.isAfter(endLocal);
-    }
+        LocalDate orderDate = Instant.ofEpochMilli(orderTime)
+                .atZone(ZoneId.systemDefault())
+                .toLocalDate();
 
-    public void searchOrders(String query, int searchType) {
-        if (masterOrderList == null || masterOrderList.isEmpty()) return;
-        if (query == null || query.trim().isEmpty()) {
-            filterAndSortOrders(0, null, 0, 0, null);
-            return;
-        }
-        String finalQuery = query.toLowerCase().trim();
-        List<Order> result = new ArrayList<>();
-        for (Order order : masterOrderList) {
-            boolean isMatch = false;
-            switch (searchType) {
-                case 0: if (order.getFullname() != null && order.getFullname().toLowerCase().contains(finalQuery)) isMatch = true; break;
-                case 1: if (order.getPhone() != null && order.getPhone().contains(finalQuery)) isMatch = true; break;
-                case 2: if (order.getDate() != null && order.getDate().contains(finalQuery)) isMatch = true; break;
-            }
-            if (isMatch) result.add(order);
-        }
-        sortResultList(result, 0);
-        displayedOrders.setValue(result);
+        LocalDate start = startDate == 0 ? LocalDate.MIN :
+                Instant.ofEpochMilli(startDate).atZone(ZoneId.systemDefault()).toLocalDate();
+
+        LocalDate end = endDate == 0 ? LocalDate.MAX :
+                Instant.ofEpochMilli(endDate).atZone(ZoneId.systemDefault()).toLocalDate();
+
+        return !orderDate.isBefore(start) && !orderDate.isAfter(end);
     }
 
     private void sortResultList(List<Order> list, int sortType) {
         if (list == null || list.isEmpty()) return;
+
         switch (sortType) {
-            case 0: Collections.sort(list, (o1, o2) -> Long.compare(parseDateToLong(o2.getDate()), parseDateToLong(o1.getDate()))); break;
-            case 1: Collections.sort(list, (o1, o2) -> Long.compare(parseDateToLong(o1.getDate()), parseDateToLong(o2.getDate()))); break;
-            case 2: Collections.sort(list, (o1, o2) -> Double.compare(o1.getTotal(), o2.getTotal())); break;
-            case 3: Collections.sort(list, (o1, o2) -> Double.compare(o2.getTotal(), o1.getTotal())); break;
+            case 0:
+                Collections.sort(list, (o1, o2) -> Long.compare(parseDateToLong(o2.getDate()), parseDateToLong(o1.getDate())));
+                break;
+            case 1:
+                Collections.sort(list, (o1, o2) -> Long.compare(parseDateToLong(o1.getDate()), parseDateToLong(o2.getDate())));
+                break;
+            case 2:
+                Collections.sort(list, (o1, o2) -> Double.compare(o1.getTotal(), o2.getTotal()));
+                break;
+            case 3:
+                Collections.sort(list, (o1, o2) -> Double.compare(o2.getTotal(), o1.getTotal()));
+                break;
         }
     }
 
@@ -217,16 +318,27 @@ public class OrderViewModel extends AndroidViewModel {
         try {
             Date date = isoFormat.parse(dateString);
             return date != null ? date.getTime() : 0;
-        } catch (Exception e) {}
-        try {
-            if (dateString.length() >= 23) {
-                String cleanDate = dateString.substring(0, 23);
-                SimpleDateFormat manualFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS", Locale.getDefault());
-                manualFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
-                Date date = manualFormat.parse(cleanDate);
-                return date != null ? date.getTime() : 0;
-            }
-        } catch (Exception ex) { ex.printStackTrace(); }
+        } catch (Exception ignored) {}
         return 0;
+    }
+
+    public int getCurrentSortType() {
+        return currentSortType;
+    }
+
+    public List<Integer> getCurrentStatusFilter() {
+        return currentStatusFilter;
+    }
+
+    public long getCurrentStartDate() {
+        return currentStartDate;
+    }
+
+    public long getCurrentEndDate() {
+        return currentEndDate;
+    }
+
+    public List<Integer> getCurrentPriceRanges() {
+        return currentPriceRanges;
     }
 }

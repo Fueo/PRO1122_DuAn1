@@ -41,7 +41,6 @@ import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class DiscountUpdateFragment extends Fragment {
 
-    // --- Views ---
     private EditText edtCode, edtPercent, edtStartDate, edtEndDate;
     private Button btnSave;
     private RadioGroup rgScope;
@@ -49,7 +48,6 @@ public class DiscountUpdateFragment extends Fragment {
     private TextView tvSelectedCount, btnOpenProductSelector;
     private RecyclerView rvSelectedProducts;
 
-    // --- Data & Logic ---
     private DiscountViewModel discountViewModel;
     private ProductViewModel productViewModel;
     private ProductSelectionAdapter previewAdapter;
@@ -62,7 +60,6 @@ public class DiscountUpdateFragment extends Fragment {
     private ArrayList<String> selectedProductIds = new ArrayList<>();
     private List<Product> previewProductList = new ArrayList<>();
 
-    // --- Nhận kết quả từ màn hình chọn sản phẩm ---
     private final ActivityResultLauncher<Intent> selectProductLauncher = registerForActivityResult(
             new ActivityResultContracts.StartActivityForResult(),
             result -> {
@@ -71,7 +68,7 @@ public class DiscountUpdateFragment extends Fragment {
                     if (results != null) {
                         this.selectedProductIds = results;
                         updateSelectedCountUI();
-                        loadSelectedProductsDetails(); // Load lại thông tin để hiển thị preview
+                        loadSelectedProductsDetails();
                     }
                 }
             }
@@ -98,7 +95,7 @@ public class DiscountUpdateFragment extends Fragment {
         }
 
         setupDatePickers();
-        setupScopeEvents(); // <--- Xử lý sự kiện chuyển đổi Tất cả / Chỉ định
+        setupScopeEvents();
 
         btnOpenProductSelector.setOnClickListener(v -> openSelectProductActivity());
 
@@ -107,7 +104,6 @@ public class DiscountUpdateFragment extends Fragment {
             loadDiscountData(discountId);
         } else {
             btnSave.setText("Thêm mới");
-            // Mặc định chọn "Tất cả sản phẩm"
             rgScope.check(R.id.rbAllProducts);
             layoutSelectedProducts.setVisibility(View.GONE);
         }
@@ -137,22 +133,14 @@ public class DiscountUpdateFragment extends Fragment {
         rvSelectedProducts.setAdapter(previewAdapter);
     }
 
-    // --- LOGIC: XỬ LÝ CHUYỂN ĐỔI "TẤT CẢ" VÀ "CHỈ ĐỊNH" ---
     private void setupScopeEvents() {
         rgScope.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbSpecificProducts) {
-                // Nếu chọn "Chỉ định": Hiện danh sách
                 layoutSelectedProducts.setVisibility(View.VISIBLE);
-
-                // Nếu danh sách đang có ID mà chưa load preview (trường hợp load từ API) thì load lại
                 if (previewProductList.isEmpty() && !selectedProductIds.isEmpty()) {
                     loadSelectedProductsDetails();
                 }
             } else {
-                // Nếu chọn "Tất cả": Ẩn danh sách
-                // Lưu ý: Ta KHÔNG xoá selectedProductIds ở đây, để nếu người dùng bấm nhầm
-                // có thể quay lại "Chỉ định" mà vẫn còn dữ liệu cũ.
-                // Việc gửi list rỗng lên server sẽ được xử lý ở hàm handleSave().
                 layoutSelectedProducts.setVisibility(View.GONE);
             }
         });
@@ -169,17 +157,21 @@ public class DiscountUpdateFragment extends Fragment {
         previewAdapter.setSelectedIds(selectedProductIds);
 
         for (String id : selectedProductIds) {
-            productViewModel.getProductByID(id).observe(getViewLifecycleOwner(), product -> {
-                if (product != null) {
-                    boolean exists = false;
-                    for (Product p : previewProductList) {
-                        if (p.getId().equals(product.getId())) {
-                            exists = true; break;
+            // [SỬA] Xử lý ApiResponse<Product>
+            productViewModel.getProductByID(id).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
+                    Product product = apiResponse.getData();
+                    if (product != null) {
+                        boolean exists = false;
+                        for (Product p : previewProductList) {
+                            if (p.getId().equals(product.getId())) {
+                                exists = true; break;
+                            }
                         }
-                    }
-                    if (!exists) {
-                        previewProductList.add(product);
-                        previewAdapter.setList(new ArrayList<>(previewProductList));
+                        if (!exists) {
+                            previewProductList.add(product);
+                            previewAdapter.setList(new ArrayList<>(previewProductList));
+                        }
                     }
                 }
             });
@@ -198,43 +190,42 @@ public class DiscountUpdateFragment extends Fragment {
         tvSelectedCount.setText("Đã chọn: " + count + " sản phẩm");
     }
 
-    // --- LOGIC: LOAD DỮ LIỆU CŨ ---
     private void loadDiscountData(String id) {
-        discountViewModel.getDiscountByID(id).observe(getViewLifecycleOwner(), discount -> {
-            if (discount != null) {
-                edtCode.setText(discount.getDiscountName());
-                edtPercent.setText(String.valueOf((int)discount.getDiscountRate()));
-                edtStartDate.setText(formatDateForDisplay(discount.getStartDate()));
-                edtEndDate.setText(formatDateForDisplay(discount.getEndDate()));
+        // [SỬA] Xử lý ApiResponse<Discount>
+        discountViewModel.getDiscountByID(id).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                Discount discount = apiResponse.getData();
+                if (discount != null) {
+                    edtCode.setText(discount.getDiscountName());
+                    edtPercent.setText(String.valueOf((int)discount.getDiscountRate()));
+                    edtStartDate.setText(formatDateForDisplay(discount.getStartDate()));
+                    edtEndDate.setText(formatDateForDisplay(discount.getEndDate()));
 
-                List<Product> applied = discount.getAppliedProducts();
+                    List<Product> applied = discount.getAppliedProducts();
 
-                // Logic xác định là "Tất cả" hay "Chỉ định" dựa vào dữ liệu trả về
-                if (applied != null && !applied.isEmpty()) {
-                    // Có sản phẩm -> Là chế độ Chỉ định
-                    rgScope.check(R.id.rbSpecificProducts);
-
-                    selectedProductIds.clear();
-                    previewProductList.clear();
-                    for (Product p : applied) {
-                        selectedProductIds.add(p.getId());
-                        previewProductList.add(p);
+                    if (applied != null && !applied.isEmpty()) {
+                        rgScope.check(R.id.rbSpecificProducts);
+                        selectedProductIds.clear();
+                        previewProductList.clear();
+                        for (Product p : applied) {
+                            selectedProductIds.add(p.getId());
+                            previewProductList.add(p);
+                        }
+                        updateSelectedCountUI();
+                        previewAdapter.setList(previewProductList);
+                        previewAdapter.setSelectedIds(selectedProductIds);
+                    } else {
+                        rgScope.check(R.id.rbAllProducts);
+                        layoutSelectedProducts.setVisibility(View.GONE);
                     }
-                    updateSelectedCountUI();
-                    previewAdapter.setList(previewProductList);
-                    previewAdapter.setSelectedIds(selectedProductIds);
-                } else {
-                    // Không có sản phẩm nào -> Là chế độ Tất cả
-                    rgScope.check(R.id.rbAllProducts);
-                    layoutSelectedProducts.setVisibility(View.GONE);
                 }
             } else {
-                FancyToast.makeText(getContext(), "Lỗi tải dữ liệu", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi tải dữ liệu";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
 
-    // --- LOGIC: LƯU (QUAN TRỌNG) ---
     private void handleSave() {
         String name = edtCode.getText().toString().trim();
         String rateStr = edtPercent.getText().toString().trim();
@@ -246,10 +237,8 @@ public class DiscountUpdateFragment extends Fragment {
             return;
         }
 
-        // Xác định chế độ đang chọn
         boolean isSpecific = (rgScope.getCheckedRadioButtonId() == R.id.rbSpecificProducts);
 
-        // Validate: Nếu chọn chỉ định thì phải có ít nhất 1 sp
         if (isSpecific && (selectedProductIds == null || selectedProductIds.isEmpty())) {
             FancyToast.makeText(getContext(), "Vui lòng chọn ít nhất 1 sản phẩm", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return;
@@ -263,25 +252,30 @@ public class DiscountUpdateFragment extends Fragment {
 
         Discount discount = new Discount(name, rate, start, end);
 
-        // --- XỬ LÝ ID SẢN PHẨM GỬI LÊN ---
         if (isSpecific) {
-            // Nếu chọn chỉ định: Gửi danh sách ID thật
             discount.setProductIds(selectedProductIds);
         } else {
-            // Nếu chọn TẤT CẢ: Gửi danh sách RỖNG
-            // Backend sẽ hiểu rỗng == Apply All
             discount.setProductIds(new ArrayList<>());
         }
 
+        // [SỬA] Xử lý ApiResponse<Discount> cho Add/Update
         if (discountId == null) {
-            discountViewModel.addDiscount(discount).observe(getViewLifecycleOwner(), success -> {
-                if (success) showSuccessDialog("Thêm mã giảm giá thành công!");
-                else FancyToast.makeText(getContext(), "Thêm thất bại", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+            discountViewModel.addDiscount(discount).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
+                    showSuccessDialog("Thêm mã giảm giá thành công!");
+                } else {
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Thêm thất bại";
+                    FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                }
             });
         } else {
-            discountViewModel.updateDiscount(discountId, discount).observe(getViewLifecycleOwner(), success -> {
-                if (success) showSuccessDialog("Cập nhật thành công!");
-                else FancyToast.makeText(getContext(), "Cập nhật thất bại", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+            discountViewModel.updateDiscount(discountId, discount).observe(getViewLifecycleOwner(), apiResponse -> {
+                if (apiResponse != null && apiResponse.isStatus()) {
+                    showSuccessDialog("Cập nhật thành công!");
+                } else {
+                    String msg = (apiResponse != null) ? apiResponse.getMessage() : "Cập nhật thất bại";
+                    FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
+                }
             });
         }
     }

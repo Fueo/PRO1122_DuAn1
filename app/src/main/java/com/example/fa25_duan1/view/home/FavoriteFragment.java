@@ -11,8 +11,6 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -20,17 +18,15 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.adapter.BookGridAdapter;
 import com.example.fa25_duan1.model.Product;
-import com.example.fa25_duan1.view.detail.DetailActivity; // Import DetailActivity (Chứa giỏ hàng)
+import com.example.fa25_duan1.view.detail.DetailActivity;
 import com.example.fa25_duan1.view.detail.ProductDetailActivity;
 import com.example.fa25_duan1.viewmodel.CartViewModel;
 import com.example.fa25_duan1.viewmodel.FavoriteViewModel;
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 import com.shashank.sony.fancytoastlib.FancyToast;
-import io.github.cutelibs.cutedialog.CuteDialog; // Import Dialog
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class FavoriteFragment extends Fragment {
 
@@ -44,9 +40,6 @@ public class FavoriteFragment extends Fragment {
     private ProductViewModel productViewModel;
     private CartViewModel cartViewModel;
 
-    // List tạm để gom dữ liệu từ nhiều request lẻ
-    private List<Product> tempProductList = new ArrayList<>();
-
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -58,26 +51,25 @@ public class FavoriteFragment extends Fragment {
         super.onViewCreated(view, savedInstanceState);
 
         initViews(view);
+        initViewModels();
         setupAdapter();
 
-        // 1. Chỉ đăng ký lắng nghe (Observer) tại đây
-        // Việc gọi dữ liệu sẽ để cho onResume lo
-        setupViewModels();
+        // Setup lắng nghe dữ liệu
+        setupObservers();
+
+        // Tải dữ liệu lần đầu
+        loadData();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        // Refresh lại ID để icon tim đúng trạng thái
+        if (favoriteViewModel != null) favoriteViewModel.refreshFavorites();
+        if (cartViewModel != null) cartViewModel.refreshCart();
 
-        // 2. Kích hoạt lấy dữ liệu mới nhất mỗi khi màn hình hiện lên
-        if (favoriteViewModel != null) {
-            favoriteViewModel.refreshFavorites();
-        }
-
-        // Cập nhật giỏ hàng để đồng bộ Badge (nếu có)
-        if (cartViewModel != null) {
-            cartViewModel.refreshCart();
-        }
+        // Refresh lại danh sách sản phẩm (đề phòng user bỏ tim ở màn hình khác)
+        loadData();
     }
 
     private void initViews(View view) {
@@ -87,13 +79,14 @@ public class FavoriteFragment extends Fragment {
         tvTitle = view.findViewById(R.id.tvTitle);
     }
 
-    private void updateTotalCount(int count) {
-        if (tvTitle != null) {
-            tvTitle.setText(count + " Sản phẩm");
-        }
+    private void initViewModels() {
+        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
+        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
+        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
     }
 
     private void setupAdapter() {
+        // Khởi tạo Adapter rỗng
         bookGridAdapter = new BookGridAdapter(getContext(), new ArrayList<>(), new BookGridAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(Product product) {
@@ -104,20 +97,14 @@ public class FavoriteFragment extends Fragment {
 
             @Override
             public void onFavoriteClick(String productId) {
-                // Xử lý bỏ thích ngay tại màn hình này
+                // Khi bấm tim ở màn hình này -> Tức là Bỏ thích
                 favoriteViewModel.toggleFavorite(productId);
 
-                // Xóa khỏi adapter để UI cập nhật ngay lập tức
+                // Xóa ngay khỏi danh sách hiển thị (Hiệu ứng UI tức thì)
                 bookGridAdapter.removeProductById(productId);
 
-                // Cập nhật lại số lượng title
-                int newCount = bookGridAdapter.getItemCount();
-                updateTotalCount(newCount);
-
-                // Nếu xóa hết thì hiện layout trống
-                if (newCount == 0) {
-                    if (layoutEmpty != null) layoutEmpty.setVisibility(View.VISIBLE);
-                }
+                // Cập nhật lại số lượng và giao diện trống nếu cần
+                checkEmptyState();
             }
 
             @Override
@@ -125,147 +112,106 @@ public class FavoriteFragment extends Fragment {
                 addToCartLogic(product);
             }
 
-            // --- [MỚI] XỬ LÝ SỰ KIỆN MUA NGAY ---
             @Override
             public void onBuyNowClick(Product product) {
                 handleBuyNow(product);
             }
         });
 
-        GridLayoutManager gridLayoutManager = new GridLayoutManager(getContext(), 2);
-        rvProducts.setLayoutManager(gridLayoutManager);
+        rvProducts.setLayoutManager(new GridLayoutManager(getContext(), 2));
         rvProducts.setAdapter(bookGridAdapter);
     }
 
-    private void setupViewModels() {
-        favoriteViewModel = new ViewModelProvider(this).get(FavoriteViewModel.class);
-        productViewModel = new ViewModelProvider(this).get(ProductViewModel.class);
-        // Dùng requireActivity() để share ViewModel với Activity chính (đồng bộ giỏ hàng)
-        cartViewModel = new ViewModelProvider(requireActivity()).get(CartViewModel.class);
-
-        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
-
-        // Lắng nghe sự thay đổi của danh sách ID yêu thích
+    /**
+     * Lắng nghe các thay đổi từ ViewModel (chủ yếu là list ID để tô màu tim)
+     */
+    private void setupObservers() {
+        // Lắng nghe danh sách ID yêu thích để cập nhật icon tim (Đỏ/Xám) trong Adapter
         favoriteViewModel.getFavoriteIds().observe(getViewLifecycleOwner(), ids -> {
-            // Cập nhật list ID cho adapter (để icon tim hiển thị đúng màu)
-            bookGridAdapter.setFavoriteIds(ids);
-
-            if (ids == null || ids.isEmpty()) {
-                // Nếu không có ID nào -> Ẩn loading, hiện layout trống
-                if (progressBar != null) progressBar.setVisibility(View.GONE);
-                if (layoutEmpty != null) layoutEmpty.setVisibility(View.VISIBLE);
-                rvProducts.setVisibility(View.GONE);
-                bookGridAdapter.setProducts(new ArrayList<>());
-                updateTotalCount(0);
-            } else {
-                // Nếu có ID -> Hiện recyclerview, bắt đầu tải chi tiết sản phẩm
-                if (layoutEmpty != null) layoutEmpty.setVisibility(View.GONE);
-                rvProducts.setVisibility(View.VISIBLE);
-                fetchProductsFromIds(ids);
-            }
-        });
-    }
-
-    // --- LOGIC THÊM VÀO GIỎ (Chỉ hiện thông báo) ---
-    private void addToCartLogic(Product product) {
-        if (product == null) return;
-
-        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
-            if (response != null && response.isStatus()) {
-                cartViewModel.refreshCart();
-                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
-            } else {
-                String msg = (response != null) ? response.getMessage() : "Lỗi kết nối";
-                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
-            }
-        });
-    }
-
-    // --- [MỚI] LOGIC MUA NGAY (Thêm vào giỏ + Chuyển màn hình) ---
-    private void handleBuyNow(Product product) {
-        if (product == null) return;
-
-        // 1. Hiện Loading Dialog
-
-        // 2. Gọi API thêm vào giỏ
-        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), response -> {
-            // 3. Tắt Loading
-            if (response != null && response.isStatus()) {
-                // Thành công
-                cartViewModel.refreshCart();
-
-                // 4. Chuyển sang màn hình Giỏ hàng (DetailActivity - Cart Fragment)
-                Intent intent = new Intent(getContext(), DetailActivity.class);
-                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
-                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
-                startActivity(intent);
-
-            } else {
-                // Thất bại
-                String msg = (response != null && response.getMessage() != null)
-                        ? response.getMessage()
-                        : "Lỗi kết nối server";
-                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+            if (bookGridAdapter != null) {
+                bookGridAdapter.setFavoriteIds(ids);
             }
         });
     }
 
     /**
-     * Hàm tải chi tiết sản phẩm từ danh sách ID.
+     * [QUAN TRỌNG] Gọi API lấy danh sách sản phẩm yêu thích (1 Request duy nhất)
      */
-    private void fetchProductsFromIds(List<String> ids) {
-        // Clear danh sách cũ để tránh bị cộng dồn
-        tempProductList.clear();
+    private void loadData() {
+        if (progressBar != null) progressBar.setVisibility(View.VISIBLE);
 
-        if (ids == null || ids.isEmpty()) {
+        // Gọi API mới: getFavoriteProductsApi
+        productViewModel.getFavoriteProductsApi().observe(getViewLifecycleOwner(), apiResponse -> {
             if (progressBar != null) progressBar.setVisibility(View.GONE);
-            return;
-        }
 
-        // Dùng AtomicInteger để đếm số lượng request hoàn thành
-        AtomicInteger completedRequests = new AtomicInteger(0);
-        int totalRequests = ids.size();
+            if (apiResponse != null && apiResponse.isStatus()) {
+                List<Product> products = apiResponse.getData();
 
-        for (String id : ids) {
-            // Lấy LiveData
-            LiveData<Product> liveData = productViewModel.getProductByID(id);
+                // Cập nhật Adapter
+                bookGridAdapter.setProducts(products != null ? products : new ArrayList<>());
 
-            // Observer ẩn danh
-            liveData.observe(getViewLifecycleOwner(), new Observer<Product>() {
-                @Override
-                public void onChanged(Product product) {
-                    // [QUAN TRỌNG 1] Hủy đăng ký ngay lập tức để tránh gọi lại nhiều lần
-                    liveData.removeObserver(this);
-
-                    if (product != null) {
-                        // [QUAN TRỌNG 2] Kiểm tra trùng lặp trước khi add (Double check)
-                        boolean exists = false;
-                        for (Product p : tempProductList) {
-                            if (p.getId().equals(product.getId())) {
-                                exists = true;
-                                break;
-                            }
-                        }
-                        if (!exists) {
-                            tempProductList.add(product);
-                        }
-                    }
-
-                    // Kiểm tra xem đã chạy xong hết tất cả ID chưa
-                    if (completedRequests.incrementAndGet() == totalRequests) {
-                        if (progressBar != null) progressBar.setVisibility(View.GONE);
-
-                        // Update Adapter
-                        bookGridAdapter.setProducts(new ArrayList<>(tempProductList));
-                        updateTotalCount(tempProductList.size());
-
-                        // Check lại lần cuối để hiện layout empty nếu cần
-                        if (tempProductList.isEmpty() && layoutEmpty != null) {
-                            layoutEmpty.setVisibility(View.VISIBLE);
-                        }
-                    }
+                // Cập nhật UI
+                checkEmptyState();
+            } else {
+                // Xử lý lỗi (ví dụ: mất mạng, hết phiên)
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi tải dữ liệu";
+                if (getContext() != null) {
+                    // Có thể show toast hoặc log tùy ý
                 }
-            });
+                // Nếu lỗi thì coi như danh sách rỗng
+                bookGridAdapter.setProducts(new ArrayList<>());
+                checkEmptyState();
+            }
+        });
+    }
+
+    private void checkEmptyState() {
+        int count = bookGridAdapter.getItemCount();
+        updateTotalCount(count);
+
+        if (count == 0) {
+            if (layoutEmpty != null) layoutEmpty.setVisibility(View.VISIBLE);
+            rvProducts.setVisibility(View.GONE);
+        } else {
+            if (layoutEmpty != null) layoutEmpty.setVisibility(View.GONE);
+            rvProducts.setVisibility(View.VISIBLE);
         }
+    }
+
+    private void updateTotalCount(int count) {
+        if (tvTitle != null) {
+            tvTitle.setText(count + " Sản phẩm");
+        }
+    }
+
+    // --- Logic Giỏ hàng (Giữ nguyên) ---
+
+    private void addToCartLogic(Product product) {
+        if (product == null) return;
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                cartViewModel.refreshCart();
+                FancyToast.makeText(getContext(), "Đã thêm vào giỏ hàng", FancyToast.LENGTH_SHORT, FancyToast.SUCCESS, false).show();
+            } else {
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi kết nối";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+            }
+        });
+    }
+
+    private void handleBuyNow(Product product) {
+        if (product == null) return;
+        cartViewModel.increaseQuantity(product.getId()).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                cartViewModel.refreshCart();
+                Intent intent = new Intent(getContext(), DetailActivity.class);
+                intent.putExtra(DetailActivity.EXTRA_HEADER_TITLE, "Giỏ hàng");
+                intent.putExtra(DetailActivity.EXTRA_CONTENT_FRAGMENT, "cart");
+                startActivity(intent);
+            } else {
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi kết nối server";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
+            }
+        });
     }
 }

@@ -24,7 +24,6 @@ import com.example.fa25_duan1.viewmodel.CategoryViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-// --- IMPORT THƯ VIỆN MỚI ---
 import com.shashank.sony.fancytoastlib.FancyToast;
 import io.github.cutelibs.cutedialog.CuteDialog;
 
@@ -52,7 +51,6 @@ public class CategoryManageFragment extends Fragment {
         btnAdd = view.findViewById(R.id.btnAdd);
         layout_empty = view.findViewById(R.id.layout_empty);
 
-        // Khởi tạo Adapter
         categoryAdapter = new CategoryManageAdapter(getContext(), new ArrayList<>(), new CategoryManageAdapter.OnCategoryActionListener() {
             @Override
             public void onEditClick(Category category) {
@@ -68,14 +66,19 @@ public class CategoryManageFragment extends Fragment {
         rvData.setLayoutManager(new LinearLayoutManager(getContext()));
         rvData.setAdapter(categoryAdapter);
 
-        // Khởi tạo ViewModel
         viewModel = new ViewModelProvider(requireActivity()).get(CategoryViewModel.class);
 
-        // Observe dữ liệu
         viewModel.getDisplayedCategories().observe(getViewLifecycleOwner(), categories -> {
             if (categories != null) {
                 categoryAdapter.setData(categories);
                 checkEmptyState(categories);
+            }
+        });
+
+        // Observe Error Message
+        viewModel.getMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty()) {
+                FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
         });
 
@@ -98,53 +101,37 @@ public class CategoryManageFragment extends Fragment {
     private void deleteCategory(Category category) {
         if (category == null) return;
 
-        // --- SỬ DỤNG CUTEDIALOG (XÁC NHẬN) ---
         new CuteDialog.withIcon(requireActivity())
                 .setIcon(R.drawable.ic_dialog_confirm)
                 .setTitle("Xóa danh mục")
                 .setDescription("Bạn có chắc chắn muốn xóa danh mục: " + category.getName() + "?")
-
-                // Cấu hình màu sắc đồng bộ Blue
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonColor(R.color.blue)
                 .setTitleTextColor(R.color.black)
                 .setDescriptionTextColor(R.color.gray_text)
-
-                .setPositiveButtonText("Xóa", v -> {
-                    performDelete(category);
-                })
-                .setNegativeButtonText("Hủy", v -> {
-                    // Tự động đóng dialog
-                })
+                .setPositiveButtonText("Xóa", v -> performDelete(category))
+                .setNegativeButtonText("Hủy", v -> {})
                 .show();
     }
 
     private void performDelete(Category category) {
-        viewModel.deleteCategory(category.get_id()).observe(getViewLifecycleOwner(), success -> {
-            if (success != null && success) {
-                viewModel.refreshData();
+        // [SỬA] Xử lý ApiResponse<Void>
+        viewModel.deleteCategory(category.get_id()).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                viewModel.refreshData(); // Refresh list
 
-                // --- SỬ DỤNG CUTEDIALOG (THÀNH CÔNG) ---
                 new CuteDialog.withIcon(requireActivity())
                         .setIcon(R.drawable.ic_dialog_success)
                         .setTitle("Thành công")
                         .setDescription("Đã xóa danh mục thành công!")
-
                         .setPrimaryColor(R.color.blue)
                         .setPositiveButtonColor(R.color.blue)
-                        .setTitleTextColor(R.color.black)
-                        .setDescriptionTextColor(R.color.gray_text)
-
                         .setPositiveButtonText("Đóng", v -> {})
                         .hideNegativeButton(true)
                         .show();
             } else {
-                // --- SỬ DỤNG FANCY TOAST (LỖI) ---
-                FancyToast.makeText(getContext(),
-                        "Xóa thất bại! Vui lòng thử lại.",
-                        FancyToast.LENGTH_SHORT,
-                        FancyToast.ERROR,
-                        true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Xóa thất bại";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }

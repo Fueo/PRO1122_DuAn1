@@ -33,5 +33,5 @@ public interface AddressApi {
 
     // DELETE: Xóa địa chỉ
     @DELETE("addresses/delete/{id}")
-    Call<Void> deleteAddress(@Path("id") String id);
+    Call<ApiResponse<Void>> deleteAddress(@Path("id") String id);
 }

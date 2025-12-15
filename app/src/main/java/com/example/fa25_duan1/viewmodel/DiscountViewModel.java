@@ -4,8 +4,11 @@ import android.app.Application;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.example.fa25_duan1.model.ApiResponse; // Import ApiResponse
 import com.example.fa25_duan1.model.Discount;
 import com.example.fa25_duan1.repository.DiscountRepository;
 
@@ -16,8 +19,18 @@ import java.util.List;
 public class DiscountViewModel extends AndroidViewModel {
 
     private final DiscountRepository repository;
-    private MutableLiveData<List<Discount>> displayedDiscounts = new MutableLiveData<>();
+
+    // Danh sách hiển thị trên UI (đã qua filter/search)
+    private final MediatorLiveData<List<Discount>> displayedDiscounts = new MediatorLiveData<>();
+
+    // Danh sách gốc từ Server để phục vụ search/sort local
     private List<Discount> originalList = new ArrayList<>();
+
+    // LiveData báo lỗi
+    private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
+
+    // Biến theo dõi nguồn repo
+    private LiveData<ApiResponse<List<Discount>>> currentRepoSource;
 
     public DiscountViewModel(@NonNull Application application) {
         super(application);
@@ -25,44 +38,69 @@ public class DiscountViewModel extends AndroidViewModel {
         refreshData();
     }
 
-    public MutableLiveData<List<Discount>> getDisplayedDiscounts() {
+    public LiveData<List<Discount>> getDisplayedDiscounts() {
         return displayedDiscounts;
     }
 
+    public LiveData<String> getMessage() {
+        return messageLiveData;
+    }
+
+    /**
+     * Tải dữ liệu từ Server
+     */
     public void refreshData() {
-        repository.getAllDiscounts().observeForever(discounts -> {
-            if (discounts != null) {
-                originalList = discounts;
-                displayedDiscounts.setValue(originalList);
+        if (currentRepoSource != null) {
+            displayedDiscounts.removeSource(currentRepoSource);
+        }
+
+        currentRepoSource = repository.getAllDiscounts();
+
+        displayedDiscounts.addSource(currentRepoSource, apiResponse -> {
+            if (apiResponse != null) {
+                if (apiResponse.isStatus()) {
+                    // Thành công: Cập nhật list gốc và list hiển thị
+                    originalList = apiResponse.getData() != null ? apiResponse.getData() : new ArrayList<>();
+                    displayedDiscounts.setValue(new ArrayList<>(originalList));
+                } else {
+                    // Thất bại
+                    messageLiveData.setValue(apiResponse.getMessage());
+                }
             } else {
-                displayedDiscounts.setValue(new ArrayList<>());
+                messageLiveData.setValue("Lỗi kết nối");
             }
         });
     }
 
-    public MutableLiveData<Boolean> addDiscount(Discount discount) {
+    // --- CRUD (Cập nhật kiểu trả về thành ApiResponse) ---
+
+    public LiveData<ApiResponse<Discount>> addDiscount(Discount discount) {
         return repository.addDiscount(discount);
     }
 
-    public MutableLiveData<Boolean> updateDiscount(String id, Discount discount) {
+    public LiveData<ApiResponse<Discount>> updateDiscount(String id, Discount discount) {
         return repository.updateDiscount(id, discount);
     }
 
-    public MutableLiveData<Boolean> deleteDiscount(String id) {
+    public LiveData<ApiResponse<Void>> deleteDiscount(String id) {
         return repository.deleteDiscount(id);
     }
 
-    public MutableLiveData<Discount> getDiscountByID(String id) {
+    public LiveData<ApiResponse<Discount>> getDiscountByID(String id) {
         return repository.getDiscountById(id);
     }
 
+    // --- SEARCH & SORT (LOCAL) ---
+
     public void searchDiscounts(String query) {
-        if (query == null || query.isEmpty()) {
-            displayedDiscounts.setValue(originalList);
+        if (query == null || query.trim().isEmpty()) {
+            displayedDiscounts.setValue(new ArrayList<>(originalList));
         } else {
             List<Discount> filtered = new ArrayList<>();
+            String q = query.toLowerCase().trim();
             for (Discount d : originalList) {
-                if (d.getDiscountName() != null && d.getDiscountName().toLowerCase().contains(query.toLowerCase())) {
+                // Tìm theo tên mã hoặc mã code (nếu có field code)
+                if (d.getDiscountName() != null && d.getDiscountName().toLowerCase().contains(q)) {
                     filtered.add(d);
                 }
             }
@@ -71,7 +109,10 @@ public class DiscountViewModel extends AndroidViewModel {
     }
 
     public void sortDiscounts(int position) {
-        List<Discount> currentList = new ArrayList<>(displayedDiscounts.getValue() != null ? displayedDiscounts.getValue() : originalList);
+        // Lấy list hiện tại đang hiển thị để sort (có thể đang là list search)
+        List<Discount> currentList = new ArrayList<>(
+                displayedDiscounts.getValue() != null ? displayedDiscounts.getValue() : originalList
+        );
 
         switch (position) {
             case 0: // Mới nhất

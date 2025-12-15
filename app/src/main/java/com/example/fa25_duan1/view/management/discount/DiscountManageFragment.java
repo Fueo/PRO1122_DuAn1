@@ -24,7 +24,6 @@ import com.example.fa25_duan1.viewmodel.DiscountViewModel;
 import java.util.ArrayList;
 import java.util.List;
 
-// --- IMPORT THƯ VIỆN MỚI ---
 import com.shashank.sony.fancytoastlib.FancyToast;
 import io.github.cutelibs.cutedialog.CuteDialog;
 
@@ -35,6 +34,7 @@ public class DiscountManageFragment extends Fragment {
     private DiscountManageAdapter adapter;
     private DiscountViewModel viewModel;
 
+    @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_discount_management, container, false);
@@ -44,7 +44,6 @@ public class DiscountManageFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // Load Filter Fragment
         getActivity().getSupportFragmentManager().beginTransaction()
                 .replace(R.id.fragment_filter, new DiscountFilterFragment())
                 .commit();
@@ -53,7 +52,6 @@ public class DiscountManageFragment extends Fragment {
         btnAdd = view.findViewById(R.id.btnAddDiscount);
         layout_empty = view.findViewById(R.id.layout_empty);
 
-        // Setup Adapter
         adapter = new DiscountManageAdapter(getContext(), new ArrayList<>(), new DiscountManageAdapter.OnDiscountActionListener() {
             @Override
             public void onEditClick(Discount discount) {
@@ -69,7 +67,6 @@ public class DiscountManageFragment extends Fragment {
         rvData.setLayoutManager(new LinearLayoutManager(getContext()));
         rvData.setAdapter(adapter);
 
-        // ViewModel setup
         viewModel = new ViewModelProvider(requireActivity()).get(DiscountViewModel.class);
 
         // Load data lần đầu
@@ -79,6 +76,13 @@ public class DiscountManageFragment extends Fragment {
             if (discounts != null) {
                 adapter.setData(discounts);
                 checkEmptyState(discounts);
+            }
+        });
+
+        // Observe error message
+        viewModel.getMessage().observe(getViewLifecycleOwner(), msg -> {
+            if (msg != null && !msg.isEmpty()) {
+                FancyToast.makeText(requireContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
             }
         });
 
@@ -101,53 +105,35 @@ public class DiscountManageFragment extends Fragment {
     private void deleteDiscount(Discount discount) {
         if (discount == null) return;
 
-        // --- SỬ DỤNG CUTEDIALOG (XÁC NHẬN) ---
         new CuteDialog.withIcon(requireActivity())
                 .setIcon(R.drawable.ic_dialog_confirm)
                 .setTitle("Xóa mã giảm giá")
                 .setDescription("Bạn có chắc muốn xóa mã: " + discount.getDiscountName() + "?")
-
-                // Cấu hình màu sắc đồng bộ Blue
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
-
-                .setPositiveButtonText("Xóa", v -> {
-                    performDelete(discount);
-                })
-                .setNegativeButtonText("Hủy", v -> {
-                    // Tự động đóng dialog
-                })
+                .setPositiveButtonText("Xóa", v -> performDelete(discount))
+                .setNegativeButtonText("Hủy", v -> {})
                 .show();
     }
 
     private void performDelete(Discount discount) {
-        viewModel.deleteDiscount(discount.get_id()).observe(getViewLifecycleOwner(), success -> {
-            if (success != null && success) {
+        // [SỬA] Xử lý ApiResponse<Void>
+        viewModel.deleteDiscount(discount.get_id()).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
                 viewModel.refreshData();
 
-                // --- SỬ DỤNG CUTEDIALOG (THÀNH CÔNG) ---
                 new CuteDialog.withIcon(requireActivity())
                         .setIcon(R.drawable.ic_dialog_success)
                         .setTitle("Thành công")
                         .setDescription("Đã xóa mã giảm giá thành công!")
-
                         .setPrimaryColor(R.color.blue)
                         .setPositiveButtonColor(R.color.blue)
-                        .setTitleTextColor(R.color.black)
-                        .setDescriptionTextColor(R.color.gray_text)
-
                         .setPositiveButtonText("Đóng", v -> {})
                         .hideNegativeButton(true)
                         .show();
             } else {
-                // --- SỬ DỤNG FANCY TOAST (LỖI) ---
-                FancyToast.makeText(getContext(),
-                        "Xóa thất bại! Vui lòng thử lại.",
-                        FancyToast.LENGTH_SHORT,
-                        FancyToast.ERROR,
-                        true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Xóa thất bại";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }

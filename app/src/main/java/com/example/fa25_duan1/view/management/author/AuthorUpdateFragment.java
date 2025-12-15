@@ -30,19 +30,16 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 
-// --- IMPORT THƯ VIỆN MỚI ---
 import com.shashank.sony.fancytoastlib.FancyToast;
 import io.github.cutelibs.cutedialog.CuteDialog;
 
 public class AuthorUpdateFragment extends Fragment {
 
-    // Khai báo Views
     private CircleImageView ivProfile;
     private ImageView btnChangeAvatar;
     private EditText etName, etDescription;
     private Button btnSave;
 
-    // Logic variables
     private AuthorViewModel viewModel;
     private Uri selectedAvatarUri = null;
     private String authorId;
@@ -60,17 +57,14 @@ public class AuthorUpdateFragment extends Fragment {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Khởi tạo ViewModel
         viewModel = new ViewModelProvider(this).get(AuthorViewModel.class);
 
-        // 2. Ánh xạ View
         ivProfile = view.findViewById(R.id.ivProfile);
         btnChangeAvatar = view.findViewById(R.id.btnChangeAvatar);
         etName = view.findViewById(R.id.etName);
         etDescription = view.findViewById(R.id.etDescription);
         btnSave = view.findViewById(R.id.btnSave);
 
-        // 3. Kiểm tra mode (Add/Edit)
         if (getActivity().getIntent() != null) {
             authorId = getActivity().getIntent().getStringExtra("Id");
         }
@@ -82,7 +76,6 @@ public class AuthorUpdateFragment extends Fragment {
             btnSave.setText("Thêm mới");
         }
 
-        // 4. Sự kiện Click
         btnChangeAvatar.setOnClickListener(v -> pickImageFromGallery());
 
         btnSave.setOnClickListener(v -> {
@@ -95,26 +88,26 @@ public class AuthorUpdateFragment extends Fragment {
     }
 
     private void loadAuthorDetail(String id) {
-        viewModel.getAuthorByID(id).observe(getViewLifecycleOwner(), author -> {
-            if (author != null) {
-                this.currentAuthor = author;
-                etName.setText(author.getName());
-                etDescription.setText(author.getDescription());
+        // [SỬA] Xử lý ApiResponse<Author>
+        viewModel.getAuthorByID(id).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
+                Author author = apiResponse.getData();
+                if (author != null) {
+                    this.currentAuthor = author;
+                    etName.setText(author.getName());
+                    etDescription.setText(author.getDescription());
 
-                if (author.getAvatar() != null && !author.getAvatar().isEmpty()) {
-                    Glide.with(requireContext())
-                            .load(author.getAvatar())
-                            .placeholder(R.drawable.ic_avatar_placeholder)
-                            .error(R.drawable.ic_avatar_placeholder)
-                            .into(ivProfile);
+                    if (author.getAvatar() != null && !author.getAvatar().isEmpty()) {
+                        Glide.with(requireContext())
+                                .load(author.getAvatar())
+                                .placeholder(R.drawable.ic_avatar_placeholder)
+                                .error(R.drawable.ic_avatar_placeholder)
+                                .into(ivProfile);
+                    }
                 }
             } else {
-                // --- FANCY TOAST ERROR ---
-                FancyToast.makeText(getContext(),
-                        "Không tìm thấy thông tin tác giả",
-                        FancyToast.LENGTH_SHORT,
-                        FancyToast.ERROR,
-                        true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi tải thông tin";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
@@ -126,24 +119,14 @@ public class AuthorUpdateFragment extends Fragment {
         if (name.isEmpty()) {
             etName.setError("Tên tác giả không được để trống");
             etName.requestFocus();
-            // --- FANCY TOAST WARNING ---
-            FancyToast.makeText(getContext(),
-                    "Vui lòng nhập tên tác giả",
-                    FancyToast.LENGTH_SHORT,
-                    FancyToast.WARNING,
-                    true).show();
+            FancyToast.makeText(getContext(), "Vui lòng nhập tên tác giả", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         }
 
         if (description.isEmpty()) {
             etDescription.setError("Mô tả không được để trống");
             etDescription.requestFocus();
-            // --- FANCY TOAST WARNING ---
-            FancyToast.makeText(getContext(),
-                    "Vui lòng nhập mô tả",
-                    FancyToast.LENGTH_SHORT,
-                    FancyToast.WARNING,
-                    true).show();
+            FancyToast.makeText(getContext(), "Vui lòng nhập mô tả", FancyToast.LENGTH_SHORT, FancyToast.WARNING, true).show();
             return false;
         }
 
@@ -160,17 +143,13 @@ public class AuthorUpdateFragment extends Fragment {
         RequestBody descBody = toRequestBody(description);
         MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
 
-        viewModel.addAuthorWithAvatar(nameBody, descBody, avatarPart).observe(getViewLifecycleOwner(), author -> {
-            if (author != null) {
-                // --- SHOW SUCCESS DIALOG ---
+        // [SỬA] Xử lý ApiResponse<Author>
+        viewModel.addAuthorWithAvatar(nameBody, descBody, avatarPart).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
                 showSuccessDialog("Thêm tác giả thành công!");
             } else {
-                // --- FANCY TOAST ERROR ---
-                FancyToast.makeText(getContext(),
-                        "Thêm thất bại. Vui lòng thử lại.",
-                        FancyToast.LENGTH_SHORT,
-                        FancyToast.ERROR,
-                        true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi thêm tác giả";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
@@ -186,36 +165,25 @@ public class AuthorUpdateFragment extends Fragment {
         RequestBody descBody = toRequestBody(description);
         MultipartBody.Part avatarPart = prepareFilePart("avatar", selectedAvatarUri);
 
-        viewModel.updateAuthorWithAvatar(authorId, nameBody, descBody, avatarPart).observe(getViewLifecycleOwner(), author -> {
-            if (author != null) {
-                // --- SHOW SUCCESS DIALOG ---
+        // [SỬA] Xử lý ApiResponse<Author>
+        viewModel.updateAuthorWithAvatar(authorId, nameBody, descBody, avatarPart).observe(getViewLifecycleOwner(), apiResponse -> {
+            if (apiResponse != null && apiResponse.isStatus()) {
                 showSuccessDialog("Cập nhật tác giả thành công!");
             } else {
-                // --- FANCY TOAST ERROR ---
-                FancyToast.makeText(getContext(),
-                        "Cập nhật thất bại. Vui lòng thử lại.",
-                        FancyToast.LENGTH_SHORT,
-                        FancyToast.ERROR,
-                        true).show();
+                String msg = (apiResponse != null) ? apiResponse.getMessage() : "Lỗi cập nhật";
+                FancyToast.makeText(getContext(), msg, FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
             }
         });
     }
 
-    // --- HÀM HIỂN THỊ DIALOG THÀNH CÔNG (DÙNG CHUNG)  ---
     private void showSuccessDialog(String message) {
         new CuteDialog.withIcon(requireActivity())
                 .setIcon(R.drawable.ic_dialog_success)
                 .setTitle("Thành công")
                 .setDescription(message)
-
-                // Cấu hình màu sắc đồng bộ Blue
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonColor(R.color.blue)
-                .setTitleTextColor(R.color.black)
-                .setDescriptionTextColor(R.color.gray_text)
-
                 .setPositiveButtonText("Đóng", v -> {
-                    // Khi bấm Đóng mới finish Activity
                     requireActivity().setResult(Activity.RESULT_OK);
                     requireActivity().finish();
                 })

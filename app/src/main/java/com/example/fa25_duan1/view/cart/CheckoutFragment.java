@@ -2,6 +2,8 @@ package com.example.fa25_duan1.view.cart;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,10 +32,12 @@ import com.google.android.material.button.MaterialButton;
 import com.shashank.sony.fancytoastlib.FancyToast;
 
 import java.text.DecimalFormat;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import io.github.cutelibs.cutedialog.CuteDialog;
-import vn.zalopay.sdk.Environment;
 import vn.zalopay.sdk.ZaloPayError;
 import vn.zalopay.sdk.ZaloPaySDK;
 import vn.zalopay.sdk.listeners.PayOrderListener;
@@ -57,6 +61,12 @@ public class CheckoutFragment extends Fragment {
     // --- Biến dữ liệu ---
     private Address selectedAddress = null;
     private String finalPaymentMethod = "COD"; // Mặc định là COD
+
+    // === CÁC BIẾN KIỂM SOÁT ZALOPAY (NEW) ===
+    private String pendingZaloPayTransId = null;
+    private boolean isCheckingStatus = false;
+    private Set<String> processedTransactions = new HashSet<>();
+    private CuteDialog.withIcon loadingDialogRef = null;
 
     @Nullable
     @Override
@@ -87,6 +97,7 @@ public class CheckoutFragment extends Fragment {
     public void onResume() {
         super.onResume();
         if (addressViewModel != null) addressViewModel.refreshData();
+        // Không gọi check status ở đây để tránh xung đột với SDK Callback
     }
 
     private void initViews(View view) {
@@ -224,7 +235,7 @@ public class CheckoutFragment extends Fragment {
         btnCheckout.setEnabled(false);
         cartViewModel.checkCartAvailability().observe(getViewLifecycleOwner(), isValid -> {
             btnCheckout.setEnabled(true);
-            if (Boolean.TRUE.equals(isValid)) {
+            if (Boolean.TRUE.equals(isValid.getData())) {
                 showConfirmCheckoutDialog();
             } else {
                 FancyToast.makeText(getContext(), "Giỏ hàng có thay đổi, vui lòng kiểm tra lại!", FancyToast.LENGTH_LONG, FancyToast.ERROR, true).show();
@@ -258,7 +269,6 @@ public class CheckoutFragment extends Fragment {
         btnCheckout.setEnabled(false);
         btnCheckout.setText("Đang xử lý...");
 
-        // 1. GỌI API TẠO ĐƠN HÀNG TRƯỚC (Lưu vào DB)
         orderViewModel.checkout(
                 selectedAddress.getName(),
                 selectedAddress.getAddress(),
@@ -270,6 +280,7 @@ public class CheckoutFragment extends Fragment {
             btnCheckout.setText("Đặt hàng");
 
             if (response != null && response.isStatus()) {
+                // Refresh cart locally ngay khi tạo đơn xong (dù chưa thanh toán)
                 cartViewModel.refreshCart();
 
                 String orderId = response.getData().getOrderId();
@@ -279,7 +290,6 @@ public class CheckoutFragment extends Fragment {
                 if (finalPaymentMethod.equals("QR")) {
                     showRedirectToPaymentDialog(orderId, total, transactionCode);
                 } else if (finalPaymentMethod.equals("ZaloPay")) {
-                    // 2. NẾU LÀ ZALOPAY -> HIỆN DIALOG ĐỂ BẮT ĐẦU THANH TOÁN
                     showRedirectToZaloPayDialog(orderId);
                 } else {
                     showSuccessCODDialog(orderId);
@@ -320,7 +330,6 @@ public class CheckoutFragment extends Fragment {
                 .setDescription("Mã đơn hàng: " + orderId + "\n\nNhấn xác nhận để chuyển sang ứng dụng ZaloPay.")
                 .setPrimaryColor(R.color.blue)
                 .setPositiveButtonText("Thanh toán ZaloPay", v -> {
-                    // 3. KHI USER BẤM NÚT NÀY -> GỌI API LẤY TOKEN ZALO
                     requestZaloPayTokenFromServer(orderId);
                 })
                 .setNegativeButtonText("Để sau", v -> navigateToHome())
@@ -329,18 +338,18 @@ public class CheckoutFragment extends Fragment {
 
     // --- BƯỚC 3: GỌI VIEWMODEL ĐỂ LẤY TOKEN ZALO ---
     private void requestZaloPayTokenFromServer(String orderId) {
-        // Hiện loading nhẹ hoặc disable nút nếu cần
-
         orderViewModel.createZaloPayPayment(orderId).observe(getViewLifecycleOwner(), response -> {
             if (response == null) return;
 
             if (response.isStatus() && response.getData() != null) {
-                // Lấy Token từ Model ZaloPayResult
                 String zpToken = response.getData().getZpTransToken();
+                String appTransId = response.getData().getAppTransId();
+
+                // Lưu lại mã giao dịch
+                pendingZaloPayTransId = appTransId;
 
                 if (zpToken != null && !zpToken.isEmpty()) {
-                    // 4. CÓ TOKEN -> GỌI SDK
-                    requestZaloPayPayment(zpToken);
+                    requestZaloPayPayment(zpToken, appTransId);
                 } else {
                     FancyToast.makeText(getContext(), "Lỗi: Token thanh toán trống!", FancyToast.LENGTH_SHORT, FancyToast.ERROR, true).show();
                 }
@@ -351,8 +360,8 @@ public class CheckoutFragment extends Fragment {
         });
     }
 
-    // --- BƯỚC 4: GỌI SDK ZALOPAY ---
-    private void requestZaloPayPayment(String zpToken) {
+    // --- BƯỚC 4: GỌI SDK ZALOPAY (ĐÃ SỬA LOGIC) ---
+    private void requestZaloPayPayment(String zpToken, String appTransId) {
         if (!isAdded() || getActivity() == null) return;
 
         ZaloPaySDK.getInstance().payOrder(
@@ -361,18 +370,18 @@ public class CheckoutFragment extends Fragment {
                 "demozpdk://app",
                 new PayOrderListener() {
                     @Override
-                    public void onPaymentSucceeded(String transactionId, String transToken, String appTransID) {
-                        // Quay lại Thread chính để update UI
-                        if(getActivity() != null) {
+                    public void onPaymentSucceeded(String transactionId, String transToken, String returnedAppTransID) {
+                        if (getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
-                                cartViewModel.refreshCart();
-                                new CuteDialog.withIcon(requireActivity())
-                                        .setIcon(R.drawable.ic_dialog_success)
-                                        .setTitle("Thanh toán thành công!")
-                                        .hideNegativeButton(true)
-                                        .setDescription("Mã giao dịch: " + transactionId)
-                                        .setPositiveButtonText("Về trang chủ", v -> navigateToHome())
-                                        .show();
+                                // [CHẶN TRÙNG LẶP]
+                                if (processedTransactions.contains(returnedAppTransID)) {
+                                    return;
+                                }
+
+                                String finalId = (returnedAppTransID != null && !returnedAppTransID.isEmpty()) ? returnedAppTransID : appTransId;
+
+                                // Thay vì hiện dialog ngay, ta gọi Check Status
+                                checkZaloPayStatusFromBackend(finalId, 3);
                             });
                         }
                     }
@@ -381,14 +390,8 @@ public class CheckoutFragment extends Fragment {
                     public void onPaymentCanceled(String zpTransToken, String appTransID) {
                         if(getActivity() != null) {
                             getActivity().runOnUiThread(() -> {
-                                cartViewModel.refreshCart();
-                                new CuteDialog.withIcon(requireActivity())
-                                        .setIcon(R.drawable.ic_dialog_error)
-                                        .setTitle("Lỗi")
-                                        .hideNegativeButton(true)
-                                        .setDescription("Bạn đã hủy thanh toán")
-                                        .setPositiveButtonText("Về trang chủ", v -> navigateToHome())
-                                        .show();
+                                FancyToast.makeText(getContext(), "Bạn đã hủy thanh toán", FancyToast.LENGTH_SHORT, FancyToast.WARNING, false).show();
+                                navigateToHome(); // Hoặc ở lại trang
                             });
                         }
                     }
@@ -400,19 +403,88 @@ public class CheckoutFragment extends Fragment {
                                 if (zaloPayError == ZaloPayError.PAYMENT_APP_NOT_FOUND) {
                                     ZaloPaySDK.getInstance().navigateToZaloOnStore(requireActivity());
                                 } else {
-                                    new CuteDialog.withIcon(requireActivity())
-                                            .setIcon(R.drawable.ic_dialog_error)
-                                            .setTitle("Lỗi")
-                                            .hideNegativeButton(true)
-                                            .setDescription("Lỗi thanh toán: " + zaloPayError.toString())
-                                            .setPositiveButtonText("Về trang chủ", v -> navigateToHome())
-                                            .show();
+                                    FancyToast.makeText(getContext(), "Lỗi thanh toán: " + zaloPayError.toString(), FancyToast.LENGTH_SHORT, FancyToast.ERROR, false).show();
                                 }
                             });
                         }
                     }
                 }
         );
+    }
+
+    // --- BƯỚC 5: CHECK STATUS (RECURSIVE RETRY) ---
+    private void checkZaloPayStatusFromBackend(String appTransId, int retryCount) {
+        // [CHỐT CHẶN 2]
+        if (processedTransactions.contains(appTransId)) return;
+        if (isCheckingStatus && retryCount == 3) return;
+
+        // Bắt đầu check
+        if (retryCount == 3) {
+            isCheckingStatus = true;
+            loadingDialogRef = new CuteDialog.withIcon(requireActivity())
+                    .setIcon(R.drawable.ic_dialog_info)
+                    .setTitle("Đang xác thực...")
+                    .setDescription("Vui lòng đợi hệ thống xác nhận...")
+                    .hideNegativeButton(true).hidePositiveButton(true);
+            loadingDialogRef.show();
+
+            // Auto dismiss 8s
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                if(loadingDialogRef != null && loadingDialogRef.isShowing()) {
+                    try { loadingDialogRef.dismiss(); } catch (Exception e) {}
+                }
+            }, 8000);
+        }
+
+        orderViewModel.checkZaloPayStatus(appTransId).observe(getViewLifecycleOwner(), response -> {
+            if (!isAdded() || getActivity() == null) return;
+
+            boolean isValid = (response != null && response.getData() != null);
+            int returnCode = -1;
+            if (isValid) {
+                try {
+                    Object rc = response.getData().get("return_code");
+                    returnCode = (rc instanceof Number) ? ((Number) rc).intValue() : Double.valueOf(String.valueOf(rc)).intValue();
+                } catch (Exception e) { returnCode = -1; }
+            }
+
+            // === TRƯỜNG HỢP 1: THÀNH CÔNG ===
+            if (isValid && returnCode == 1) {
+                if (loadingDialogRef != null && loadingDialogRef.isShowing()) loadingDialogRef.dismiss();
+
+                processedTransactions.add(appTransId);
+                isCheckingStatus = false;
+                cartViewModel.refreshCart(); // Update lại giỏ hàng (về 0)
+
+                new CuteDialog.withIcon(requireActivity())
+                        .setIcon(R.drawable.ic_check_circle)
+                        .setTitle("Thanh toán thành công!")
+                        .setDescription("Đơn hàng của bạn đã được xác nhận.")
+                        .setPositiveButtonText("Về trang chủ", v -> navigateToHome())
+                        .hideNegativeButton(true)
+                        .show();
+                return;
+            }
+
+            // === TRƯỜNG HỢP 2: RETRY ===
+            if (retryCount > 0) {
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    checkZaloPayStatusFromBackend(appTransId, retryCount - 1);
+                }, 2000);
+            } else {
+                // === TRƯỜNG HỢP 3: THẤT BẠI ===
+                if (loadingDialogRef != null && loadingDialogRef.isShowing()) loadingDialogRef.dismiss();
+                isCheckingStatus = false;
+
+                new CuteDialog.withIcon(requireActivity())
+                        .setIcon(R.drawable.ic_dialog_warning)
+                        .setTitle("Giao dịch đang xử lý")
+                        .setDescription("Hệ thống chưa nhận được kết quả. Vui lòng kiểm tra lại sau trong Lịch sử đơn hàng.")
+                        .setPositiveButtonText("Kiểm tra lại", v -> checkZaloPayStatusFromBackend(appTransId, 3))
+                        .setNegativeButtonText("Về trang chủ", v -> navigateToHome())
+                        .show();
+            }
+        });
     }
 
     // --- CASE 3: COD ---

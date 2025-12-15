@@ -6,8 +6,10 @@ import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.example.fa25_duan1.model.Address;
+import com.example.fa25_duan1.model.ApiResponse; // Import ApiResponse
 import com.example.fa25_duan1.repository.AddressRepository;
 
 import java.util.ArrayList;
@@ -23,8 +25,11 @@ public class AddressViewModel extends AndroidViewModel {
     // Danh sách hiển thị trên UI (đã qua filter/search)
     private final MediatorLiveData<List<Address>> displayedAddressesLiveData = new MediatorLiveData<>();
 
-    // Biến theo dõi nguồn từ repo để refresh
-    private LiveData<List<Address>> currentRepoSource;
+    // LiveData để báo lỗi cho View (Fragment) nếu cần
+    private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
+
+    // Biến theo dõi nguồn từ repo để refresh (Kiểu dữ liệu thay đổi thành ApiResponse)
+    private LiveData<ApiResponse<List<Address>>> currentRepoSource;
 
     public AddressViewModel(@NonNull Application application) {
         super(application);
@@ -33,54 +38,67 @@ public class AddressViewModel extends AndroidViewModel {
         refreshData();
     }
 
-    /**
-     * Fragment sẽ observe hàm này để lấy list hiển thị lên RecyclerView
-     */
     public LiveData<List<Address>> getDisplayedAddresses() {
         return displayedAddressesLiveData;
     }
 
+    public LiveData<String> getMessage() {
+        return messageLiveData;
+    }
+
     /**
-     * Tải lại danh sách từ Server
+     * Tải lại danh sách từ Server (Đã sửa để xử lý ApiResponse)
      */
     public void refreshData() {
         if (currentRepoSource != null) {
             displayedAddressesLiveData.removeSource(currentRepoSource);
         }
+
+        // Gọi Repository (trả về ApiResponse)
         currentRepoSource = repository.getMyAddresses();
-        displayedAddressesLiveData.addSource(currentRepoSource, addresses -> {
-            if (addresses == null) {
-                addresses = new ArrayList<>();
+
+        displayedAddressesLiveData.addSource(currentRepoSource, apiResponse -> {
+            List<Address> addresses = new ArrayList<>();
+
+            if (apiResponse != null) {
+                if (apiResponse.isStatus()) {
+                    // Thành công: Lấy data
+                    if (apiResponse.getData() != null) {
+                        addresses = apiResponse.getData();
+                    }
+                } else {
+                    // Thất bại: Gửi thông báo lỗi
+                    messageLiveData.setValue(apiResponse.getMessage());
+                }
+            } else {
+                messageLiveData.setValue("Lỗi kết nối");
             }
+
+            // Cập nhật list gốc
             allAddressesLiveData.setValue(addresses);
 
-            // Mặc định sắp xếp cái mới nhất lên đầu (theo createAt hoặc đơn giản là đảo ngược list)
-            // Giả sử Address.getDate() trả về String dạng ISO date có thể so sánh
-            List<Address> sorted = new ArrayList<>(addresses);
-            // Sắp xếp custom nếu cần, ví dụ:
-            // sorted.sort((a1, a2) -> a2.getDate().compareTo(a1.getDate()));
-
-            displayedAddressesLiveData.setValue(sorted);
+            // Cập nhật list hiển thị (Copy để tránh tham chiếu)
+            displayedAddressesLiveData.setValue(new ArrayList<>(addresses));
         });
     }
 
-    // --- CRUD WRAPPERS ---
+    // --- CRUD WRAPPERS (CẬP NHẬT KIỂU TRẢ VỀ) ---
 
-    public LiveData<Address> addAddress(Address address) {
+    public LiveData<ApiResponse<Address>> addAddress(Address address) {
         return repository.addAddress(address);
     }
 
-    public LiveData<Address> updateAddress(String id, Address address) {
+    public LiveData<ApiResponse<Address>> updateAddress(String id, Address address) {
         return repository.updateAddress(id, address);
     }
 
-    public LiveData<Boolean> deleteAddress(String id) {
+    // Delete trả về ApiResponse<Void> thay vì Boolean
+    public LiveData<ApiResponse<Void>> deleteAddress(String id) {
         return repository.deleteAddress(id);
     }
 
-    /**
-     * Tìm kiếm địa chỉ (Local Search trên list đã tải về)
-     */
+    // --- CÁC HÀM SEARCH/FILTER GIỮ NGUYÊN (VÌ CHẠY TRÊN LIST ĐÃ TẢI VỀ) ---
+
     public void searchAddresses(String query) {
         List<Address> masterList = allAddressesLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();
@@ -94,7 +112,6 @@ public class AddressViewModel extends AndroidViewModel {
         List<Address> result = new ArrayList<>();
 
         for (Address a : masterList) {
-            // Tìm theo tên người nhận, địa chỉ hoặc số điện thoại
             if ((a.getName() != null && a.getName().toLowerCase().contains(q)) ||
                     (a.getAddress() != null && a.getAddress().toLowerCase().contains(q)) ||
                     (a.getPhone() != null && a.getPhone().toLowerCase().contains(q))) {
@@ -104,9 +121,6 @@ public class AddressViewModel extends AndroidViewModel {
         displayedAddressesLiveData.setValue(result);
     }
 
-    /**
-     * Lọc theo Tag (Ví dụ: Nhà riêng, Công ty)
-     */
     public void filterByTag(String tag) {
         List<Address> masterList = allAddressesLiveData.getValue();
         if (masterList == null) masterList = new ArrayList<>();

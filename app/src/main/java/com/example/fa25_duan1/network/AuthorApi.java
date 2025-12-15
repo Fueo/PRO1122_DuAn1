@@ -48,5 +48,5 @@ public interface AuthorApi {
 
     // DELETE: Xóa author theo ID
     @DELETE("authors/delete/{id}")
-    Call<Void> deleteAuthor(@Path("id") String id);
+    Call<ApiResponse<Void>> deleteAuthor(@Path("id") String id);
 }

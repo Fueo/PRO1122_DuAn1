@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import com.example.fa25_duan1.R;
 import com.example.fa25_duan1.model.Author;
+import com.example.fa25_duan1.model.Product; // Import Product
 import com.example.fa25_duan1.viewmodel.ProductViewModel;
 
 import java.util.List;
@@ -26,7 +27,6 @@ public class AuthorManageAdapter extends RecyclerView.Adapter<AuthorManageAdapte
     private final Context context;
     private final OnItemClickListener listener;
 
-    // THÊM: ViewModel và LifecycleOwner
     private final ProductViewModel productViewModel;
     private final LifecycleOwner lifecycleOwner;
 
@@ -36,7 +36,6 @@ public class AuthorManageAdapter extends RecyclerView.Adapter<AuthorManageAdapte
         void onItemClick(Author author);
     }
 
-    // CẬP NHẬT: Constructor nhận thêm viewModel và lifecycleOwner
     public AuthorManageAdapter(Context context,
                                List<Author> authorList,
                                OnItemClickListener listener,
@@ -95,17 +94,22 @@ public class AuthorManageAdapter extends RecyclerView.Adapter<AuthorManageAdapte
         // 2. Hiển thị Tên
         holder.tvName.setText(author.getName());
 
-        // 3. XỬ LÝ SỐ LƯỢNG SÁCH (Gọi ViewModel)
-        // Đặt text mặc định trước khi load xong
+        // 3. XỬ LÝ SỐ LƯỢNG SÁCH (Đã sửa để hứng ApiResponse)
         holder.tvInfo.setText("Đang tải dữ liệu...");
 
         if (author.getAuthorID() != null) {
-            // Gọi hàm lấy danh sách sách theo AuthorID đã viết ở bước trước
-            productViewModel.getProductsByAuthor(author.getAuthorID()).observe(lifecycleOwner, products -> {
-                // Kiểm tra ViewHolder còn khớp với position không để tránh lỗi hiển thị khi scroll nhanh
-                if (holder.getAdapterPosition() == position) {
+            // [QUAN TRỌNG] Quan sát ApiResponse thay vì List<Product>
+            productViewModel.getProductsByAuthor(author.getAuthorID()).observe(lifecycleOwner, apiResponse -> {
+                // Kiểm tra xem ViewHolder này có còn hiển thị đúng vị trí (position) không
+                // Tránh trường hợp scroll nhanh, view bị tái sử dụng cho item khác
+                if (holder.getAdapterPosition() != position) return;
+
+                if (apiResponse != null && apiResponse.isStatus()) {
+                    List<Product> products = apiResponse.getData();
                     int count = (products != null) ? products.size() : 0;
                     holder.tvInfo.setText("Tác giả của " + count + " đầu sách");
+                } else {
+                    holder.tvInfo.setText("Chưa có thông tin sách");
                 }
             });
         } else {

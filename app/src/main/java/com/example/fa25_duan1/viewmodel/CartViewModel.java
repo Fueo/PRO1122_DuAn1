@@ -7,9 +7,8 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.Observer;
 
-import com.example.fa25_duan1.model.ApiResponse;
+import com.example.fa25_duan1.model.ApiResponse; // Import ApiResponse
 import com.example.fa25_duan1.model.CartItem;
 import com.example.fa25_duan1.repository.CartRepository;
 
@@ -20,11 +19,14 @@ public class CartViewModel extends AndroidViewModel {
 
     private final CartRepository repository;
 
-    // Quản lý danh sách giỏ hàng bằng MediatorLiveData (giống AddressViewModel)
+    // Quản lý danh sách giỏ hàng
     private final MediatorLiveData<List<CartItem>> cartItems = new MediatorLiveData<>();
 
-    // Biến theo dõi nguồn dữ liệu hiện tại để tránh chồng chéo observer
-    private LiveData<List<CartItem>> currentRepoSource;
+    // LiveData báo lỗi về UI
+    private final MutableLiveData<String> messageLiveData = new MutableLiveData<>();
+
+    // Biến theo dõi nguồn dữ liệu hiện tại (Kiểu ApiResponse)
+    private LiveData<ApiResponse<List<CartItem>>> currentRepoSource;
 
     // Các biến dữ liệu tính toán (Derived data)
     private final MutableLiveData<Long> totalPrice = new MutableLiveData<>(0L);
@@ -33,60 +35,84 @@ public class CartViewModel extends AndroidViewModel {
     public CartViewModel(@NonNull Application application) {
         super(application);
         repository = new CartRepository(application);
-        // Tự động tải giỏ hàng khi khởi tạo ViewModel
-//        refreshCart();
+        // refreshCart(); // Tùy chọn gọi ngay hoặc để Fragment gọi onResume
     }
 
     // --- Getters cho UI observe ---
     public LiveData<List<CartItem>> getCartItems() { return cartItems; }
     public LiveData<Long> getTotalPrice() { return totalPrice; }
     public LiveData<Integer> getTotalQuantity() { return totalQuantity; }
+    public LiveData<String> getMessage() { return messageLiveData; }
 
     /**
-     * Tải lại danh sách giỏ hàng từ Repository (Giống logic AddressViewModel)
+     * Tải lại danh sách giỏ hàng từ Repository
      */
     public void refreshCart() {
-        // 1. Gỡ bỏ nguồn cũ nếu đang lắng nghe
         if (currentRepoSource != null) {
             cartItems.removeSource(currentRepoSource);
         }
 
-        // 2. Lấy nguồn mới từ Repository
+        // Gọi Repository (trả về ApiResponse)
         currentRepoSource = repository.getCart();
 
-        // 3. Lắng nghe nguồn mới và cập nhật dữ liệu
-        cartItems.addSource(currentRepoSource, items -> {
-            if (items == null) {
-                items = new ArrayList<>();
+        cartItems.addSource(currentRepoSource, apiResponse -> {
+            List<CartItem> items = new ArrayList<>();
+
+            if (apiResponse != null) {
+                if (apiResponse.isStatus()) {
+                    // Thành công: Lấy data
+                    if (apiResponse.getData() != null) {
+                        items = apiResponse.getData();
+                    }
+                } else {
+                    // Thất bại: Gửi thông báo lỗi
+                    messageLiveData.setValue(apiResponse.getMessage());
+                }
+            } else {
+                messageLiveData.setValue("Lỗi kết nối");
             }
+
             // Cập nhật danh sách
             cartItems.setValue(items);
 
-            // Tự động tính toán lại tổng tiền bất cứ khi nào danh sách thay đổi
+            // Tự động tính toán lại tổng tiền
             calculateTotal(items);
         });
     }
 
-    // --- CRUD ACTIONS (Trả về LiveData để View tự xử lý) ---
+    // --- CRUD ACTIONS (CẬP NHẬT KIỂU TRẢ VỀ APIRESPONSE) ---
 
-    // Tăng số lượng / Thêm vào giỏ
+    // 1. Thêm vào giỏ / Tăng số lượng
+    // Trả về ApiResponse<CartItem> để biết item mới cập nhật
+    public LiveData<ApiResponse<CartItem>> addToCart(String productId, int quantity) {
+        return repository.addToCart(productId, quantity);
+    }
+
+    // Alias cho addToCart(id, 1)
     public LiveData<ApiResponse<CartItem>> increaseQuantity(String productId) {
         return repository.addToCart(productId, 1);
     }
 
-    // Giảm số lượng
+    // 2. Giảm số lượng
     public LiveData<ApiResponse<CartItem>> decreaseQuantity(String productId) {
         return repository.decreaseQuantity(productId);
     }
 
-    // Xóa sản phẩm
-    public LiveData<Boolean> deleteItem(String cartItemId) {
+    // 3. Xóa sản phẩm
+    // Trả về ApiResponse<Void> thay vì Boolean
+    public LiveData<ApiResponse<Void>> deleteItem(String cartItemId) {
         return repository.deleteCartItem(cartItemId);
     }
 
-    // Kiểm tra giỏ hàng trước khi thanh toán
-    public LiveData<Boolean> checkCartAvailability() {
+    // 4. Kiểm tra giỏ hàng trước khi thanh toán (Check tồn kho)
+    // Trả về ApiResponse<Boolean> (Data bên trong là true/false hợp lệ hay không)
+    public LiveData<ApiResponse<Boolean>> checkCartAvailability() {
         return repository.checkCartAvailability();
+    }
+
+    // 5. Xóa toàn bộ giỏ hàng
+    public LiveData<ApiResponse<Void>> clearCart() {
+        return repository.clearCart();
     }
 
     /**
@@ -111,13 +137,4 @@ public class CartViewModel extends AndroidViewModel {
         totalPrice.setValue(total);
         totalQuantity.setValue(count);
     }
-
-    public LiveData<Boolean> clearCart() {
-        return repository.clearCart();
-    }
-
-    public LiveData<ApiResponse<CartItem>> addToCart(String productId, int quantity) {
-        return repository.addToCart(productId, quantity);
-    }
-
 }

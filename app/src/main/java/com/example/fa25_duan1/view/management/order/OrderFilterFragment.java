@@ -34,203 +34,220 @@ import java.util.Locale;
 
 public class OrderFilterFragment extends Fragment {
 
-    // ViewModel
     private OrderViewModel viewModel;
 
-    // UI Components
     private NiceSpinner spSort;
     private LinearLayout llToggleFilter;
     private ExpandableLayout expandableLayout;
     private ImageView ivClose;
 
-    // Date Selectors
     private TextView tvStartDate, tvEndDate;
     private Calendar calendarStart, calendarEnd;
     private long startTimeMillis = 0;
     private long endTimeMillis = 0;
 
-    // [CẬP NHẬT] Status Checkboxes (Thêm cbWaitConfirm)
     private CheckBox cbWaitConfirm, cbPending, cbShipping, cbCompleted, cbCancelled;
-
-    // Price Checkboxes
     private CheckBox cbTotalRange1, cbTotalRange2, cbTotalRange3, cbTotalRange4;
 
-    // Buttons
     private Button btnReset, btnApply;
 
-    // Format ngày hiển thị lên TextView
-    private final SimpleDateFormat displayDateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+    private final SimpleDateFormat displayDateFormat =
+            new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // [LƯU Ý] Hãy đảm bảo tên file XML đúng với file bạn vừa tạo (ví dụ: fragment_order_filter.xml)
+    public View onCreateView(@NonNull LayoutInflater inflater,
+                             @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_orderfilter, container, false);
     }
 
     @Override
-    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+    public void onViewCreated(@NonNull View view,
+                              @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        // 1. Kết nối ViewModel (Dùng requireActivity để share data với OrderManageFragment)
         viewModel = new ViewModelProvider(requireActivity()).get(OrderViewModel.class);
 
-        // 2. Ánh xạ View
         initViews(view);
-
-        // 3. Thiết lập các thành phần
         setupSpinner();
         setupDatePicker();
         setupExpandableLayout();
 
-        // 4. Sự kiện Click
+        restoreFilterState(); // ✅ QUAN TRỌNG
+
         btnApply.setOnClickListener(v -> applyFilter());
         btnReset.setOnClickListener(v -> resetFilter());
     }
 
+    // =====================================================
+    // ===================== RESTORE UI ====================
+    // =====================================================
+
+    private void restoreFilterState() {
+        // Sort
+        spSort.setSelectedIndex(viewModel.getCurrentSortType());
+
+        // Status
+        List<Integer> status = viewModel.getCurrentStatusFilter();
+        if (status != null) {
+            cbWaitConfirm.setChecked(status.contains(0));
+            cbPending.setChecked(status.contains(1));
+            cbShipping.setChecked(status.contains(2));
+            cbCompleted.setChecked(status.contains(3));
+            cbCancelled.setChecked(status.contains(4));
+        }
+
+        // Price
+        List<Integer> prices = viewModel.getCurrentPriceRanges();
+        if (prices != null) {
+            cbTotalRange1.setChecked(prices.contains(0));
+            cbTotalRange2.setChecked(prices.contains(1));
+            cbTotalRange3.setChecked(prices.contains(2));
+            cbTotalRange4.setChecked(prices.contains(3));
+        }
+
+        // Date
+        startTimeMillis = viewModel.getCurrentStartDate();
+        endTimeMillis = viewModel.getCurrentEndDate();
+
+        if (startTimeMillis > 0) {
+            calendarStart.setTimeInMillis(startTimeMillis);
+            tvStartDate.setText(displayDateFormat.format(calendarStart.getTime()));
+        }
+
+        if (endTimeMillis > 0) {
+            calendarEnd.setTimeInMillis(endTimeMillis);
+            tvEndDate.setText(displayDateFormat.format(calendarEnd.getTime()));
+        }
+    }
+
+    // =====================================================
+    // ===================== INIT ==========================
+    // =====================================================
+
     private void initViews(View view) {
-        // Header
         spSort = view.findViewById(R.id.spSort);
         llToggleFilter = view.findViewById(R.id.llToggleFilter);
         expandableLayout = view.findViewById(R.id.expandable_layout);
         ivClose = view.findViewById(R.id.ivClose);
 
-        // Date
         tvStartDate = view.findViewById(R.id.tvStartDate);
         tvEndDate = view.findViewById(R.id.tvEndDate);
         calendarStart = Calendar.getInstance();
         calendarEnd = Calendar.getInstance();
 
-        // [CẬP NHẬT] Checkbox Status (Khớp ID trong XML)
-        cbWaitConfirm = view.findViewById(R.id.cbWaitConfirm); // Mới
+        cbWaitConfirm = view.findViewById(R.id.cbWaitConfirm);
         cbPending = view.findViewById(R.id.cbPending);
         cbShipping = view.findViewById(R.id.cbShipping);
         cbCompleted = view.findViewById(R.id.cbCompleted);
         cbCancelled = view.findViewById(R.id.cbCancelled);
 
-        // Checkbox Price
-        cbTotalRange1 = view.findViewById(R.id.cbTotalRange1); // < 500k
-        cbTotalRange2 = view.findViewById(R.id.cbTotalRange2); // 500k - 1tr
-        cbTotalRange3 = view.findViewById(R.id.cbTotalRange3); // 1tr - 5tr
-        cbTotalRange4 = view.findViewById(R.id.cbTotalRange4); // > 5tr
+        cbTotalRange1 = view.findViewById(R.id.cbTotalRange1);
+        cbTotalRange2 = view.findViewById(R.id.cbTotalRange2);
+        cbTotalRange3 = view.findViewById(R.id.cbTotalRange3);
+        cbTotalRange4 = view.findViewById(R.id.cbTotalRange4);
 
-        // Buttons
         btnReset = view.findViewById(R.id.btnReset);
         btnApply = view.findViewById(R.id.btnApply);
     }
 
     private void setupSpinner() {
-        LinkedList<String> data = new LinkedList<>(Arrays.asList(
+        spSort.attachDataSource(new LinkedList<>(Arrays.asList(
                 "Mới nhất",
                 "Cũ nhất",
                 "Giá thấp đến cao",
                 "Giá cao đến thấp"
-        ));
-        spSort.attachDataSource(data);
+        )));
 
-        // Khi người dùng chọn sort, có thể gọi apply luôn hoặc đợi bấm nút
-        spSort.setOnSpinnerItemSelectedListener((parent, v, position, id) -> {
-            applyFilter(); // Tự động apply khi chọn sort
-        });
+        spSort.setOnSpinnerItemSelectedListener((parent, v, position, id) -> applyFilter());
     }
 
     private void setupDatePicker() {
-        // Chọn ngày bắt đầu
         tvStartDate.setOnClickListener(v -> {
-            DatePickerDialog dialog = new DatePickerDialog(getContext(), (view, year, month, dayOfMonth) -> {
-                // Set thời gian là 00:00:00 của ngày đó
-                calendarStart.set(year, month, dayOfMonth, 0, 0, 0);
+            new DatePickerDialog(getContext(), (view, y, m, d) -> {
+                calendarStart.set(y, m, d, 0, 0, 0);
                 startTimeMillis = calendarStart.getTimeInMillis();
                 tvStartDate.setText(displayDateFormat.format(calendarStart.getTime()));
-            }, calendarStart.get(Calendar.YEAR), calendarStart.get(Calendar.MONTH), calendarStart.get(Calendar.DAY_OF_MONTH));
-            dialog.show();
+            }, calendarStart.get(Calendar.YEAR),
+                    calendarStart.get(Calendar.MONTH),
+                    calendarStart.get(Calendar.DAY_OF_MONTH)).show();
         });
 
-        // Chọn ngày kết thúc
         tvEndDate.setOnClickListener(v -> {
-            DatePickerDialog dialog = new DatePickerDialog(getContext(), (view, year, month, dayOfMonth) -> {
-                // Set thời gian là 23:59:59 của ngày đó để bao trọn ngày
-                calendarEnd.set(year, month, dayOfMonth, 23, 59, 59);
+            new DatePickerDialog(getContext(), (view, y, m, d) -> {
+                calendarEnd.set(y, m, d, 23, 59, 59);
                 endTimeMillis = calendarEnd.getTimeInMillis();
                 tvEndDate.setText(displayDateFormat.format(calendarEnd.getTime()));
-            }, calendarEnd.get(Calendar.YEAR), calendarEnd.get(Calendar.MONTH), calendarEnd.get(Calendar.DAY_OF_MONTH));
-            dialog.show();
+            }, calendarEnd.get(Calendar.YEAR),
+                    calendarEnd.get(Calendar.MONTH),
+                    calendarEnd.get(Calendar.DAY_OF_MONTH)).show();
         });
     }
 
     private void setupExpandableLayout() {
-        // Bấm vào header thì mở/đóng layout lọc
-        llToggleFilter.setOnClickListener(v -> {
-            if (expandableLayout.isExpanded()) {
-                expandableLayout.collapse();
-            } else {
-                expandableLayout.expand();
-            }
-        });
+        llToggleFilter.setOnClickListener(v ->
+        { if (expandableLayout.isExpanded()) expandableLayout.collapse();
+        else expandableLayout.expand(); });
 
-        // Bấm nút X thì đóng
         ivClose.setOnClickListener(v -> expandableLayout.collapse());
     }
 
+    // =====================================================
+    // ===================== ACTIONS =======================
+    // =====================================================
+
     private void applyFilter() {
-        // 1. Lấy kiểu sắp xếp
         int sortType = spSort.getSelectedIndex();
 
-        // 2. Lấy danh sách trạng thái [QUAN TRỌNG: Khớp logic ViewModel]
-        List<Integer> statusList = new ArrayList<>();
+        List<Integer> status = new ArrayList<>();
+        if (cbWaitConfirm.isChecked()) status.add(0);
+        if (cbPending.isChecked()) status.add(1);
+        if (cbShipping.isChecked()) status.add(2);
+        if (cbCompleted.isChecked()) status.add(3);
+        if (cbCancelled.isChecked()) status.add(4);
 
-        if (cbWaitConfirm.isChecked()) statusList.add(0); // Chờ xác nhận
-        if (cbPending.isChecked()) statusList.add(1);     // Đang xử lý
-        if (cbShipping.isChecked()) statusList.add(2);    // Đang giao
-        if (cbCompleted.isChecked()) statusList.add(3);   // Hoàn thành
-        if (cbCancelled.isChecked()) statusList.add(4);   // Đã hủy
+        List<Integer> price = new ArrayList<>();
+        if (cbTotalRange1.isChecked()) price.add(0);
+        if (cbTotalRange2.isChecked()) price.add(1);
+        if (cbTotalRange3.isChecked()) price.add(2);
+        if (cbTotalRange4.isChecked()) price.add(3);
 
-        // 3. Lấy khoảng giá
-        List<Integer> priceRanges = new ArrayList<>();
-        if (cbTotalRange1.isChecked()) priceRanges.add(0);
-        if (cbTotalRange2.isChecked()) priceRanges.add(1);
-        if (cbTotalRange3.isChecked()) priceRanges.add(2);
-        if (cbTotalRange4.isChecked()) priceRanges.add(3);
-
-        // 4. Validate ngày tháng (nếu có chọn)
         if (startTimeMillis > 0 && endTimeMillis > 0 && startTimeMillis > endTimeMillis) {
-            Toast.makeText(getContext(), "Ngày bắt đầu không được lớn hơn ngày kết thúc", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Ngày bắt đầu không hợp lệ", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 5. Gửi sang ViewModel xử lý
-        viewModel.filterAndSortOrders(sortType, statusList, startTimeMillis, endTimeMillis, priceRanges);
+        viewModel.filterAndSortOrders(
+                sortType,
+                status,
+                startTimeMillis,
+                endTimeMillis,
+                price
+        );
 
-        // 6. Đóng panel sau khi áp dụng
         expandableLayout.collapse();
     }
 
     private void resetFilter() {
-        // Reset UI về mặc định
         spSort.setSelectedIndex(0);
-
-        // Reset Status
         cbWaitConfirm.setChecked(false);
         cbPending.setChecked(false);
         cbShipping.setChecked(false);
         cbCompleted.setChecked(false);
         cbCancelled.setChecked(false);
 
-        // Reset Price
         cbTotalRange1.setChecked(false);
         cbTotalRange2.setChecked(false);
         cbTotalRange3.setChecked(false);
         cbTotalRange4.setChecked(false);
 
-        // Reset Date
         tvStartDate.setText("");
         tvEndDate.setText("");
         startTimeMillis = 0;
         endTimeMillis = 0;
 
-        // Reset dữ liệu (gọi filter với tham số rỗng)
         viewModel.filterAndSortOrders(0, null, 0, 0, null);
-
         Toast.makeText(getContext(), "Đã đặt lại bộ lọc", Toast.LENGTH_SHORT).show();
     }
 }
